@@ -16,9 +16,9 @@ class ProductDetailScreen extends StatefulWidget {
   final String productId;
 
   const ProductDetailScreen({
-    Key? key,
+    super.key,
     required this.productId,
-  }) : super(key: key);
+  });
 
   @override
   _ProductDetailScreenState createState() => _ProductDetailScreenState();
@@ -290,7 +290,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
   }
 
   Widget _buildProductImages() {
-    return Container(
+    return SizedBox(
       height: 400,
       child: Column(
         children: [

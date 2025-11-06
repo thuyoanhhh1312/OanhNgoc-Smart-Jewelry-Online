@@ -5,10 +5,10 @@ class ReviewModal extends StatefulWidget {
   final Function(Map<String, dynamic>) onSubmit;
 
   const ReviewModal({
-    Key? key,
+    super.key,
     required this.onClose,
     required this.onSubmit,
-  }) : super(key: key);
+  });
 
   @override
   _ReviewModalState createState() => _ReviewModalState();

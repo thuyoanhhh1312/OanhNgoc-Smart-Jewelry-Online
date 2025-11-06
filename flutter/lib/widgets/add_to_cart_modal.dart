@@ -7,11 +7,11 @@ class AddToCartModal extends StatefulWidget {
   final Function(int) onConfirm;
 
   const AddToCartModal({
-    Key? key,
+    super.key,
     required this.product,
     required this.onClose,
     required this.onConfirm,
-  }) : super(key: key);
+  });
 
   @override
   _AddToCartModalState createState() => _AddToCartModalState();
