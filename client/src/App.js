@@ -60,6 +60,8 @@ import UserOrderHistory from './pages/UserOrderHistory';
 import BlogList from './pages/Blog/BlogList';
 import BlogDetail from './pages/Blog/BlogDetail';
 
+import PaymentResult from './pages/PaymentResult';
+
 import { useDispatch } from 'react-redux';
 function App() {
   const dispatch = useDispatch();
@@ -317,6 +319,7 @@ function App() {
             </UserRoute>
           }
         />
+        <Route path="/payment-result" element={<PaymentResult />} />
       </Routes>
     </Router>
   );
