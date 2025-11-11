@@ -22,6 +22,7 @@ import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import CloseIcon from '@mui/icons-material/Close';
 import { getProvinces, getDistricts, getWards } from '../api/vietnamLocationApi';
 import bankApi from '../api/bankApi';
+import vnpayApi from '../api/vnpayApi';
 
 // Thông tin ngân hàng MB Bank
 const BANK_NAME = 'MB Bank';
@@ -197,7 +198,7 @@ const CheckoutPage = () => {
           quantity: item.count,
         })),
         promotion_code: promoCode.trim(),
-        user_id: user?.id
+        user_id: user?.id,
       };
       const res = await orderApi.calculatePrice(priceData, user?.token);
       if (res.valid) {
@@ -248,10 +249,21 @@ const CheckoutPage = () => {
       const res = await orderApi.checkout(orderData, user?.token);
       toast.success('Đặt hàng thành công! Mã đơn hàng: ' + res.order.order_id);
       dispatch({ type: 'CLEAR_CART' });
+      if (paymentMethod === 'vnpay') {
+        try {
+          const vnpRes = await vnpayApi.createPaymentUrl(res.order.order_id, total);
+          window.location.href = vnpRes.paymentUrl; // Chuyển đến trang thanh toán VNPay
+          return; // Dừng lại sau khi redirect
+        } catch (err) {
+          toast.error('Không thể tạo liên kết thanh toán VNPay!');
+        }
+      }
+
       navigate('/order-success', { state: { order: res.order } });
     } catch (error) {
       toast.error(
-        'Lỗi khi đặt hàng: ' + (error.response?.data?.message || error.message || 'Vui lòng thử lại sau.'),
+        'Lỗi khi đặt hàng: ' +
+          (error.response?.data?.message || error.message || 'Vui lòng thử lại sau.'),
       );
     } finally {
       setSubmitting(false);
@@ -336,7 +348,9 @@ const CheckoutPage = () => {
 
         {/* Sản phẩm đã chọn */}
         <Box mb={4} borderRadius={0} p={2} sx={{ border: 0, borderColor: 'none' }}>
-          {selectedItems.length === 0 && <Typography color="text.secondary">Không có sản phẩm nào.</Typography>}
+          {selectedItems.length === 0 && (
+            <Typography color="text.secondary">Không có sản phẩm nào.</Typography>
+          )}
           {selectedItems.map((item) => (
             <Box
               key={item.product_id}
@@ -349,7 +363,10 @@ const CheckoutPage = () => {
               sx={{ '&:last-child': { borderBottom: 'none', mb: 0, pb: 0 } }}
             >
               <img
-                src={item.ProductImages?.[0]?.image_url || 'https://cdn.pnj.io/images/logo/pnj.com.vn.png'}
+                src={
+                  item.ProductImages?.[0]?.image_url ||
+                  'https://cdn.pnj.io/images/logo/pnj.com.vn.png'
+                }
                 alt={item.product_name}
                 width={64}
                 height={64}
@@ -367,7 +384,9 @@ const CheckoutPage = () => {
                     Đơn giá:
                   </Typography>
                   <Typography variant="body2" fontWeight="bold" color="#C58C46" mt={0.5} ml={0.5}>
-                    {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(item.price)}
+                    {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(
+                      item.price,
+                    )}
                   </Typography>
                 </div>
               </Box>
@@ -641,6 +660,21 @@ const CheckoutPage = () => {
               Thanh toán bằng ngân hàng
             </Button>
           </Stack>
+          <Button
+            variant={paymentMethod === 'vnpay' ? 'contained' : 'outlined'}
+            onClick={() => setPaymentMethod('vnpay')}
+            fullWidth
+            sx={{
+              justifyContent: 'flex-start',
+              ...(paymentMethod === 'vnpay' && {
+                backgroundColor: '#003468',
+                color: '#fff',
+                '&:hover': { backgroundColor: '#002954' },
+              }),
+            }}
+          >
+            Thanh toán qua VNPay
+          </Button>
 
           {paymentMethod === 'ck' && (
             <Box mt={3} mb={2}>
@@ -664,6 +698,11 @@ const CheckoutPage = () => {
                 </Select>
               </FormControl>
             </Box>
+          )}
+          {paymentMethod === 'vnpay' && (
+            <Typography mt={2} color="text.secondary">
+              Sau khi đặt hàng, bạn sẽ được chuyển đến cổng thanh toán VNPay.
+            </Typography>
           )}
 
           {(paymentMethod === 'cod' || paymentMethod === 'momo' || paymentMethod === 'ck') && (
@@ -697,14 +736,14 @@ const CheckoutPage = () => {
                 {paymentMethod === 'momo'
                   ? 'Ví MoMo'
                   : paymentMethod === 'ck'
-                    ? bankAccounts.find(b => b.id === selectedBankAccountId)?.bank_name || ''
+                    ? bankAccounts.find((b) => b.id === selectedBankAccountId)?.bank_name || ''
                     : 'MB Bank'}
               </Typography>
               <Typography variant="body2" color="text.secondary" mb={1}>
                 {paymentMethod === 'momo'
                   ? '99MM23332M53758772'
                   : paymentMethod === 'ck'
-                    ? bankAccounts.find(b => b.id === selectedBankAccountId)?.account_number || ''
+                    ? bankAccounts.find((b) => b.id === selectedBankAccountId)?.account_number || ''
                     : '0816837690'}
               </Typography>
             </Box>

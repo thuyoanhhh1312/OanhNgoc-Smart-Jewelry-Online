@@ -3,6 +3,7 @@ import express from 'express';
 import cors from 'cors';
 import apiRoutes from './routes/apiRoutes.js'; // Đảm bảo file này cũng dùng export default nếu là ES Module
 import { errorHandler } from './middlewares/errorHandler.js';
+import vnpayRouter from './vnpay/payment.js';
 
 const app = express();
 
@@ -43,6 +44,8 @@ app.use((req, res, next) => {
 });
 
 app.use("/api", apiRoutes);
+// VNPay routes
+app.use('/api/payment', vnpayRouter);  
 
 // middleware xử lý lỗi toàn cục
 app.use(errorHandler);
