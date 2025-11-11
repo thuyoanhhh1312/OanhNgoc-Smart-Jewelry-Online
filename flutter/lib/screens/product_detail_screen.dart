@@ -269,19 +269,81 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
 
     return Scaffold(
       appBar: AppBar(
+        elevation: 0,
+        backgroundColor: Colors.white,
+        titleTextStyle: const TextStyle(
+          color: Color(0xFF1A1A1A),
+          fontSize: 18,
+          fontWeight: FontWeight.bold,
+          letterSpacing: 0.3,
+        ),
         title: Text(product!.name),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.share),
-            onPressed: () {
-              // Share functionality
-            },
+        leading: Container(
+          margin: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: Colors.grey.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(10),
           ),
-          IconButton(
-            icon: const Icon(Icons.favorite_border),
-            onPressed: () {
-              // Add to wishlist functionality
-            },
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              onTap: () => Navigator.pop(context),
+              borderRadius: BorderRadius.circular(10),
+              child: const Icon(
+                Icons.arrow_back,
+                color: Color(0xFF1A1A1A),
+              ),
+            ),
+          ),
+        ),
+        actions: [
+          Container(
+            margin: const EdgeInsets.only(right: 8),
+            decoration: BoxDecoration(
+              color: Colors.grey.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: () {
+                  // Share functionality
+                },
+                borderRadius: BorderRadius.circular(10),
+                child: const Padding(
+                  padding: EdgeInsets.all(8),
+                  child: Icon(
+                    Icons.share,
+                    color: Color(0xFF1A1A1A),
+                    size: 22,
+                  ),
+                ),
+              ),
+            ),
+          ),
+          Container(
+            margin: const EdgeInsets.only(right: 12),
+            decoration: BoxDecoration(
+              color: Colors.grey.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: () {
+                  // Add to wishlist functionality
+                },
+                borderRadius: BorderRadius.circular(10),
+                child: Padding(
+                  padding: const EdgeInsets.all(8),
+                  child: Icon(
+                    Icons.favorite_border,
+                    color: Colors.red.shade400,
+                    size: 22,
+                  ),
+                ),
+              ),
+            ),
           ),
         ],
       ),
@@ -292,23 +354,56 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
             // Product images
             _buildProductImages(),
             
+            // Divider
+            Container(
+              height: 8,
+              color: Colors.grey.withOpacity(0.08),
+            ),
+            
             // Product info
             _buildProductInfo(),
             
             // Action buttons
             _buildActionButtons(),
             
+            // Divider
+            Container(
+              height: 8,
+              color: Colors.grey.withOpacity(0.08),
+            ),
+            
             // Benefits section
             _buildBenefitsSection(),
+            
+            // Divider
+            Container(
+              height: 8,
+              color: Colors.grey.withOpacity(0.08),
+            ),
             
             // Product details tabs
             _buildProductDetailsTabs(),
             
+            // Divider
+            Container(
+              height: 8,
+              color: Colors.grey.withOpacity(0.08),
+            ),
+            
             // Similar products
             _buildSimilarProducts(),
             
+            // Divider
+            Container(
+              height: 8,
+              color: Colors.grey.withOpacity(0.08),
+            ),
+            
             // Reviews section
             _buildReviewsSection(),
+            
+            // Bottom padding
+            const SizedBox(height: 20),
           ],
         ),
       ),
@@ -815,7 +910,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
                         // Call functionality
                       },
                       borderRadius: BorderRadius.circular(12),
-                      child: Container(
+                      child: SizedBox(
                         height: 48,
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
@@ -1030,7 +1125,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
           ),
           const SizedBox(height: 16),
           Container(
-            height: 200,
+            constraints: const BoxConstraints(maxHeight: 400),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
@@ -1077,13 +1172,13 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
                   ),
                   
                   // Policy tab
-                  const SingleChildScrollView(
-                    padding: EdgeInsets.all(16),
+                  SingleChildScrollView(
+                    padding: const EdgeInsets.all(16),
                     child: Text(
                       'Thông tin chính sách đổi trả và bảo hành sẽ được hiển thị ở đây.',
                       style: TextStyle(
                         fontSize: 14,
-                        color: Color(0xFF1A1A1A),
+                        color: Colors.grey.shade600,
                         height: 1.6,
                         fontWeight: FontWeight.w500,
                       ),
@@ -1091,13 +1186,13 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
                   ),
                   
                   // FAQ tab
-                  const SingleChildScrollView(
-                    padding: EdgeInsets.all(16),
+                  SingleChildScrollView(
+                    padding: const EdgeInsets.all(16),
                     child: Text(
                       'Câu hỏi thường gặp về sản phẩm sẽ được hiển thị ở đây.',
                       style: TextStyle(
                         fontSize: 14,
-                        color: Color(0xFF1A1A1A),
+                        color: Colors.grey.shade600,
                         height: 1.6,
                         fontWeight: FontWeight.w500,
                       ),
