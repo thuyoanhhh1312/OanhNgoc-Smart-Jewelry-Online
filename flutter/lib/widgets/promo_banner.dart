@@ -94,17 +94,22 @@ class _PromoBannerState extends State<PromoBanner> {
         width: double.infinity,
         margin: const EdgeInsets.symmetric(horizontal: 4),
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(18),
           boxShadow: [
             BoxShadow(
-              color: AppColors.shadow,
-              blurRadius: 8,
-              offset: const Offset(0, 2),
+              color: AppColors.primary.withOpacity(0.2),
+              blurRadius: 20,
+              offset: const Offset(0, 8),
+            ),
+            BoxShadow(
+              color: AppColors.primary.withOpacity(0.1),
+              blurRadius: 40,
+              offset: const Offset(0, 16),
             ),
           ],
         ),
         child: ClipRRect(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(18),
           child: Stack(
             children: [
               // Background Image
@@ -118,7 +123,9 @@ class _PromoBannerState extends State<PromoBanner> {
                       child: const Center(
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
-                          color: AppColors.primary,
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            AppColors.primary,
+                          ),
                         ),
                       ),
                     ),
@@ -138,7 +145,7 @@ class _PromoBannerState extends State<PromoBanner> {
                   ),
                 ),
               
-              // Overlay
+              // Overlay with gradient
               if (banner.hasOverlay)
                 Positioned.fill(
                   child: Container(
@@ -148,19 +155,19 @@ class _PromoBannerState extends State<PromoBanner> {
                         end: Alignment.bottomCenter,
                         colors: [
                           Colors.transparent,
-                          Colors.black.withOpacity(0.3),
+                          Colors.black.withOpacity(0.4),
                         ],
                       ),
                     ),
                   ),
                 ),
               
-              // Content
+              // Content with better styling
               if (banner.title != null || banner.subtitle != null)
                 Positioned(
-                  left: 16,
-                  right: 16,
-                  bottom: 16,
+                  left: 20,
+                  right: 20,
+                  bottom: 20,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisSize: MainAxisSize.min,
@@ -168,25 +175,72 @@ class _PromoBannerState extends State<PromoBanner> {
                       if (banner.title != null)
                         Text(
                           banner.title!,
-                          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                            color: banner.titleColor ?? AppColors.textOnPrimary,
+                          style: Theme.of(context)
+                              .textTheme
+                              .headlineSmall
+                              ?.copyWith(
+                            color:
+                                banner.titleColor ?? AppColors.textOnPrimary,
                             fontWeight: FontWeight.bold,
+                            letterSpacing: 0.5,
+                            shadows: [
+                              Shadow(
+                                offset: const Offset(0, 2),
+                                blurRadius: 4,
+                                color: Colors.black.withOpacity(0.3),
+                              ),
+                            ],
                           ),
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                         ),
                       
                       if (banner.subtitle != null) ...[
-                        const SizedBox(height: 4),
+                        const SizedBox(height: 8),
                         Text(
                           banner.subtitle!,
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: banner.subtitleColor ?? AppColors.textOnPrimary.withOpacity(0.9),
+                          style: Theme.of(context)
+                              .textTheme
+                              .bodyMedium
+                              ?.copyWith(
+                            color: banner.subtitleColor ??
+                                AppColors.textOnPrimary.withOpacity(0.95),
+                            letterSpacing: 0.3,
+                            shadows: [
+                              Shadow(
+                                offset: const Offset(0, 1),
+                                blurRadius: 2,
+                                color: Colors.black.withOpacity(0.2),
+                              ),
+                            ],
                           ),
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                         ),
                       ],
+                      
+                      const SizedBox(height: 12),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 8,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppColors.textOnPrimary.withOpacity(0.95),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          'Khám phá ngay',
+                          style: Theme.of(context)
+                              .textTheme
+                              .bodySmall
+                              ?.copyWith(
+                            color: AppColors.primary,
+                            fontWeight: FontWeight.w600,
+                            letterSpacing: 0.5,
+                          ),
+                        ),
+                      ),
                     ],
                   ),
                 ),
