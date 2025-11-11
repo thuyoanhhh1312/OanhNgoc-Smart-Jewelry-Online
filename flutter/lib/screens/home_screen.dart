@@ -322,31 +322,45 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildSearchBar() {
     return Container(
-      margin: const EdgeInsets.all(16),
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       child: GestureDetector(
         onTap: () {
           Navigator.of(context).pushNamed('/search');
         },
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
           decoration: BoxDecoration(
-            color: AppColors.surface,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: AppColors.border),
+            gradient: LinearGradient(
+              colors: [
+                AppColors.surface,
+                AppColors.surface.withOpacity(0.95),
+              ],
+            ),
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(
+              color: AppColors.primary.withOpacity(0.2),
+            ),
             boxShadow: [
               BoxShadow(
-                color: AppColors.shadow,
-                blurRadius: 4,
-                offset: const Offset(0, 1),
+                color: AppColors.primary.withOpacity(0.08),
+                blurRadius: 12,
+                offset: const Offset(0, 4),
               ),
             ],
           ),
           child: Row(
             children: [
-              const Icon(
-                Icons.search,
-                color: AppColors.textLight,
-                size: 20,
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(
+                  Icons.search,
+                  color: AppColors.primary,
+                  size: 20,
+                ),
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -354,13 +368,21 @@ class _HomeScreenState extends State<HomeScreen> {
                   AppStrings.searchHint,
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                     color: AppColors.textLight,
+                    letterSpacing: 0.3,
                   ),
                 ),
               ),
-              const Icon(
-                Icons.tune,
-                color: AppColors.textLight,
-                size: 20,
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(
+                  Icons.tune,
+                  color: AppColors.primary,
+                  size: 20,
+                ),
               ),
             ],
           ),
@@ -370,10 +392,32 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildPromoBanners() {
-    return PromoBanner(
-      banners: BannerItem.defaultBanners(),
-      height: 160,
-      margin: const EdgeInsets.symmetric(horizontal: 16),
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+      child: Column(
+        children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(16),
+            child: Container(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.primary.withOpacity(0.15),
+                    blurRadius: 20,
+                    offset: const Offset(0, 8),
+                  ),
+                ],
+              ),
+              child: PromoBanner(
+                banners: BannerItem.defaultBanners(),
+                height: 180,
+                margin: EdgeInsets.zero,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -387,40 +431,89 @@ class _HomeScreenState extends State<HomeScreen> {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const SizedBox(height: 24),
+            const SizedBox(height: 32),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(
-                    AppStrings.categories,
-                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                      fontWeight: FontWeight.bold,
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        ShaderMask(
+                          shaderCallback: (bounds) {
+                            return LinearGradient(
+                              colors: [
+                                AppColors.primary,
+                                AppColors.primary.withOpacity(0.6),
+                              ],
+                            ).createShader(bounds);
+                          },
+                          child: Text(
+                            'Danh mục sản phẩm',
+                            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Khám phá các loại trang sức sang trọng',
+                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                  TextButton(
-                    onPressed: () {
-                      Navigator.of(context).pushNamed('/categories');
-                    },
-                    child: Text(AppStrings.viewAll),
+                  const SizedBox(width: 16),
+                  Container(
+                    decoration: BoxDecoration(
+                      color: AppColors.primary.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: TextButton(
+                      onPressed: () {
+                        Navigator.of(context).pushNamed('/categories');
+                      },
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            AppStrings.viewAll,
+                            style: TextStyle(
+                              color: AppColors.primary,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          const SizedBox(width: 4),
+                          const Icon(
+                            Icons.arrow_forward,
+                            size: 16,
+                            color: AppColors.primary,
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
                 ],
               ),
             ),
             
-            const SizedBox(height: 16),
+            const SizedBox(height: 20),
             
             SizedBox(
-              height: 120,
+              height: 140,
               child: ListView.builder(
                 scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(horizontal: 12),
+                padding: const EdgeInsets.symmetric(horizontal: 16),
                 itemCount: productProvider.categories.length,
                 itemBuilder: (context, index) {
                   final category = productProvider.categories[index];
                   return SizedBox(
-                    width: 90,
+                    width: 100,
                     child: CategoryCard(
                       category: category,
                       onTap: () {
@@ -511,28 +604,79 @@ class _HomeScreenState extends State<HomeScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const SizedBox(height: 24),
+        const SizedBox(height: 32),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                title,
-                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                  fontWeight: FontWeight.bold,
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    ShaderMask(
+                      shaderCallback: (bounds) {
+                        return LinearGradient(
+                          colors: [
+                            AppColors.primary,
+                            AppColors.primary.withOpacity(0.6),
+                          ],
+                        ).createShader(bounds);
+                      },
+                      child: Text(
+                        title,
+                        style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Container(
+                      width: 40,
+                      height: 3,
+                      decoration: BoxDecoration(
+                        color: AppColors.primary,
+                        borderRadius: BorderRadius.circular(1.5),
+                      ),
+                    ),
+                  ],
                 ),
               ),
               if (onViewAll != null)
-                TextButton(
-                  onPressed: onViewAll,
-                  child: Text(AppStrings.viewAll),
+                Container(
+                  decoration: BoxDecoration(
+                    color: AppColors.primary.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: TextButton(
+                    onPressed: onViewAll,
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          AppStrings.viewAll,
+                          style: TextStyle(
+                            color: AppColors.primary,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                        const Icon(
+                          Icons.arrow_forward,
+                          size: 16,
+                          color: AppColors.primary,
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
             ],
           ),
         ),
         
-        const SizedBox(height: 16),
+        const SizedBox(height: 20),
         
         // Hiển thị full sản phẩm với lazy loading
         Padding(
