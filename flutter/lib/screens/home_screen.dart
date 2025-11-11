@@ -160,24 +160,57 @@ class _HomeScreenState extends State<HomeScreen> {
       builder: (context, authProvider, child) {
         return SliverAppBar(
           floating: true,
+          pinned: false,
+          expandedHeight: 0,
           backgroundColor: AppColors.surface,
           elevation: 0,
+          flexibleSpace: Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  AppColors.surface,
+                  AppColors.surface.withOpacity(0.98),
+                ],
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.primary.withOpacity(0.1),
+                  blurRadius: 12,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+          ),
           title: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
                 authProvider.isLoggedIn 
-                    ? 'Xin chào, ${authProvider.user?.fullName ?? 'Khách hàng'}!'
+                    ? 'Xin chào, ${authProvider.user?.fullName?.split(' ').last ?? 'Khách hàng'}!'
                     : 'Chào mừng đến với',
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
                   color: AppColors.textSecondary,
+                  letterSpacing: 0.2,
                 ),
               ),
-              Text(
-                AppStrings.appName,
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  color: AppColors.primary,
-                  fontWeight: FontWeight.bold,
+              ShaderMask(
+                shaderCallback: (bounds) {
+                  return LinearGradient(
+                    colors: [
+                      AppColors.primary,
+                      AppColors.primary.withOpacity(0.7),
+                    ],
+                  ).createShader(bounds);
+                },
+                child: Text(
+                  AppStrings.appName,
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 0.5,
+                  ),
                 ),
               ),
             ],
@@ -188,53 +221,78 @@ class _HomeScreenState extends State<HomeScreen> {
               builder: (context, authProvider, child) {
                 if (authProvider.isLoggedIn) {
                   // Profile Button for logged in user
-                  return IconButton(
-                    onPressed: () {
-                      Navigator.of(context).pushNamed('/profile');
-                    },
-                    icon: CircleAvatar(
-                      radius: 16,
-                      backgroundColor: AppColors.primary,
-                      child: Text(
-                        authProvider.user?.fullName?.substring(0, 1).toUpperCase() ?? 'U',
-                        style: const TextStyle(
-                          color: AppColors.textOnPrimary,
-                          fontSize: 14,
-                          fontWeight: FontWeight.bold,
+                  return Container(
+                    margin: const EdgeInsets.only(right: 12),
+                    child: IconButton(
+                      onPressed: () {
+                        Navigator.of(context).pushNamed('/profile');
+                      },
+                      icon: Container(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [
+                              AppColors.primary,
+                              AppColors.primary.withOpacity(0.8),
+                            ],
+                          ),
+                          shape: BoxShape.circle,
+                          boxShadow: [
+                            BoxShadow(
+                              color: AppColors.primary.withOpacity(0.3),
+                              blurRadius: 8,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: CircleAvatar(
+                          radius: 16,
+                          backgroundColor: Colors.transparent,
+                          child: Text(
+                            authProvider.user?.fullName?.substring(0, 1).toUpperCase() ?? 'U',
+                            style: const TextStyle(
+                              color: AppColors.textOnPrimary,
+                              fontSize: 13,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
                         ),
                       ),
                     ),
                   );
                 } else {
                   // Login Button for guest user
-                  return TextButton(
-                    onPressed: () {
-                      Navigator.of(context).pushNamed('/login');
-                    },
-                    style: TextButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                      backgroundColor: AppColors.primary.withOpacity(0.1),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(20),
+                  return Container(
+                    margin: const EdgeInsets.only(right: 12),
+                    child: TextButton(
+                      onPressed: () {
+                        Navigator.of(context).pushNamed('/login');
+                      },
+                      style: TextButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        backgroundColor: AppColors.primary.withOpacity(0.15),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(20),
+                        ),
                       ),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Icon(
-                          Icons.person_outline,
-                          size: 18,
-                          color: AppColors.primary,
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          'Đăng nhập',
-                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(
+                            Icons.person_outline,
+                            size: 16,
                             color: AppColors.primary,
-                            fontWeight: FontWeight.w600,
                           ),
-                        ),
-                      ],
+                          const SizedBox(width: 4),
+                          Text(
+                            'Đăng nhập',
+                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: AppColors.primary,
+                              fontWeight: FontWeight.w600,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   );
                 }
@@ -251,6 +309,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   const Icon(
                     Icons.notifications_outlined,
                     color: AppColors.textSecondary,
+                    size: 22,
                   ),
                   // Notification badge
                   Positioned(
@@ -272,48 +331,50 @@ class _HomeScreenState extends State<HomeScreen> {
             // Cart
             Consumer<CartProvider>(
               builder: (context, cartProvider, child) {
-                return IconButton(
-                  onPressed: () {
-                    Navigator.of(context).pushNamed('/cart');
-                  },
-                  icon: Stack(
-                    children: [
-                      const Icon(
-                        Icons.shopping_bag_outlined,
-                        color: AppColors.textSecondary,
-                      ),
-                      if (cartProvider.itemCount > 0)
-                        Positioned(
-                          right: 0,
-                          top: 0,
-                          child: Container(
-                            padding: const EdgeInsets.all(2),
-                            decoration: const BoxDecoration(
-                              color: AppColors.primary,
-                              shape: BoxShape.circle,
-                            ),
-                            constraints: const BoxConstraints(
-                              minWidth: 16,
-                              minHeight: 16,
-                            ),
-                            child: Text(
-                              '${cartProvider.itemCount}',
-                              style: const TextStyle(
-                                color: AppColors.textOnPrimary,
-                                fontSize: 10,
-                                fontWeight: FontWeight.bold,
+                return Container(
+                  margin: const EdgeInsets.only(right: 8),
+                  child: IconButton(
+                    onPressed: () {
+                      Navigator.of(context).pushNamed('/cart');
+                    },
+                    icon: Stack(
+                      children: [
+                        const Icon(
+                          Icons.shopping_bag_outlined,
+                          color: AppColors.textSecondary,
+                          size: 22,
+                        ),
+                        if (cartProvider.itemCount > 0)
+                          Positioned(
+                            right: 0,
+                            top: 0,
+                            child: Container(
+                              padding: const EdgeInsets.all(2),
+                              decoration: const BoxDecoration(
+                                color: AppColors.primary,
+                                shape: BoxShape.circle,
                               ),
-                              textAlign: TextAlign.center,
+                              constraints: const BoxConstraints(
+                                minWidth: 16,
+                                minHeight: 16,
+                              ),
+                              child: Text(
+                                '${cartProvider.itemCount}',
+                                style: const TextStyle(
+                                  color: AppColors.textOnPrimary,
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
                             ),
                           ),
-                        ),
-                    ],
+                      ],
+                    ),
                   ),
                 );
               },
             ),
-            
-            const SizedBox(width: 8),
           ],
         );
       },
