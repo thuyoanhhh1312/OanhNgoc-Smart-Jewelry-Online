@@ -57,12 +57,16 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
 
   Future<void> _loadProductDetail() async {
     try {
+      print('=== ProductDetailScreen Loading ===');
+      print('Product ID: ${widget.productId}');
+      
       setState(() {
         isLoading = true;
       });
 
       // Load product detail
       final productData = await ProductService.getProductById(widget.productId);
+      print('Product loaded: ${productData.name}');
       setState(() {
         product = productData;
       });
@@ -79,13 +83,16 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
       }
 
       // Load reviews and rating summary
+      print('Loading reviews for product ID: ${product!.id}');
       await _loadReviews();
       await _loadRatingSummary();
 
       // Save to viewed products
       _saveToViewedProducts();
+      print('=== ProductDetailScreen Loaded Successfully ===');
     } catch (e) {
       print('Error loading product detail: $e');
+      print('Stack trace: $e');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Lỗi khi tải chi tiết sản phẩm: $e')),
       );
@@ -105,12 +112,16 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
       });
 
       final reviewData = await ProductService.getProductReviews(product!.id);
+      print('Review data response: $reviewData');
       
       // Handle response - backend returns { message: '...', reviews: [...] }
       if (reviewData['reviews'] != null) {
         setState(() {
           reviews = reviewData['reviews'] ?? [];
         });
+        print('Reviews loaded: ${reviews.length} reviews');
+      } else {
+        print('No reviews key in response');
       }
     } catch (e) {
       print('Error loading reviews: $e');
@@ -122,19 +133,36 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
   }
 
   Future<void> _loadRatingSummary() async {
-    if (product == null) return;
+    if (product == null) {
+      print('ERROR: Product is null in _loadRatingSummary');
+      return;
+    }
+    
+    if (product!.id.isEmpty) {
+      print('ERROR: Product ID is empty in _loadRatingSummary');
+      return;
+    }
     
     try {
+      print('Calling API for reviews summary with product ID: "${product!.id}"');
       final summaryData = await ProductService.getProductReviewSummary(product!.id);
+      print('Rating summary response: $summaryData');
+      print('Response type: ${summaryData.runtimeType}');
+      print('Has data key: ${summaryData.containsKey("data")}');
       
       // Handle response - backend returns { message: '...', data: {...} }
       if (summaryData['data'] != null) {
         setState(() {
           reviewSummary = summaryData['data'];
         });
+        print('Rating summary loaded successfully: avgRating=${reviewSummary!['avgRating']}, totalReviews=${reviewSummary!['totalReviews']}');
+      } else {
+        print('ERROR: No data key in summary response or invalid format');
+        print('Full response keys: ${summaryData.keys}');
       }
     } catch (e) {
-      print('Error loading rating summary: $e');
+      print('ERROR loading rating summary: $e');
+      print('Stack trace: ${StackTrace.current}');
     }
   }
 
@@ -747,22 +775,41 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
           ),
           const SizedBox(height: 16),
           
-          // Rating summary
+          // Rating summary - always show if we have data
           if (reviewSummary != null)
-            RatingSummary(
-              avgRating: reviewSummary!['avgRating']?.toDouble() ?? 0.0,
-              totalReviews: reviewSummary!['totalReviews'] ?? 0,
-              ratingDistribution: reviewSummary!['ratingDistribution'] ?? {},
+            Column(
+              children: [
+                RatingSummary(
+                  avgRating: reviewSummary!['avgRating']?.toDouble() ?? 0.0,
+                  totalReviews: reviewSummary!['totalReviews'] ?? 0,
+                  ratingDistribution: reviewSummary!['ratingDistribution'] ?? {},
+                ),
+                const SizedBox(height: 16),
+              ],
             ),
           
-          const SizedBox(height: 16),
+          // Reviews list heading
+          if (reviews.isNotEmpty)
+            const Padding(
+              padding: EdgeInsets.only(bottom: 12),
+              child: Text(
+                'Bình luận từ người dùng',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
           
           // Reviews list
           if (isLoadingReviews)
             const LoadingWidget()
-          else if (reviews.isEmpty)
-            const Text('Chưa có đánh giá nào cho sản phẩm này')
-          else
+          else if (reviews.isEmpty && reviewSummary == null)
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 20),
+              child: Text('Chưa có đánh giá nào cho sản phẩm này'),
+            )
+          else if (reviews.isNotEmpty)
             ListView.builder(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),

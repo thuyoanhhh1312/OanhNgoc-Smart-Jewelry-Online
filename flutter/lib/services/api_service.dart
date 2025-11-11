@@ -57,9 +57,19 @@ class ApiService {
         uri = uri.replace(queryParameters: queryParams);
       }
       
+      print('=== API GET Request ===');
+      print('URL: $uri');
+      print('Headers: $_headers');
+      
       final response = await http.get(uri, headers: _headers);
+      
+      print('Response Status: ${response.statusCode}');
+      print('Response Body: ${response.body}');
+      print('========================');
+      
       return await _handleResponse(response);
     } catch (e) {
+      print('API GET Error: $e');
       throw _handleError(e);
     }
   }

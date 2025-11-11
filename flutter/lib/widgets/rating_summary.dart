@@ -88,7 +88,7 @@ class RatingSummary extends StatelessWidget {
                 child: Column(
                   children: List.generate(5, (index) {
                     final star = 5 - index;
-                    final count = ratingDistribution[star.toString()] ?? 0;
+                    final count = (ratingDistribution[star.toString()] ?? 0) as int;
                     final percentage = totalReviews > 0 ? (count / totalReviews) : 0.0;
                     
                     return Padding(
