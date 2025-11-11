@@ -117,9 +117,15 @@ class ProductService {
         'subcategory_id': subcategoryId,
       });
       
-      if (response['success'] == true && response['data'] != null) {
+      // Backend returns array directly, not wrapped in {success, data}
+      if (response is List) {
+        return response
+            .map((product) => Product.fromJson(product as Map<String, dynamic>))
+            .toList();
+      } else if (response is Map<String, dynamic> && response['data'] != null) {
+        // Handle wrapped response format if needed
         return (response['data'] as List)
-            .map((product) => Product.fromJson(product))
+            .map((product) => Product.fromJson(product as Map<String, dynamic>))
             .toList();
       }
       return [];

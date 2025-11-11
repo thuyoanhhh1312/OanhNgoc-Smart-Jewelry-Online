@@ -18,75 +18,127 @@ class CategoryCard extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 8),
+        margin: const EdgeInsets.symmetric(horizontal: 6),
         decoration: BoxDecoration(
-          color: AppColors.surface,
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: AppColors.shadow,
-              blurRadius: 8,
-              offset: const Offset(0, 2),
+              color: AppColors.primary.withOpacity(0.1),
+              blurRadius: 16,
+              offset: const Offset(0, 4),
             ),
           ],
         ),
-        child: Column(
-          children: [
-            // Category Image
-            Expanded(
-              flex: 3,
-              child: Container(
-                width: double.infinity,
-                decoration: BoxDecoration(
-                  borderRadius: const BorderRadius.vertical(
-                    top: Radius.circular(16),
-                  ),
-                  color: AppColors.surfaceVariant,
+        child: Material(
+          borderRadius: BorderRadius.circular(16),
+          child: InkWell(
+            borderRadius: BorderRadius.circular(16),
+            onTap: onTap,
+            child: Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    AppColors.surface,
+                    AppColors.surface.withOpacity(0.95),
+                  ],
                 ),
-                child: ClipRRect(
-                  borderRadius: const BorderRadius.vertical(
-                    top: Radius.circular(16),
-                  ),
-                  child: category.image != null
-                      ? CachedNetworkImage(
-                          imageUrl: category.image!,
-                          fit: BoxFit.cover,
-                          placeholder: (context, url) => Container(
-                            color: AppColors.surfaceVariant,
-                            child: const Center(
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                color: AppColors.primary,
-                              ),
-                            ),
-                          ),
-                          errorWidget: (context, url, error) => _buildDefaultIcon(),
-                        )
-                      : _buildDefaultIcon(),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: AppColors.primary.withOpacity(0.1),
+                  width: 1.5,
                 ),
               ),
-            ),
-            
-            // Category Name
-            Expanded(
-              flex: 1,
-              child: Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(8),
-                child: Center(
-                  child: Text(
-                    category.name,
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      fontWeight: FontWeight.w600,
+              child: Column(
+                children: [
+                  // Category Image
+                  Expanded(
+                    flex: 3,
+                    child: Container(
+                      width: double.infinity,
+                      decoration: BoxDecoration(
+                        borderRadius: const BorderRadius.vertical(
+                          top: Radius.circular(14),
+                        ),
+                        gradient: LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [
+                            AppColors.primary.withOpacity(0.1),
+                            AppColors.primary.withOpacity(0.05),
+                          ],
+                        ),
+                      ),
+                      child: ClipRRect(
+                        borderRadius: const BorderRadius.vertical(
+                          top: Radius.circular(14),
+                        ),
+                        child: category.image != null
+                            ? CachedNetworkImage(
+                                imageUrl: category.image!,
+                                fit: BoxFit.cover,
+                                placeholder: (context, url) => Container(
+                                  color: AppColors.surfaceVariant,
+                                  child: const Center(
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      valueColor: AlwaysStoppedAnimation<Color>(
+                                        AppColors.primary,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                errorWidget: (context, url, error) =>
+                                    _buildDefaultIcon(),
+                              )
+                            : _buildDefaultIcon(),
+                      ),
                     ),
-                    textAlign: TextAlign.center,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
                   ),
-                ),
+                  
+                  // Category Name
+                  Expanded(
+                    flex: 1,
+                    child: Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        borderRadius: const BorderRadius.vertical(
+                          bottom: Radius.circular(14),
+                        ),
+                        gradient: LinearGradient(
+                          colors: [
+                            AppColors.surface,
+                            AppColors.primary.withOpacity(0.03),
+                          ],
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                        ),
+                      ),
+                      child: Center(
+                        child: Text(
+                          category.name,
+                          style: Theme.of(context)
+                              .textTheme
+                              .bodySmall
+                              ?.copyWith(
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.textPrimary,
+                            fontSize: 12,
+                            letterSpacing: 0.3,
+                          ),
+                          textAlign: TextAlign.center,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
-          ],
+          ),
         ),
       ),
     );
@@ -121,12 +173,21 @@ class CategoryCard extends StatelessWidget {
     }
 
     return Container(
-      color: AppColors.primary.withOpacity(0.1),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            AppColors.primary.withOpacity(0.15),
+            AppColors.primary.withOpacity(0.05),
+          ],
+        ),
+      ),
       child: Center(
         child: Icon(
           iconData,
           color: AppColors.primary,
-          size: 32,
+          size: 40,
         ),
       ),
     );

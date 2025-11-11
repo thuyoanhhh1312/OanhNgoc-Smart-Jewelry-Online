@@ -362,22 +362,22 @@ export const getSimilarProducts = async (req, res) => {
   const { category_id, subcategory_id } = req.query; // Nhận category_id và subcategory_id từ query params
 
   try {
-    const products = await Product.findAll({
+    const products = await db.Product.findAll({
       where: {
         category_id,  // Lọc theo category_id
         subcategory_id,  // Lọc theo subcategory_id
       },
       include: [
         {
-          model: Category,
+          model: db.Category,
           attributes: ['category_name'],
         },
         {
-          model: SubCategory,
+          model: db.SubCategory,
           attributes: ['subcategory_name'],
         },
         {
-          model: ProductImage,
+          model: db.ProductImage,
           attributes: ['image_id', 'image_url', 'alt_text', 'is_main'],
         },
       ],
