@@ -815,7 +815,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
                         // Call functionality
                       },
                       borderRadius: BorderRadius.circular(12),
-                      child: Container(
+                      child: SizedBox(
                         height: 48,
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
@@ -1030,7 +1030,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
           ),
           const SizedBox(height: 16),
           Container(
-            height: 200,
+            constraints: const BoxConstraints(maxHeight: 400),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
@@ -1077,13 +1077,13 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
                   ),
                   
                   // Policy tab
-                  const SingleChildScrollView(
-                    padding: EdgeInsets.all(16),
+                  SingleChildScrollView(
+                    padding: const EdgeInsets.all(16),
                     child: Text(
                       'Thông tin chính sách đổi trả và bảo hành sẽ được hiển thị ở đây.',
                       style: TextStyle(
                         fontSize: 14,
-                        color: Color(0xFF1A1A1A),
+                        color: Colors.grey.shade600,
                         height: 1.6,
                         fontWeight: FontWeight.w500,
                       ),
@@ -1091,13 +1091,13 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
                   ),
                   
                   // FAQ tab
-                  const SingleChildScrollView(
-                    padding: EdgeInsets.all(16),
+                  SingleChildScrollView(
+                    padding: const EdgeInsets.all(16),
                     child: Text(
                       'Câu hỏi thường gặp về sản phẩm sẽ được hiển thị ở đây.',
                       style: TextStyle(
                         fontSize: 14,
-                        color: Color(0xFF1A1A1A),
+                        color: Colors.grey.shade600,
                         height: 1.6,
                         fontWeight: FontWeight.w500,
                       ),
