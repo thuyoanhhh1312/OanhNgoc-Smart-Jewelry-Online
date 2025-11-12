@@ -89,7 +89,8 @@ flutter:
   assets:
     - assets/images/
     - assets/icons/
-    - .env
+    # Note: .env file is not included as an asset for Flutter Web
+    # Web uses environment.dart with default values instead
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images
