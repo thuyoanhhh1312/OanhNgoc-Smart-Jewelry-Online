@@ -87,8 +87,8 @@ flutter:
 
   # To add assets to your application, add an assets section, like this:
   assets:
-    - assets/images/
-    - assets/icons/
+    # - assets/images/
+    # - assets/icons/
     # Note: .env file is not included as an asset for Flutter Web
     # Web uses environment.dart with default values instead
 
