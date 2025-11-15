@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router";
+import { useNavigate } from "react-router-dom";
 import Label from "../form/Label";
 import Input from "../form/input/InputField";
 import { ToastContainer, toast } from 'react-toastify';
@@ -16,7 +16,7 @@ export default function ForgotPasswordForm() {
         e.preventDefault();
 
         const config = {
-            url: process.env.REACT_APP_FORGOT_PASSWORD_REDIRECT,
+            url: import.meta.env.VITE_FORGOT_PASSWORD_REDIRECT,
             handleCodeInApp: true,
         };
 

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router";
+import { useParams, useNavigate } from "react-router-dom";
 import SubCategoryAPI from "../../../api/subCategoryApi";
 import categoryApi from "../../../api/categoryApi";
 import Input from "../../../components/form/input/InputField";

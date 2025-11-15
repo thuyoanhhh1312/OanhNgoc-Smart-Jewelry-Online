@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import Input from "../../../components/form/input/InputField";
 import Label from "../../../components/form/Label";
 import Button from "../../../components/ui/button/Button";
-import { useNavigate } from "react-router";
+import { useNavigate } from "react-router-dom";
 import subCategoryApi from "../../../api/subCategoryApi";
 import categoryApi from "../../../api/categoryApi";
 import { useSelector } from "react-redux";

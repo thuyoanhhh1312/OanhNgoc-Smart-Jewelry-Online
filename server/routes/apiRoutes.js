@@ -44,6 +44,7 @@ import * as searchController from "../controllers/searchController.js";
 import * as dashboardController from "../controllers/dashboardController.js";
 import * as vietnamLocationController from "../controllers/vietnamLocationController.js";
 import * as bankController from "../controllers/bankController.js";
+import { generate3DModel } from "../controllers/product3DController.js";
 
 import * as tagController from "../controllers/tagController.js";
 router.get("/tags", tagController.getAllTags);
@@ -391,5 +392,8 @@ router.delete(
   isAdminOrStaff,
   articleController.deleteNews
 );
+
+// generate 3d
+router.post("/generate-3d/:product_id", generate3DModel);
 
 export default router;

@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_URL = process.env.API_URL || "http://localhost:5000/api"; // Adjust the base URL as needed
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api"; // Adjust the base URL as needed
 const register = async (name, email, password) => {
     console.log('API_URL', API_URL)
     console.log('name', name)

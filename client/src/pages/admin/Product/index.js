@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { DataTable } from 'primereact/datatable';
 import { Column } from 'primereact/column';
 import ProductAPI from '../../../api/productApi';
-import { Link } from 'react-router';
+import { Link } from 'react-router-dom';
 import Swal from 'sweetalert2';
 import DOMPurify from 'dompurify';
 import { Image } from 'primereact/image';
