@@ -1,16 +1,28 @@
-import { HelmetProvider, Helmet } from "react-helmet-async";
+import React, { useEffect } from "react";
 
-// Component để thiết lập meta thông tin cho trang
-const PageMeta = ({ title, description }) => (
-  <Helmet>
-    <title>{title}</title>
-    <meta name="description" content={description} />
-  </Helmet>
-);
+const ensureDescriptionTag = () => {
+  let tag = document.querySelector('meta[name="description"]');
+  if (!tag) {
+    tag = document.createElement('meta');
+    tag.name = 'description';
+    document.head.appendChild(tag);
+  }
+  return tag;
+};
 
-// Component để bọc ứng dụng và sử dụng HelmetProvider
-export const AppWrapper = ({ children }) => (
-  <HelmetProvider>{children}</HelmetProvider>
-);
+const PageMeta = ({ title, description }) => {
+  useEffect(() => {
+    if (title) {
+      document.title = title;
+    }
+    if (typeof description === 'string') {
+      ensureDescriptionTag().setAttribute('content', description);
+    }
+  }, [title, description]);
+
+  return null;
+};
+
+export const AppWrapper = ({ children }) => <>{children}</>;
 
 export default PageMeta;

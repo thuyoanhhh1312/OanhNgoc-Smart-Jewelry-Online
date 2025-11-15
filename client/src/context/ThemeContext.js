@@ -1,4 +1,4 @@
-import { createContext, useState, useContext, useEffect } from "react";
+import React, { createContext, useState, useContext, useEffect } from "react";
 
 // Tạo context mà không cần kiểu dữ liệu
 const ThemeContext = createContext({

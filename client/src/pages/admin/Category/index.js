@@ -2,7 +2,7 @@ import { DataTable } from 'primereact/datatable';
 import { Column } from 'primereact/column';
 import React, { useEffect, useState } from "react";
 import CategoryAPI from "../../../api/categoryApi";
-import { Link } from "react-router";
+import { Link } from "react-router-dom";
 import { useSelector } from "react-redux";
 import Swal from 'sweetalert2';
 

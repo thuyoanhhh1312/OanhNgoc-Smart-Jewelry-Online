@@ -1,9 +1,8 @@
+@import url("https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&display=swap") layer(base);
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-
-@import url("https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&display=swap")
-layer(base);
 
 @custom-variant dark (&:is(.dark *));
 
@@ -383,7 +382,6 @@ table, tr {
 .p-paginator .p-dropdown {
   margin-left: 15px;
 }
-
 
 
 

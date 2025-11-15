@@ -17,21 +17,22 @@ import { calculatePriceSchema, checkoutSchema } from '../validators/orderValidat
 import upload from '../middlewares/upload.js';
 
 // Controllers
-import * as roleController from '../controllers/roleController.js';
-import * as userController from '../controllers/userController.js';
-import * as authController from '../controllers/authController.js';
-import * as categoryController from '../controllers/categoryController.js';
-import * as productController from '../controllers/productController.js';
-import * as subCategoryController from '../controllers/subCategoryController.js';
-import * as promotionController from '../controllers/promotionController.js';
-import * as orderController from '../controllers/orderController.js';
-import * as customerController from '../controllers/customerController.js';
-import * as orderStatusController from '../controllers/orderStatusController.js';
-import * as productReviewController from '../controllers/productReviewController.js';
-import * as searchController from '../controllers/searchController.js';
-import * as dashboardController from '../controllers/dashboardController.js';
-import * as vietnamLocationController from '../controllers/vietnamLocationController.js';
-import * as bankController from '../controllers/bankController.js';
+import * as roleController from "../controllers/roleController.js";
+import * as userController from "../controllers/userController.js";
+import * as authController from "../controllers/authController.js";
+import * as categoryController from "../controllers/categoryController.js";
+import * as productController from "../controllers/productController.js";
+import * as subCategoryController from "../controllers/subCategoryController.js";
+import * as promotionController from "../controllers/promotionController.js";
+import * as orderController from "../controllers/orderController.js";
+import * as customerController from "../controllers/customerController.js";
+import * as orderStatusController from "../controllers/orderStatusController.js";
+import * as productReviewController from "../controllers/productReviewController.js";
+import * as searchController from "../controllers/searchController.js";
+import * as dashboardController from "../controllers/dashboardController.js";
+import * as vietnamLocationController from "../controllers/vietnamLocationController.js";
+import * as bankController from "../controllers/bankController.js";
+import { generate3DModel } from "../controllers/product3DController.js";
 
 import * as tagController from '../controllers/tagController.js';
 router.get('/tags', tagController.getAllTags);
@@ -181,5 +182,8 @@ router.delete(
   isAdminOrStaff,
   articleController.deleteNews
 );
+
+// generate 3d
+router.post("/generate-3d/:product_id", generate3DModel);
 
 export default router;
