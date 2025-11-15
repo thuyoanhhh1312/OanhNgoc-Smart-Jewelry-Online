@@ -5,7 +5,7 @@ import Button from '../../../components/ui/button/Button';
 import * as UserAPI from '../../../api/userApi';
 import OrderAPI from '../../../api/orderApi';
 import OrderStatusAPI from '../../../api/orderStatusApi';
-import { useNavigate, useParams } from 'react-router';
+import { useNavigate, useParams } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import Swal from 'sweetalert2';
 import Checkbox from '../../../components/form/input/Checkbox';

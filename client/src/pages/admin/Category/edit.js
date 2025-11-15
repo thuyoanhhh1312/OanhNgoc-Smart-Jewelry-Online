@@ -3,7 +3,7 @@ import Input from "../../../components/form/input/InputField";
 import Label from "../../../components/form/Label";
 import Button from "../../../components/ui/button/Button";
 import categoryApi from "../../../api/categoryApi";
-import { useNavigate, useParams } from "react-router";
+import { useNavigate, useParams } from "react-router-dom";
 import { useSelector } from "react-redux";
 import Swal from "sweetalert2";
 
