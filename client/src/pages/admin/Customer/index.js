@@ -5,6 +5,7 @@ import { Column } from 'primereact/column';
 import { getCustomers } from '../../../api/customerApi';
 import { useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
+import dayjs from 'dayjs';
 
 const CustomerList = () => {
   const { user } = useSelector((state) => ({ ...state }));
@@ -67,6 +68,18 @@ const CustomerList = () => {
     );
   };
 
+  const formatDate = (dateStr) => (dateStr ? dayjs(dateStr).format('DD/MM/YYYY') : '');
+
+  const segmentBodyTemplate = (rowData) => {
+    const map = {
+      vip: 'VIP',
+      gold: 'Vàng',
+      silver: 'Bạc',
+      bronze: 'Đồng',
+    };
+    return map[rowData.segment_type] || '';
+  };
+
   return (
     <div className="bg-white p-4 rounded-lg shadow-md">
       <div className="flex flex-row justify-between items-center mb-4">
@@ -102,6 +115,20 @@ const CustomerList = () => {
         <Column field="email" header="Email" sortable headerClassName="bg-gray-200" />
         <Column field="phone" header="Điện thoại" sortable headerClassName="bg-gray-200" />
         <Column field="gender" header="Giới tính" sortable headerClassName="bg-gray-200" />
+        <Column
+          field="birthday"
+          header="Ngày sinh"
+          sortable
+          headerClassName="bg-gray-200"
+          body={(row) => formatDate(row.birthday)}
+        />
+        <Column
+          field="segment_type"
+          header="Xếp hạng"
+          sortable
+          headerClassName="bg-gray-200"
+          body={segmentBodyTemplate}
+        />
         <Column field="address" header="Địa chỉ" sortable headerClassName="bg-gray-200" />
         <Column
           field="orderCount"
