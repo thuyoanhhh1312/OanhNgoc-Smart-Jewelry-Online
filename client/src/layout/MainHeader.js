@@ -10,8 +10,9 @@ import { ShoppingCartOutlined } from '@ant-design/icons';
 import Header from '../components/ui/home/HomeHeader';
 
 const MainHeader = () => {
-  let dispatch = useDispatch();
-  let { user, cart } = useSelector((state) => ({ ...state }));
+  const dispatch = useDispatch();
+  const user = useSelector((state) => state.user);
+  const cart = useSelector((state) => state.cart ?? []);
 
   const [isOpen, setIsOpen] = useState(false);
   const navigate = useNavigate();
