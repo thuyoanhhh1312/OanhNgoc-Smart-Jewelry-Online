@@ -1,9 +1,8 @@
 import axios from 'axios';
-const API_BASE = 'http://localhost:5000/api/payment';
 
 const vnpayApi = {
   createPaymentUrl: async (orderId, amount) => {
-    const res = await axios.post(`${API_BASE}/create_payment_url`, { orderId, amount });
+    const res = await axios.post(`${import.meta.env.VITE_API_BASE_URL}`, { orderId, amount });
     return res.data;
   },
 };

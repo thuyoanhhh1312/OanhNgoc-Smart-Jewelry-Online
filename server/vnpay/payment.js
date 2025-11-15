@@ -19,7 +19,7 @@ router.post('/create_payment_url', (req, res) => {
   const tmnCode = process.env.VNP_TMN_CODE; // ✅ phải trùng tên trong .env
   const secretKey = process.env.VNP_HASHSECRET;
   const vnpUrl = process.env.VNP_URL;
-  const returnUrl = 'http://localhost:5000/api/payment/vnpay_return'; // 👈 callback về server
+  const returnUrl = process.env.VNP_RETURN_URL; // 👈 callback về server
 
 
   const createDate = moment().format('YYYYMMDDHHmmss');
