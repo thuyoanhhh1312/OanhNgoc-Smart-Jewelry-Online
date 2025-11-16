@@ -81,7 +81,8 @@ router.get(
 );
 router.get("/auth/current-user", authenticateToken, authController.currentUser);
 router.post("/auth/refresh-token", authController.refreshToken);
-router.post("/auth/forgot-password", authController.forgotPassword);
+router.post("/auth/send-otp", authController.sendOtp);
+router.post("/auth/verify-otp", authController.verifyOtp);
 router.post("/auth/reset-password", authController.resetPassword);
 
 // User routes

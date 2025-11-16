@@ -1,31 +1,30 @@
 import React, { useState } from 'react';
-import { Form, Input, Button, Typography, Card } from 'antd';
+import { Form, Input, Button, Typography, Card, Space } from 'antd';
 import { MailOutlined } from '@ant-design/icons';
 import { toast } from 'react-toastify';
-import { forgotPassword } from '../../api/auth';
+import { sendPasswordResetOtp } from '../../api/auth';
 import { useNavigate } from 'react-router-dom';
-import AuthLayout from "./AuthPageLayout";
-
+import AuthLayout from './AuthPageLayout';
 
 const { Title, Text } = Typography;
+const EMAIL_STORAGE_KEY = 'fp_email';
+const TOKEN_STORAGE_KEY = 'fp_reset_token';
 
-const ForgotPassword = () => {
+const ForgotPasswordRequestPage = () => {
     const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
 
-    const onFinish = async (values) => {
+    const onFinish = async ({ email }) => {
         setLoading(true);
         try {
-            const res = await forgotPassword(values.email);
-            toast.success(res.data.message || 'Vui lòng kiểm tra email để tiếp tục!');
-            // Lấy token resetToken từ response, truyền qua state khi chuyển trang
-            navigate('/reset-password', { state: { resetToken: res.data.resetToken } });
+            await sendPasswordResetOtp(email);
+            sessionStorage.setItem(EMAIL_STORAGE_KEY, email);
+            sessionStorage.removeItem(TOKEN_STORAGE_KEY);
+            toast.success('OTP đã được gửi tới email của bạn.');
+            navigate('/forgot-password/verify', { state: { email } });
         } catch (error) {
-            if (error.response) {
-                toast.error(error.response.data.message || 'Có lỗi xảy ra!');
-            } else {
-                toast.error('Không thể kết nối tới server.');
-            }
+            const message = error?.response?.data?.message || 'Gửi OTP thất bại. Vui lòng thử lại.';
+            toast.error(message);
         } finally {
             setLoading(false);
         }
@@ -35,20 +34,23 @@ const ForgotPassword = () => {
         <AuthLayout>
             <div className="flex justify-center items-center w-full min-h-screen bg-gray-50 p-4">
                 <Card
-                    style={{ maxWidth: 400, width: '100%' }}
-                    bordered={false}
+                    style={{ maxWidth: 420, width: '100%' }}
+                    variant="outlined"
                     className="shadow-md rounded-lg"
                 >
-                    <Title level={3} className="text-center mb-6">Quên mật khẩu</Title>
-                    <Text className="mb-4 block text-center text-gray-600">
-                        Nhập email của bạn để nhận liên kết đặt lại mật khẩu
-                    </Text>
+                    <Space direction="vertical" size="small" className="w-full">
+                        <Title level={3} className="text-center">Quên mật khẩu</Title>
+                        <Text className="block text-center text-gray-600">
+                            Nhập email để nhận mã OTP khôi phục mật khẩu.
+                        </Text>
+                    </Space>
 
                     <Form
                         name="forgot_password"
                         onFinish={onFinish}
                         layout="vertical"
                         requiredMark={false}
+                        className="mt-6"
                     >
                         <Form.Item
                             name="email"
@@ -62,12 +64,13 @@ const ForgotPassword = () => {
                                 prefix={<MailOutlined />}
                                 placeholder="example@domain.com"
                                 size="large"
+                                autoComplete="email"
                             />
                         </Form.Item>
 
                         <Form.Item>
                             <Button type="primary" htmlType="submit" block loading={loading} size="large">
-                                Gửi liên kết
+                                Gửi OTP
                             </Button>
                         </Form.Item>
                     </Form>
@@ -77,4 +80,4 @@ const ForgotPassword = () => {
     );
 };
 
-export default ForgotPassword;
+export default ForgotPasswordRequestPage;

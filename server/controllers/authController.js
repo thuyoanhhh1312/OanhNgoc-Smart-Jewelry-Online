@@ -2,6 +2,14 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import db from '../models/index.js';
 import { ERROR_CODES } from '../utils/errorCodes.js';
+import { sendPasswordResetOtpEmail } from '../services/emailService.js';
+import {
+  issuePasswordResetOtp,
+  consumeOtpForEmail,
+  createResetToken,
+  consumeResetToken,
+  OTP_CONSTANTS,
+} from '../services/otpService.js';
 
 
 const generateRandomPhone = () => {
@@ -311,7 +319,7 @@ export const currentStaffOrAdmin = async (req, res, next) => {
   }
 };
 
-export const forgotPassword = async (req, res, next) => {
+export const sendOtp = async (req, res, next) => {
   const { email } = req.body;
 
   if (!email) {
@@ -323,96 +331,108 @@ export const forgotPassword = async (req, res, next) => {
   }
 
   try {
-    const user = await db.User.findOne({ where: { email } });
-    if (!user) {
-      // Email không tồn tại trong DB
+    const customer = await db.Customer.findOne({ where: { email } });
+    if (!customer) {
       return res.status(404).json({
         message: 'Email không tồn tại trong hệ thống.'
       });
     }
 
-    // Tạo token reset password chứa email, hạn 15 phút
-    const resetToken = jwt.sign(
-      { email: user.email },
-      process.env.JWT_RESET_PASSWORD_SECRET_KEY,
-      { expiresIn: '15m' }
-    );
+    const { otp, expiresAt } = await issuePasswordResetOtp(email);
+    await sendPasswordResetOtpEmail({
+      to: email,
+      otp,
+      expiresInMinutes: OTP_CONSTANTS.OTP_EXP_MINUTES,
+    });
 
-    // Trả token reset về frontend (frontend lưu token này để dùng cho bước reset-password)
     return res.status(200).json({
-      message: 'Email hợp lệ. Vui lòng tiếp tục đổi mật khẩu.',
-      resetToken
+      message: 'OTP sent',
+      expired_at: expiresAt,
     });
   } catch (err) {
     return next({
-      statusCode: 500,
-      code: ERROR_CODES.INTERNAL_SERVER_ERROR,
-      message: 'Lỗi server. Vui lòng thử lại sau.',
-      error: err.message
+      statusCode: err.statusCode || 500,
+      code: err.code || ERROR_CODES.INTERNAL_SERVER_ERROR,
+      message: err.message || 'Không thể gửi OTP. Vui lòng thử lại.',
+    });
+  }
+};
+
+export const verifyOtp = async (req, res, next) => {
+  const { email, otp } = req.body;
+
+  if (!email || !otp) {
+    return next({
+      statusCode: 400,
+      code: ERROR_CODES.VALIDATION_ERROR,
+      message: 'Vui lòng nhập email và OTP.',
+    });
+  }
+
+  try {
+    const customer = await db.Customer.findOne({ where: { email } });
+    if (!customer) {
+      return res.status(404).json({
+        message: 'Email không tồn tại trong hệ thống.',
+      });
+    }
+
+    await consumeOtpForEmail(email, otp);
+    const { token } = await createResetToken(email);
+
+    return res.status(200).json({ reset_token: token });
+  } catch (err) {
+    return next({
+      statusCode: err.statusCode || 500,
+      code: err.code || ERROR_CODES.INTERNAL_SERVER_ERROR,
+      message: err.message || 'OTP không hợp lệ.',
     });
   }
 };
 
 export const resetPassword = async (req, res, next) => {
-  const { password, confirm_password, resetToken } = req.body;
+  const { reset_token, new_password } = req.body;
 
-  if (!password || !confirm_password || !resetToken) {
+  if (!reset_token || !new_password) {
     return next({
       statusCode: 400,
       code: ERROR_CODES.VALIDATION_ERROR,
-      message: 'Vui lòng nhập đầy đủ mật khẩu, xác nhận mật khẩu.'
+      message: 'Thiếu reset token hoặc mật khẩu mới.',
     });
   }
 
-  if (password !== confirm_password) {
+  if (new_password.length < 6) {
     return next({
       statusCode: 400,
       code: ERROR_CODES.VALIDATION_ERROR,
-      message: 'Mật khẩu và xác nhận mật khẩu không khớp.'
+      message: 'Mật khẩu mới phải tối thiểu 6 ký tự.',
     });
   }
 
   try {
-    // Giải mã token lấy email
-    const decoded = jwt.verify(resetToken, process.env.JWT_RESET_PASSWORD_SECRET_KEY);
-    const email = decoded.email;
+    const tokenRecord = await consumeResetToken(reset_token);
+    const user = await db.User.findOne({ where: { email: tokenRecord.email } });
 
-    const user = await db.User.findOne({ where: { email } });
     if (!user) {
-      return res.status(404).json({
-        message: 'Người dùng không tồn tại.'
+      return next({
+        statusCode: 404,
+        code: ERROR_CODES.USER_NOT_FOUND,
+        message: 'Người dùng không tồn tại.',
       });
     }
 
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(password, salt);
-
-    user.password = hashedPassword;
+    const salt = await bcrypt.genSalt(12);
+    user.password = await bcrypt.hash(new_password, salt);
     await user.save();
 
     return res.status(200).json({
-      message: 'Đổi mật khẩu thành công.'
+      message: 'Password updated',
     });
   } catch (err) {
-    if (err.name === 'TokenExpiredError') {
-      return next({
-        statusCode: 401,
-        code: ERROR_CODES.TOKEN_EXPIRED,
-        message: 'Token đổi mật khẩu đã hết hạn. Vui lòng thử lại.'
-      });
-    }
-    if (err.name === 'JsonWebTokenError') {
-      return next({
-        statusCode: 401,
-        code: ERROR_CODES.TOKEN_INVALID,
-        message: 'Token đổi mật khẩu không hợp lệ.'
-      });
-    }
     return next({
-      statusCode: 500,
-      code: ERROR_CODES.INTERNAL_SERVER_ERROR,
-      message: 'Lỗi server. Vui lòng thử lại sau.',
-      error: err.message
+      statusCode: err.statusCode || 500,
+      code: err.code || ERROR_CODES.INTERNAL_SERVER_ERROR,
+      message: err.message || 'Không thể cập nhật mật khẩu.',
     });
   }
 };
