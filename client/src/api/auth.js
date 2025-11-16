@@ -58,16 +58,17 @@ export const currentAdminOrStaff = async (accessToken) => {
     });
 };
 
-// Gửi email để lấy resetToken (forgot password)
-export const forgotPassword = async (email) => {
-    return await API.post("/auth/forgot-password", { email });
+export const sendPasswordResetOtp = async (email) => {
+    return await API.post("/auth/send-otp", { email });
 };
 
-// Đổi mật khẩu với password, confirm_password, resetToken
-export const resetPassword = async ({ password, confirm_password, resetToken }) => {
+export const verifyPasswordResetOtp = async ({ email, otp }) => {
+    return await API.post("/auth/verify-otp", { email, otp });
+};
+
+export const resetPasswordWithToken = async ({ reset_token, new_password }) => {
     return await API.post("/auth/reset-password", {
-        password,
-        confirm_password,
-        resetToken,
+        reset_token,
+        new_password,
     });
 };

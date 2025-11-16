@@ -1,44 +1,47 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Form, Input, Button, Typography, Card } from 'antd';
-import { LockOutlined } from '@ant-design/icons';
 import { toast } from 'react-toastify';
-import { resetPassword } from '../../api/auth'; // api auth
+import { resetPasswordWithToken } from '../../api/auth';
 import { useLocation, useNavigate } from 'react-router-dom';
-import AuthLayout from "./AuthPageLayout";
+import AuthLayout from './AuthPageLayout';
 
 const { Title, Text } = Typography;
+const EMAIL_STORAGE_KEY = 'fp_email';
+const TOKEN_STORAGE_KEY = 'fp_reset_token';
 
-const ResetPassword = () => {
+const ResetPasswordPage = () => {
     const [loading, setLoading] = useState(false);
     const location = useLocation();
     const navigate = useNavigate();
 
-    // Lấy resetToken truyền qua state từ ForgotPasswordPage
-    const resetToken = location.state?.resetToken || '';
+    const resetToken = location.state?.resetToken || sessionStorage.getItem(TOKEN_STORAGE_KEY);
 
     useEffect(() => {
         if (!resetToken) {
-            toast.error('Không có token đổi mật khẩu. Vui lòng làm lại bước quên mật khẩu.');
+            toast.error('Vui lòng hoàn tất bước xác thực OTP trước.');
             navigate('/forgot-password');
         }
     }, [resetToken, navigate]);
 
-    const onFinish = async (values) => {
+    const onFinish = async ({ password, confirmPassword }) => {
+        if (password !== confirmPassword) {
+            toast.error('Mật khẩu xác nhận không khớp.');
+            return;
+        }
+
         setLoading(true);
         try {
-            await resetPassword({
-                password: values.password,
-                confirm_password: values.confirm_password,
-                resetToken,
+            await resetPasswordWithToken({
+                reset_token: resetToken,
+                new_password: password,
             });
-            toast.success('Đổi mật khẩu thành công! Bạn có thể đăng nhập lại.');
+            toast.success('Cập nhật mật khẩu thành công.');
+            sessionStorage.removeItem(TOKEN_STORAGE_KEY);
+            sessionStorage.removeItem(EMAIL_STORAGE_KEY);
             navigate('/signin');
         } catch (error) {
-            if (error.response) {
-                toast.error(error.response.data.message || 'Có lỗi xảy ra!');
-            } else {
-                toast.error('Không thể kết nối tới server.');
-            }
+            const message = error?.response?.data?.message || 'Không thể cập nhật mật khẩu.';
+            toast.error(message);
         } finally {
             setLoading(false);
         }
@@ -47,14 +50,10 @@ const ResetPassword = () => {
     return (
         <AuthLayout>
             <div className="flex justify-center items-center w-full min-h-screen bg-gray-50 p-4">
-                <Card
-                    style={{ maxWidth: 400, width: '100%' }}
-                    bordered={false}
-                    className="shadow-md rounded-lg"
-                >
-                    <Title level={3} className="text-center mb-6">Đặt lại mật khẩu</Title>
-                    <Text className="mb-4 block text-center text-gray-600">
-                        Vui lòng nhập mật khẩu mới của bạn
+                <Card style={{ maxWidth: 420, width: '100%' }} variant="outlined" className="shadow-md rounded-lg">
+                    <Title level={3} className="text-center mb-2">Đặt lại mật khẩu</Title>
+                    <Text className="block text-center text-gray-600">
+                        Hãy tạo mật khẩu mới an toàn cho tài khoản của bạn.
                     </Text>
 
                     <Form
@@ -63,6 +62,7 @@ const ResetPassword = () => {
                         layout="vertical"
                         requiredMark={false}
                         scrollToFirstError
+                        className="mt-6"
                     >
                         <Form.Item
                             name="password"
@@ -74,14 +74,14 @@ const ResetPassword = () => {
                             hasFeedback
                         >
                             <Input.Password
-                                prefix={<LockOutlined />}
-                                placeholder="Mật khẩu mới"
+                                placeholder="Nhập mật khẩu mới"
                                 size="large"
+                                visibilityToggle
                             />
                         </Form.Item>
 
                         <Form.Item
-                            name="confirm_password"
+                            name="confirmPassword"
                             label="Xác nhận mật khẩu"
                             dependencies={['password']}
                             hasFeedback
@@ -98,23 +98,22 @@ const ResetPassword = () => {
                             ]}
                         >
                             <Input.Password
-                                prefix={<LockOutlined />}
-                                placeholder="Xác nhận mật khẩu"
+                                placeholder="Nhập lại mật khẩu mới"
                                 size="large"
+                                visibilityToggle
                             />
                         </Form.Item>
 
                         <Form.Item>
                             <Button type="primary" htmlType="submit" block loading={loading} size="large">
-                                Đổi mật khẩu
+                                Xác nhận
                             </Button>
                         </Form.Item>
                     </Form>
                 </Card>
             </div>
         </AuthLayout>
-
     );
 };
 
-export default ResetPassword;
+export default ResetPasswordPage;
