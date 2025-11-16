@@ -17,8 +17,6 @@ const AddPromotion = () => {
     campaign_id: '',
     segment_target: '',
     discount: '',
-    start_date: '',
-    end_date: '',
     description: '',
     usage_limit: '',
   });
@@ -47,12 +45,7 @@ const AddPromotion = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (
-      !formData.promotion_code ||
-      !formData.discount ||
-      !formData.start_date ||
-      !formData.end_date
-    ) {
+    if (!formData.promotion_code || !formData.discount) {
       Swal.fire('Thông báo', 'Vui lòng nhập đầy đủ các trường bắt buộc', 'warning');
       return;
     }
@@ -65,8 +58,6 @@ const AddPromotion = () => {
           campaign_id: formData.campaign_id ? Number(formData.campaign_id) : null,
           segment_target: formData.segment_target || null,
           discount: Number(formData.discount),
-          start_date: formData.start_date,
-          end_date: formData.end_date,
           description: formData.description,
           usage_limit: formData.usage_limit ? Number(formData.usage_limit) : null,
         },
@@ -138,11 +129,11 @@ const AddPromotion = () => {
             className="w-full border border-gray-300 rounded px-3 py-2"
           >
             <option value="">-- Tất cả khách hàng --</option>
-            <option value="birthday">🎂 Sinh nhật</option>
-            <option value="vip">💎 VIP</option>
-            <option value="gold">🥇 Gold</option>
-            <option value="silver">🥈 Silver</option>
-            <option value="bronze">🥉 Bronze</option>
+            <option value="birthday"> Sinh nhật</option>
+            <option value="vip">VIP</option>
+            <option value="gold">Vàng</option>
+            <option value="silver">Bạc</option>
+            <option value="bronze">Đồng</option>
           </select>
         </div>
 
@@ -173,34 +164,6 @@ const AddPromotion = () => {
             value={formData.usage_limit}
             onChange={handleChange}
             placeholder="Để trống nếu không giới hạn"
-          />
-        </div>
-
-        <div>
-          <Label htmlFor="start_date">
-            Ngày bắt đầu <span className="text-red-600">*</span>
-          </Label>
-          <Input
-            id="start_date"
-            name="start_date"
-            type="date"
-            value={formData.start_date}
-            onChange={handleChange}
-            required
-          />
-        </div>
-
-        <div>
-          <Label htmlFor="end_date">
-            Ngày kết thúc <span className="text-red-600">*</span>
-          </Label>
-          <Input
-            id="end_date"
-            name="end_date"
-            type="date"
-            value={formData.end_date}
-            onChange={handleChange}
-            required
           />
         </div>
 

@@ -10,8 +10,6 @@ export const getAllPromotions = async (req, res) => {
         "campaign_id",
         "segment_target",
         "discount",
-        "start_date",
-        "end_date",
         "description",
         "usage_limit",
         "usage_count",
@@ -28,12 +26,10 @@ export const getAllPromotions = async (req, res) => {
     });
     res.status(200).json(promotions);
   } catch (error) {
-    res
-      .status(500)
-      .json({
-        message: "Lỗi khi lấy danh sách khuyến mãi",
-        error: error.message,
-      });
+    res.status(500).json({
+      message: "Lỗi khi lấy danh sách khuyến mãi",
+      error: error.message,
+    });
   }
 };
 
@@ -46,8 +42,6 @@ export const getPromotionById = async (req, res) => {
         "promotion_id",
         "promotion_code",
         "discount",
-        "start_date",
-        "end_date",
         "description",
         "usage_limit",
         "usage_count",
@@ -71,8 +65,6 @@ export const createPromotion = async (req, res) => {
     campaign_id,
     segment_target,
     discount,
-    start_date,
-    end_date,
     description,
     usage_limit,
   } = req.body;
@@ -80,12 +72,9 @@ export const createPromotion = async (req, res) => {
   // Validate usage_limit (nếu có) phải là số nguyên >= 0 hoặc null
   if (usage_limit !== undefined && usage_limit !== null) {
     if (!Number.isInteger(usage_limit) || usage_limit < 0) {
-      return res
-        .status(400)
-        .json({
-          message:
-            "usage_limit phải là số nguyên lớn hơn hoặc bằng 0 hoặc null.",
-        });
+      return res.status(400).json({
+        message: "usage_limit phải là số nguyên lớn hơn hoặc bằng 0 hoặc null.",
+      });
     }
   }
 
@@ -95,8 +84,6 @@ export const createPromotion = async (req, res) => {
       campaign_id: campaign_id || null,
       segment_target: segment_target || null,
       discount,
-      start_date,
-      end_date,
       description,
       usage_limit: usage_limit ?? null,
       usage_count: 0,
@@ -117,20 +104,15 @@ export const updatePromotion = async (req, res) => {
     campaign_id,
     segment_target,
     discount,
-    start_date,
-    end_date,
     description,
     usage_limit,
   } = req.body;
 
   if (usage_limit !== undefined && usage_limit !== null) {
     if (!Number.isInteger(usage_limit) || usage_limit < 0) {
-      return res
-        .status(400)
-        .json({
-          message:
-            "usage_limit phải là số nguyên lớn hơn hoặc bằng 0 hoặc null.",
-        });
+      return res.status(400).json({
+        message: "usage_limit phải là số nguyên lớn hơn hoặc bằng 0 hoặc null.",
+      });
     }
   }
 
@@ -146,8 +128,6 @@ export const updatePromotion = async (req, res) => {
     promotion.segment_target =
       segment_target !== undefined ? segment_target : promotion.segment_target;
     promotion.discount = discount ?? promotion.discount;
-    promotion.start_date = start_date ?? promotion.start_date;
-    promotion.end_date = end_date ?? promotion.end_date;
     promotion.description = description ?? promotion.description;
 
     // Nếu cập nhật usage_limit thì chỉ cho update khi usage_count <= usage_limit mới hợp lệ

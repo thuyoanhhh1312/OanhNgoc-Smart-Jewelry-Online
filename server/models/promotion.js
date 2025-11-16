@@ -31,16 +31,6 @@ const Promotion = sequelize.define(
       allowNull: false,
     },
 
-    start_date: {
-      type: DataTypes.DATE,
-      allowNull: false,
-    },
-
-    end_date: {
-      type: DataTypes.DATE,
-      allowNull: false,
-    },
-
     description: {
       type: DataTypes.TEXT,
       allowNull: true,
@@ -77,10 +67,6 @@ const Promotion = sequelize.define(
       {
         fields: ["campaign_id"],
         name: "idx_promotion_campaign",
-      },
-      {
-        fields: ["start_date", "end_date"],
-        name: "idx_promotion_dates",
       },
     ],
   }
