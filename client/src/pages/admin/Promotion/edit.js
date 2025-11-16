@@ -1,11 +1,12 @@
-import React, { useEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
-import { useSelector } from "react-redux";
-import promotionApi from "../../../api/promotionApi";
-import Swal from "sweetalert2";
-import Label from "../../../components/form/Label";
-import Input from "../../../components/form/input/InputField";
-import Button from "../../../components/ui/button/Button";
+import React, { useEffect, useState } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
+import { useSelector } from 'react-redux';
+import promotionApi from '../../../api/promotionApi';
+import campaignApi from '../../../api/campaignApi';
+import Swal from 'sweetalert2';
+import Label from '../../../components/form/Label';
+import Input from '../../../components/form/input/InputField';
+import Button from '../../../components/ui/button/Button';
 
 const EditPromotion = () => {
   const { user } = useSelector((state) => ({ ...state }));
@@ -13,13 +14,14 @@ const EditPromotion = () => {
   const navigate = useNavigate();
 
   const [formData, setFormData] = useState({
-    promotion_code: "",
-    discount: "",
-    usage_limit: "",
-    start_date: "",
-    end_date: "",
-    description: "",
+    promotion_code: '',
+    campaign_id: '',
+    segment_target: '',
+    discount: '',
+    usage_limit: '',
+    description: '',
   });
+  const [campaigns, setCampaigns] = useState([]);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -28,17 +30,27 @@ const EditPromotion = () => {
         const data = await promotionApi.getPromotionById(id);
         setFormData({
           promotion_code: data.promotion_code,
+          campaign_id: data.campaign_id ?? '',
+          segment_target: data.segment_target ?? '',
           discount: data.discount,
-          usage_limit: data.usage_limit ?? "",
-          start_date: data.start_date ? data.start_date.split("T")[0] : "",
-          end_date: data.end_date ? data.end_date.split("T")[0] : "",
-          description: data.description ?? "",
+          usage_limit: data.usage_limit ?? '',
+          description: data.description ?? '',
         });
       } catch (error) {
-        Swal.fire("Lỗi", "Không thể tải dữ liệu khuyến mãi", "error");
+        Swal.fire('Lỗi', 'Không thể tải dữ liệu khuyến mãi', 'error');
+      }
+    };
+    const fetchCampaigns = async () => {
+      try {
+        const response = await campaignApi.getAllCampaigns({ is_active: true }, user?.token);
+        setCampaigns(response.data || []);
+      } catch (error) {
+        console.error('Error fetching campaigns:', error);
       }
     };
     fetchPromotion();
+    fetchCampaigns();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
   const handleChange = (e) => {
@@ -49,8 +61,8 @@ const EditPromotion = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!formData.promotion_code || !formData.discount || !formData.start_date || !formData.end_date) {
-      Swal.fire("Thông báo", "Vui lòng nhập đầy đủ các trường bắt buộc", "warning");
+    if (!formData.promotion_code || !formData.discount) {
+      Swal.fire('Thông báo', 'Vui lòng nhập đầy đủ các trường bắt buộc', 'warning');
       return;
     }
 
@@ -60,28 +72,28 @@ const EditPromotion = () => {
         id,
         {
           promotion_code: formData.promotion_code,
+          campaign_id: formData.campaign_id ? Number(formData.campaign_id) : null,
+          segment_target: formData.segment_target || null,
           discount: Number(formData.discount),
           usage_limit: formData.usage_limit ? Number(formData.usage_limit) : null,
-          start_date: formData.start_date,
-          end_date: formData.end_date,
           description: formData.description,
         },
-        user.token
+        user.token,
       );
 
       await Swal.fire({
-        icon: "success",
-        title: "Cập nhật thành công!",
-        text: "Cập nhật khuyến mãi thành công!",
-        confirmButtonText: "OK",
+        icon: 'success',
+        title: 'Cập nhật thành công!',
+        text: 'Cập nhật khuyến mãi thành công!',
+        confirmButtonText: 'OK',
       });
-      navigate("/admin/promotions");
+      navigate('/admin/promotions');
     } catch (error) {
       await Swal.fire({
-        icon: "error",
-        title: "Lỗi",
-        text: "Không thể cập nhật khuyến mãi. Vui lòng thử lại!",
-        confirmButtonText: "OK",
+        icon: 'error',
+        title: 'Lỗi',
+        text: 'Không thể cập nhật khuyến mãi. Vui lòng thử lại!',
+        confirmButtonText: 'OK',
       });
     } finally {
       setLoading(false);
@@ -93,7 +105,9 @@ const EditPromotion = () => {
       <h2 className="text-2xl font-semibold mb-6">Chỉnh sửa Khuyến mãi</h2>
       <form onSubmit={handleSubmit} className="space-y-5">
         <div>
-          <Label htmlFor="promotion_code">Mã Khuyến mãi <span className="text-red-600">*</span></Label>
+          <Label htmlFor="promotion_code">
+            Mã Khuyến mãi <span className="text-red-600">*</span>
+          </Label>
           <Input
             id="promotion_code"
             name="promotion_code"
@@ -106,7 +120,45 @@ const EditPromotion = () => {
         </div>
 
         <div>
-          <Label htmlFor="discount">Phần trăm Giảm giá <span className="text-red-600">*</span></Label>
+          <Label htmlFor="campaign_id">Chiến dịch (tuỳ chọn)</Label>
+          <select
+            id="campaign_id"
+            name="campaign_id"
+            value={formData.campaign_id}
+            onChange={handleChange}
+            className="w-full border border-gray-300 rounded px-3 py-2"
+          >
+            <option value="">-- Không thuộc chiến dịch nào --</option>
+            {campaigns.map((c) => (
+              <option key={c.campaign_id} value={c.campaign_id}>
+                {c.name}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div>
+          <Label htmlFor="segment_target">Đối tượng Khách hàng (tuỳ chọn)</Label>
+          <select
+            id="segment_target"
+            name="segment_target"
+            value={formData.segment_target}
+            onChange={handleChange}
+            className="w-full border border-gray-300 rounded px-3 py-2"
+          >
+            <option value="">-- Tất cả khách hàng --</option>
+            <option value="birthday">Sinh nhật</option>
+            <option value="vip"> VIP</option>
+            <option value="gold"> Vàng</option>
+            <option value="silver">Bạc</option>
+            <option value="bronze">Đồng</option>
+          </select>
+        </div>
+
+        <div>
+          <Label htmlFor="discount">
+            Phần trăm Giảm giá <span className="text-red-600">*</span>
+          </Label>
           <Input
             id="discount"
             name="discount"
@@ -119,7 +171,6 @@ const EditPromotion = () => {
             required
           />
         </div>
-
         <div>
           <Label htmlFor="usage_limit">Giới hạn Số lượt dùng</Label>
           <Input
@@ -130,30 +181,6 @@ const EditPromotion = () => {
             value={formData.usage_limit}
             onChange={handleChange}
             placeholder="Để trống nếu không giới hạn"
-          />
-        </div>
-
-        <div>
-          <Label htmlFor="start_date">Ngày bắt đầu <span className="text-red-600">*</span></Label>
-          <Input
-            id="start_date"
-            name="start_date"
-            type="date"
-            value={formData.start_date}
-            onChange={handleChange}
-            required
-          />
-        </div>
-
-        <div>
-          <Label htmlFor="end_date">Ngày kết thúc <span className="text-red-600">*</span></Label>
-          <Input
-            id="end_date"
-            name="end_date"
-            type="date"
-            value={formData.end_date}
-            onChange={handleChange}
-            required
           />
         </div>
 
@@ -169,8 +196,12 @@ const EditPromotion = () => {
           />
         </div>
 
-        <Button type="submit" disabled={loading} className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 rounded">
-          {loading ? "Đang xử lý..." : "Cập nhật Khuyến mãi"}
+        <Button
+          type="submit"
+          disabled={loading}
+          className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 rounded"
+        >
+          {loading ? 'Đang xử lý...' : 'Cập nhật Khuyến mãi'}
         </Button>
       </form>
     </div>
