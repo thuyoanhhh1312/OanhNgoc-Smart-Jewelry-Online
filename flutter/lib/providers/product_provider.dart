@@ -15,6 +15,14 @@ class ProductProvider extends ChangeNotifier {
   String? _error;
   int _currentPage = 1;
   bool _hasMore = true;
+  
+  // Search pagination
+  int _searchPage = 1;
+  bool _searchHasMore = true;
+  String _lastSearchQuery = '';
+  String _lastSearchSortBy = 'newest';
+  double _lastSearchMinPrice = 0;
+  double _lastSearchMaxPrice = 10000000;
 
   // Getters
   List<Product> get products => _products;
@@ -27,6 +35,10 @@ class ProductProvider extends ChangeNotifier {
   String? get error => _error;
   bool get hasMore => _hasMore;
   int get currentPage => _currentPage;
+  
+  // Search pagination getters
+  int get searchPage => _searchPage;
+  bool get searchHasMore => _searchHasMore;
 
   ProductProvider() {
     loadInitialData();
@@ -167,29 +179,138 @@ class ProductProvider extends ChangeNotifier {
     try {
       _setLoading(true);
       _setError(null);
+      
+      // Reset pagination for new search
+      _searchPage = 1;
+      _searchHasMore = true;
+      _searchResults.clear();
+      
+      // Save search parameters for load more
+      _lastSearchQuery = query.trim();
+      _lastSearchSortBy = sortBy;
+      _lastSearchMinPrice = minPrice;
+      _lastSearchMaxPrice = maxPrice;
+
+      // Map sortBy to valid server fields
+      String sortField = 'product_name';
+      String sortOrder = 'ASC';
+      
+      if (sortBy == 'newest') {
+        sortField = 'product_name';
+        sortOrder = 'DESC';
+      } else if (sortBy == 'price_low') {
+        sortField = 'price';
+        sortOrder = 'ASC';
+      } else if (sortBy == 'price_high') {
+        sortField = 'price';
+        sortOrder = 'DESC';
+      }
 
       // Use the new searchProduct method
       final response = await ProductService.searchProduct(
         keyword: query.trim(),
         priceMin: minPrice,
         priceMax: maxPrice,
-        sortField: sortBy == 'newest' ? 'created_at' : 'product_name',
-        sortOrder: sortBy == 'newest' ? 'DESC' : 'ASC',
+        sortField: sortField,
+        sortOrder: sortOrder,
+        page: _searchPage,
+        limit: 20,
       );
 
-      if (response['success'] == true && response['data'] != null) {
-        _searchResults = (response['data'] as List)
-            .map((productJson) => Product.fromJson(productJson))
-            .toList();
+      print('📦 Search response received');
+      
+      // API returns {data: [...], pagination: {...}}
+      if (response['data'] != null) {
+        final dataList = response['data'];
+        if (dataList is List) {
+          _searchResults = dataList
+              .map((productJson) => Product.fromJson(productJson as Map<String, dynamic>))
+              .toList();
+          print('✅ Loaded ${_searchResults.length} products from search');
+          
+          // Check if there are more results
+          if (response['pagination'] != null) {
+            final pagination = response['pagination'];
+            _searchHasMore = _searchPage < (pagination['totalPages'] ?? 1);
+            print('📄 Page ${_searchPage} of ${pagination['totalPages']}, hasMore: $_searchHasMore');
+          }
+        } else {
+          _searchResults = [];
+          print('⚠️ Data is not a list: ${dataList.runtimeType}');
+        }
       } else {
         _searchResults = [];
+        print('⚠️ No data field in response');
       }
 
       _setLoading(false);
       notifyListeners();
     } catch (e) {
+      print('❌ Search error: $e');
       _setError(e.toString());
       _setLoading(false);
+    }
+  }
+  
+  Future<void> loadMoreSearchResults() async {
+    if (_isLoading || !_searchHasMore || _lastSearchQuery.isEmpty) {
+      print('⚠️ Cannot load more: isLoading=$_isLoading, hasMore=$_searchHasMore, query=$_lastSearchQuery');
+      return;
+    }
+
+    try {
+      _searchPage++;
+      print('📄 Loading page $_searchPage...');
+
+      // Map sortBy to valid server fields
+      String sortField = 'product_name';
+      String sortOrder = 'ASC';
+      
+      if (_lastSearchSortBy == 'newest') {
+        sortField = 'product_name';
+        sortOrder = 'DESC';
+      } else if (_lastSearchSortBy == 'price_low') {
+        sortField = 'price';
+        sortOrder = 'ASC';
+      } else if (_lastSearchSortBy == 'price_high') {
+        sortField = 'price';
+        sortOrder = 'DESC';
+      }
+
+      final response = await ProductService.searchProduct(
+        keyword: _lastSearchQuery,
+        priceMin: _lastSearchMinPrice,
+        priceMax: _lastSearchMaxPrice,
+        sortField: sortField,
+        sortOrder: sortOrder,
+        page: _searchPage,
+        limit: 20,
+      );
+
+      if (response['data'] != null) {
+        final dataList = response['data'];
+        if (dataList is List) {
+          final newProducts = dataList
+              .map((productJson) => Product.fromJson(productJson as Map<String, dynamic>))
+              .toList();
+          
+          _searchResults.addAll(newProducts);
+          print('✅ Loaded ${newProducts.length} more products. Total: ${_searchResults.length}');
+          
+          // Check if there are more results
+          if (response['pagination'] != null) {
+            final pagination = response['pagination'];
+            _searchHasMore = _searchPage < (pagination['totalPages'] ?? 1);
+            print('📄 Page $_searchPage of ${pagination['totalPages']}, hasMore: $_searchHasMore');
+          }
+        }
+      }
+
+      notifyListeners();
+    } catch (e) {
+      print('❌ Load more error: $e');
+      _searchPage--; // Revert page increment on error
+      _setError(e.toString());
     }
   }
 
