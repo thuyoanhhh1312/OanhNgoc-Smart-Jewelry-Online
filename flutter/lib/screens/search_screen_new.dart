@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../constants/app_colors.dart';
 import '../providers/product_provider.dart';
 import '../widgets/product_card.dart';
 
@@ -639,319 +640,139 @@ class _SearchScreenState extends State<SearchScreen> {
   }
 
   Widget _buildFiltersBottomSheet() {
-    return StatefulBuilder(
-      builder: (BuildContext context, StateSetter setModalState) {
-        return Container(
-          height: MediaQuery.of(context).size.height * 0.8,
-          decoration: const BoxDecoration(
-            color: Color(0xFFFAFAFA),
-            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-          ),
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+    return Container(
+      height: MediaQuery.of(context).size.height * 0.75,
+      decoration: const BoxDecoration(
+        color: Color(0xFFFAFAFA),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              // Header
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    'Bộ lọc tìm kiếm',
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.w700,
-                      color: const Color(0xFF1A1A1A),
-                    ),
-                  ),
-                  InkWell(
-                    onTap: () => Navigator.pop(context),
-                    child: Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFEEEEEE),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: const Icon(
-                        Icons.close,
-                        color: Color(0xFF1A1A1A),
-                        size: 20,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 24),
-              Expanded(
-                child: SingleChildScrollView(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Price Range
-                      Text(
-                        'Khoảng giá',
-                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.w600,
-                          color: const Color(0xFF1A1A1A),
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      
-                      // Price Input Fields
-                      Row(
-                        children: [
-                          Expanded(
-                            child: _buildPriceInputField(
-                              label: 'Từ',
-                              value: _minPrice,
-                              onChanged: (value) {
-                                setModalState(() {
-                                  _minPrice = value;
-                                });
-                                setState(() {
-                                  _minPrice = value;
-                                });
-                              },
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: _buildPriceInputField(
-                              label: 'Đến',
-                              value: _maxPrice,
-                              onChanged: (value) {
-                                setModalState(() {
-                                  _maxPrice = value;
-                                });
-                                setState(() {
-                                  _maxPrice = value;
-                                });
-                              },
-                            ),
-                          ),
-                        ],
-                      ),
-                      
-                      const SizedBox(height: 20),
-
-                      // Slider with better UX
-                      Container(
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFFFF8F0),
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(
-                            color: const Color(0xFFEDD5C3),
-                            width: 1,
-                          ),
-                        ),
-                        child: Column(
-                          children: [
-                            // Slider
-                            RangeSlider(
-                              values: RangeValues(_minPrice, _maxPrice),
-                              min: 0,
-                              max: 10000000,
-                              divisions: 100,
-                              activeColor: const Color(0xFFD4A574),
-                              inactiveColor: const Color(0xFFEDD5C3),
-                              labels: RangeLabels(
-                                _formatPrice(_minPrice),
-                                _formatPrice(_maxPrice),
-                              ),
-                              onChanged: (values) {
-                                setModalState(() {
-                                  _minPrice = values.start;
-                                  _maxPrice = values.end;
-                                });
-                                setState(() {
-                                  _minPrice = values.start;
-                                  _maxPrice = values.end;
-                                });
-                              },
-                            ),
-                            const SizedBox(height: 16),
-                            
-                            // Display price range
-                            Container(
-                              padding: const EdgeInsets.all(12),
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(8),
-                                border: Border.all(
-                                  color: const Color(0xFFEDD5C3),
-                                ),
-                              ),
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      const Text(
-                                        'Giá thấp nhất',
-                                        style: TextStyle(
-                                          fontSize: 12,
-                                          color: Color(0xFF999999),
-                                        ),
-                                      ),
-                                      const SizedBox(height: 4),
-                                      Text(
-                                        _formatPrice(_minPrice),
-                                        style: const TextStyle(
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.w700,
-                                          color: Color(0xFFD4A574),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  Container(
-                                    height: 30,
-                                    width: 1,
-                                    color: const Color(0xFFEDD5C3),
-                                  ),
-                                  Column(
-                                    crossAxisAlignment: CrossAxisAlignment.end,
-                                    children: [
-                                      const Text(
-                                        'Giá cao nhất',
-                                        style: TextStyle(
-                                          fontSize: 12,
-                                          color: Color(0xFF999999),
-                                        ),
-                                      ),
-                                      const SizedBox(height: 4),
-                                      Text(
-                                        _formatPrice(_maxPrice),
-                                        style: const TextStyle(
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.w700,
-                                          color: Color(0xFFD4A574),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      
-                      const SizedBox(height: 32),
-                    ],
-                  ),
+              Text(
+                'Bộ lọc tìm kiếm',
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.w700,
+                  color: const Color(0xFF1A1A1A),
                 ),
               ),
-              
-              // Apply Filters Button
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: () {
-                    Navigator.pop(context);
-                    _performSearch();
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFD4A574),
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    elevation: 0,
+              InkWell(
+                onTap: () => Navigator.pop(context),
+                child: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFEEEEEE),
+                    borderRadius: BorderRadius.circular(8),
                   ),
-                  child: const Text(
-                    'Áp dụng bộ lọc',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      letterSpacing: 0.5,
-                    ),
+                  child: const Icon(
+                    Icons.close,
+                    color: Color(0xFF1A1A1A),
+                    size: 20,
                   ),
                 ),
               ),
             ],
           ),
-        );
-      },
-    );
-  }
-
-  Widget _buildPriceInputField({
-    required String label,
-    required double value,
-    required Function(double) onChanged,
-  }) {
-    final controller = TextEditingController(
-      text: value > 0 ? (value / 1000).toStringAsFixed(0) : '',
-    );
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: const TextStyle(
-            fontSize: 12,
-            fontWeight: FontWeight.w500,
-            color: Color(0xFF999999),
-          ),
-        ),
-        const SizedBox(height: 8),
-        TextField(
-          controller: controller,
-          keyboardType: TextInputType.number,
-          onChanged: (val) {
-            if (val.isNotEmpty) {
-              onChanged(double.parse(val) * 1000);
-            }
-          },
-          decoration: InputDecoration(
-            hintText: 'Nhập giá',
-            hintStyle: const TextStyle(color: Color(0xFFCCCCCC)),
-            suffixText: 'K',
-            suffixStyle: const TextStyle(
-              color: Color(0xFFD4A574),
-              fontWeight: FontWeight.w600,
-            ),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: const BorderSide(color: Color(0xFFEDD5C3)),
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: const BorderSide(color: Color(0xFFEDD5C3)),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: const BorderSide(
-                color: Color(0xFFD4A574),
-                width: 2,
+          const SizedBox(height: 24),
+          Expanded(
+            child: SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Price Range
+                  Text(
+                    'Khoảng giá',
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w600,
+                      color: const Color(0xFF1A1A1A),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFFF8F0),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Column(
+                      children: [
+                        RangeSlider(
+                          values: RangeValues(_minPrice, _maxPrice),
+                          min: 0,
+                          max: 10000000,
+                          divisions: 100,
+                          activeColor: const Color(0xFFD4A574),
+                          inactiveColor: const Color(0xFFEDD5C3),
+                          labels: RangeLabels(
+                            '${(_minPrice / 1000).round()}K',
+                            '${(_maxPrice / 1000).round()}K',
+                          ),
+                          onChanged: (values) {
+                            setState(() {
+                              _minPrice = values.start;
+                              _maxPrice = values.end;
+                            });
+                          },
+                        ),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              '${(_minPrice / 1000).round()}K',
+                              style: const TextStyle(
+                                color: Color(0xFFD4A574),
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            Text(
+                              '${(_maxPrice / 1000).round()}K',
+                              style: const TextStyle(
+                                color: Color(0xFFD4A574),
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 32),
+                ],
               ),
             ),
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: 12,
-              vertical: 12,
+          ),
+          // Apply Filters Button
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: () {
+                Navigator.pop(context);
+                _performSearch();
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFD4A574),
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              child: const Text(
+                'Áp dụng bộ lọc',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
             ),
-            filled: true,
-            fillColor: Colors.white,
           ),
-          style: const TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w500,
-            color: Color(0xFF1A1A1A),
-          ),
-        ),
-      ],
+        ],
+      ),
     );
-  }
-
-  String _formatPrice(double price) {
-    if (price >= 1000000) {
-      return '${(price / 1000000).toStringAsFixed(1)}M₫';
-    } else if (price >= 1000) {
-      return '${(price / 1000).toStringAsFixed(0)}K₫';
-    }
-    return '${price.toStringAsFixed(0)}₫';
   }
 }
