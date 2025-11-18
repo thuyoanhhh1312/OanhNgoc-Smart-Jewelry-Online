@@ -105,33 +105,51 @@ class AuthService {
     }
   }
 
-  // Forgot Password (like forgotPassword in React)
-  static Future<Map<String, dynamic>> forgotPassword({
+  // Send password reset OTP
+  static Future<void> sendPasswordResetOtp({
     required String email,
   }) async {
     try {
-      return await ApiService.post('/auth/forgot-password', body: {
+      await ApiService.post('/auth/send-otp', body: {
         'email': email,
       });
     } catch (e) {
-      throw Exception('Forgot password failed: $e');
+      throw Exception('Gửi OTP thất bại: $e');
     }
   }
 
-  // Reset Password (like resetPassword in React)
-  static Future<Map<String, dynamic>> resetPassword({
-    required String password,
-    required String confirmPassword,
-    required String resetToken,
+  // Verify OTP and get reset token
+  static Future<String> verifyPasswordResetOtp({
+    required String email,
+    required String otp,
   }) async {
     try {
-      return await ApiService.post('/auth/reset-password', body: {
-        'password': password,
-        'confirm_password': confirmPassword,
-        'resetToken': resetToken,
+      final response = await ApiService.post('/auth/verify-otp', body: {
+        'email': email,
+        'otp': otp,
+      });
+
+      if (response is Map && response['reset_token'] is String) {
+        return response['reset_token'] as String;
+      }
+      throw Exception('OTP không hợp lệ');
+    } catch (e) {
+      throw Exception('Xác thực OTP thất bại: $e');
+    }
+  }
+
+  // Reset password using token
+  static Future<void> resetPasswordWithToken({
+    required String resetToken,
+    required String newPassword,
+  }) async {
+    try {
+      await ApiService.post('/auth/reset-password', body: {
+        'reset_token': resetToken,
+        'new_password': newPassword,
       });
     } catch (e) {
-      throw Exception('Reset password failed: $e');
+      throw Exception('Không thể đặt lại mật khẩu: $e');
     }
   }
 
