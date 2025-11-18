@@ -195,21 +195,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 icon: Icons.person_outline,
                 title: 'Thông tin cá nhân',
                 onTap: () {
-                  Navigator.of(context).pushNamed('/profile-edit');
-                },
-              ),
-              _buildMenuItem(
-                icon: Icons.security,
-                title: 'Đổi mật khẩu',
-                onTap: () {
-                  Navigator.of(context).pushNamed('/change-password');
-                },
-              ),
-              _buildMenuItem(
-                icon: Icons.location_on_outlined,
-                title: 'Địa chỉ của tôi',
-                onTap: () {
-                  Navigator.of(context).pushNamed('/addresses');
+                  Navigator.of(context).pushNamed('/profile/info');
                 },
               ),
             ],
@@ -225,51 +211,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 icon: Icons.shopping_bag_outlined,
                 title: 'Đơn hàng của tôi',
                 onTap: () {
-                  Navigator.of(context).pushNamed('/orders');
-                },
-              ),
-              _buildMenuItem(
-                icon: Icons.favorite_outline,
-                title: 'Sản phẩm yêu thích',
-                onTap: () {
-                  Navigator.of(context).pushNamed('/favorites');
+                  Navigator.of(context).pushNamed('/profile/orders');
                 },
               ),
               _buildMenuItem(
                 icon: Icons.rate_review_outlined,
                 title: 'Đánh giá của tôi',
                 onTap: () {
-                  Navigator.of(context).pushNamed('/reviews');
-                },
-              ),
-            ],
-          ),
-          
-          const SizedBox(height: 24),
-          
-          // Support Section
-          _buildMenuSection(
-            title: 'Hỗ trợ',
-            items: [
-              _buildMenuItem(
-                icon: Icons.help_outline,
-                title: 'Trung tâm trợ giúp',
-                onTap: () {
-                  Navigator.of(context).pushNamed('/help');
-                },
-              ),
-              _buildMenuItem(
-                icon: Icons.phone_outlined,
-                title: 'Liên hệ',
-                onTap: () {
-                  Navigator.of(context).pushNamed('/contact');
-                },
-              ),
-              _buildMenuItem(
-                icon: Icons.info_outline,
-                title: 'Về chúng tôi',
-                onTap: () {
-                  Navigator.of(context).pushNamed('/about');
+                  Navigator.of(context).pushNamed('/profile/reviews');
                 },
               ),
             ],

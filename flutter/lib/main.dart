@@ -10,6 +10,9 @@ import 'screens/auth/register_screen.dart' as auth_register;
 import 'screens/auth/forgot_password_screen.dart';
 import 'screens/auth/verify_otp_screen.dart';
 import 'screens/auth/reset_password_screen.dart';
+import 'screens/profile/personal_info_screen.dart';
+import 'screens/profile/my_orders_screen.dart';
+import 'screens/profile/my_reviews_screen.dart';
 import 'screens/main_screen.dart';
 import 'screens/search_screen.dart';
 import 'screens/cart_screen.dart';
@@ -109,6 +112,9 @@ class MyApp extends StatelessWidget {
           '/forgot-password': (context) => const ForgotPasswordScreen(),
           '/forgot-password/verify': (context) => const VerifyOtpScreen(),
           '/forgot-password/reset': (context) => const ResetPasswordScreen(),
+          '/profile/info': (context) => const PersonalInfoScreen(),
+          '/profile/orders': (context) => const MyOrdersScreen(),
+          '/profile/reviews': (context) => const MyReviewsScreen(),
           '/main': (context) => const MainScreen(),
           '/home': (context) => const MainScreen(), // Alias for /main
           '/search': (context) => const SearchScreen(),
