@@ -8,6 +8,8 @@ import 'screens/onboarding_screen.dart';
 import 'screens/auth/login_screen.dart' as auth_login;
 import 'screens/auth/register_screen.dart' as auth_register;
 import 'screens/auth/forgot_password_screen.dart';
+import 'screens/auth/verify_otp_screen.dart';
+import 'screens/auth/reset_password_screen.dart';
 import 'screens/main_screen.dart';
 import 'screens/search_screen.dart';
 import 'screens/cart_screen.dart';
@@ -105,6 +107,8 @@ class MyApp extends StatelessWidget {
           '/login': (context) => const auth_login.LoginScreen(),
           '/register': (context) => const auth_register.RegisterScreen(),
           '/forgot-password': (context) => const ForgotPasswordScreen(),
+          '/forgot-password/verify': (context) => const VerifyOtpScreen(),
+          '/forgot-password/reset': (context) => const ResetPasswordScreen(),
           '/main': (context) => const MainScreen(),
           '/home': (context) => const MainScreen(), // Alias for /main
           '/search': (context) => const SearchScreen(),
