@@ -11,10 +11,10 @@ class ReviewModal extends StatefulWidget {
   });
 
   @override
-  _ReviewModalState createState() => _ReviewModalState();
+  ReviewModalState createState() => ReviewModalState();
 }
 
-class _ReviewModalState extends State<ReviewModal> {
+class ReviewModalState extends State<ReviewModal> {
   int rating = 5;
   final TextEditingController _contentController = TextEditingController();
   bool isSubmitting = false;
@@ -43,13 +43,17 @@ class _ReviewModalState extends State<ReviewModal> {
         'content': _contentController.text.trim(),
       });
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Lỗi khi gửi đánh giá: $e')),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Lỗi khi gửi đánh giá: $e')),
+        );
+      }
     } finally {
-      setState(() {
-        isSubmitting = false;
-      });
+      if (mounted) {
+        setState(() {
+          isSubmitting = false;
+        });
+      }
     }
   }
 

@@ -23,7 +23,7 @@ class CartItemCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: AppColors.shadow.withOpacity(0.1),
+            color: AppColors.shadow.withValues(alpha: 0.1),
             blurRadius: 4,
             offset: const Offset(0, 2),
           ),
@@ -163,7 +163,7 @@ class CartItemCard extends StatelessWidget {
           child: Container(
             padding: const EdgeInsets.all(4),
             decoration: BoxDecoration(
-              color: AppColors.error.withOpacity(0.1),
+              color: AppColors.error.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(4),
             ),
             child: const Icon(
@@ -185,20 +185,23 @@ class CartItemCard extends StatelessWidget {
           child: Column(
             children: [
               // Increase Button
-              GestureDetector(
-                onTap: () => onQuantityChanged(item.quantity + 1),
-                child: Container(
-                  width: 32,
-                  height: 28,
-                  decoration: const BoxDecoration(
-                    border: Border(
-                      bottom: BorderSide(color: AppColors.border),
+              Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  onTap: () => onQuantityChanged(item.quantity + 1),
+                  child: Container(
+                    width: 32,
+                    height: 28,
+                    decoration: const BoxDecoration(
+                      border: Border(
+                        bottom: BorderSide(color: AppColors.border),
+                      ),
                     ),
-                  ),
-                  child: const Icon(
-                    Icons.add,
-                    size: 16,
-                    color: AppColors.primary,
+                    child: const Icon(
+                      Icons.add,
+                      size: 16,
+                      color: AppColors.primary,
+                    ),
                   ),
                 ),
               ),
@@ -219,24 +222,25 @@ class CartItemCard extends StatelessWidget {
               ),
               
               // Decrease Button
-              GestureDetector(
-                onTap: item.quantity > 1 
-                    ? () => onQuantityChanged(item.quantity - 1)
-                    : null,
-                child: Container(
-                  width: 32,
-                  height: 28,
-                  decoration: const BoxDecoration(
-                    border: Border(
-                      top: BorderSide(color: AppColors.border),
+              Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  onTap: item.quantity > 1 
+                      ? () => onQuantityChanged(item.quantity - 1)
+                      : () => onRemove(),
+                  child: Container(
+                    width: 32,
+                    height: 28,
+                    decoration: const BoxDecoration(
+                      border: Border(
+                        top: BorderSide(color: AppColors.border),
+                      ),
                     ),
-                  ),
-                  child: Icon(
-                    Icons.remove,
-                    size: 16,
-                    color: item.quantity > 1 
-                        ? AppColors.primary 
-                        : AppColors.textLight,
+                    child: Icon(
+                      Icons.remove,
+                      size: 16,
+                      color: AppColors.primary,
+                    ),
                   ),
                 ),
               ),

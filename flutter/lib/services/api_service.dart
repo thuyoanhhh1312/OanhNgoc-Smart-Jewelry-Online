@@ -57,19 +57,10 @@ class ApiService {
         uri = uri.replace(queryParameters: queryParams);
       }
       
-      print('=== API GET Request ===');
-      print('URL: $uri');
-      print('Headers: $_headers');
-      
       final response = await http.get(uri, headers: _headers);
-      
-      print('Response Status: ${response.statusCode}');
-      print('Response Body: ${response.body}');
-      print('========================');
       
       return await _handleResponse(response);
     } catch (e) {
-      print('API GET Error: $e');
       throw _handleError(e);
     }
   }
@@ -78,24 +69,14 @@ class ApiService {
   static Future<dynamic> post(String endpoint, {Map<String, dynamic>? body}) async {
     try {
       final url = '$_baseUrl$endpoint';
-      print('=== API POST Request ===');
-      print('URL: $url');
-      print('Headers: $_headers');
-      print('Body: ${body != null ? json.encode(body) : null}');
-      
       final response = await http.post(
         Uri.parse(url),
         headers: _headers,
         body: body != null ? json.encode(body) : null,
       );
       
-      print('Response Status: ${response.statusCode}');
-      print('Response Body: ${response.body}');
-      print('========================');
-      
       return await _handleResponse(response);
     } catch (e) {
-      print('API Error: $e');
       throw _handleError(e);
     }
   }
@@ -128,19 +109,14 @@ class ApiService {
   }
 
   static Exception _handleError(dynamic error) {
-    print('Error details: $error');
-    print('Error type: ${error.runtimeType}');
-    
     if (error is ApiException) {
       return error;
     } else if (error is http.ClientException) {
-      print('ClientException: ${error.message}');
       return const ApiException(
         statusCode: 0,
         message: AppConstants.networkErrorMessage,
       );
     } else {
-      print('Unknown error: $error');
       return const ApiException(
         statusCode: 500,
         message: AppConstants.unknownErrorMessage,

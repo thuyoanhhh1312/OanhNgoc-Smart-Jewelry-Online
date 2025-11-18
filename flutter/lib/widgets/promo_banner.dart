@@ -97,12 +97,12 @@ class _PromoBannerState extends State<PromoBanner> {
           borderRadius: BorderRadius.circular(18),
           boxShadow: [
             BoxShadow(
-              color: AppColors.primary.withOpacity(0.2),
+              color: AppColors.primary.withValues(alpha: 0.2),
               blurRadius: 20,
               offset: const Offset(0, 8),
             ),
             BoxShadow(
-              color: AppColors.primary.withOpacity(0.1),
+              color: AppColors.primary.withValues(alpha: 0.1),
               blurRadius: 40,
               offset: const Offset(0, 16),
             ),
@@ -155,7 +155,7 @@ class _PromoBannerState extends State<PromoBanner> {
                         end: Alignment.bottomCenter,
                         colors: [
                           Colors.transparent,
-                          Colors.black.withOpacity(0.4),
+                          Colors.black.withValues(alpha: 0.4),
                         ],
                       ),
                     ),
@@ -187,7 +187,7 @@ class _PromoBannerState extends State<PromoBanner> {
                               Shadow(
                                 offset: const Offset(0, 2),
                                 blurRadius: 4,
-                                color: Colors.black.withOpacity(0.3),
+                                color: Colors.black.withValues(alpha: 0.3),
                               ),
                             ],
                           ),
@@ -204,13 +204,13 @@ class _PromoBannerState extends State<PromoBanner> {
                               .bodyMedium
                               ?.copyWith(
                             color: banner.subtitleColor ??
-                                AppColors.textOnPrimary.withOpacity(0.95),
+                                AppColors.textOnPrimary.withValues(alpha: 0.95),
                             letterSpacing: 0.3,
                             shadows: [
                               Shadow(
                                 offset: const Offset(0, 1),
                                 blurRadius: 2,
-                                color: Colors.black.withOpacity(0.2),
+                                color: Colors.black.withValues(alpha: 0.2),
                               ),
                             ],
                           ),
@@ -226,7 +226,7 @@ class _PromoBannerState extends State<PromoBanner> {
                           vertical: 8,
                         ),
                         decoration: BoxDecoration(
-                          color: AppColors.textOnPrimary.withOpacity(0.95),
+                          color: AppColors.textOnPrimary.withValues(alpha: 0.95),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Text(
@@ -269,7 +269,7 @@ class _PromoBannerState extends State<PromoBanner> {
               borderRadius: BorderRadius.circular(4),
               color: _currentIndex == entry.key
                   ? AppColors.primary
-                  : AppColors.primary.withOpacity(0.3),
+                  : AppColors.primary.withValues(alpha: 0.3),
             ),
           ),
         );

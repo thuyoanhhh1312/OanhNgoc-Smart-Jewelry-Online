@@ -40,7 +40,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 width: 100,
                 height: 100,
                 decoration: BoxDecoration(
-                  color: AppColors.primary.withOpacity(0.1),
+                  color: AppColors.primary.withValues(alpha: 0.1),
                   shape: BoxShape.circle,
                 ),
                 child: const Icon(
@@ -170,7 +170,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   Text(
                     authProvider.user?.email ?? '',
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: AppColors.textOnPrimary.withOpacity(0.8),
+                      color: AppColors.textOnPrimary.withValues(alpha: 0.8),
                     ),
                   ),
                 ],
@@ -321,7 +321,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             borderRadius: BorderRadius.circular(12),
             boxShadow: [
               BoxShadow(
-                color: AppColors.shadow.withOpacity(0.1),
+                color: AppColors.shadow.withValues(alpha: 0.1),
                 blurRadius: 4,
                 offset: const Offset(0, 2),
               ),
@@ -372,16 +372,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
           TextButton(
             onPressed: () async {
+              if (!mounted) return;
+              final messenger = ScaffoldMessenger.of(context);
               Navigator.pop(context);
               await authProvider.logout();
-              if (mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Đã đăng xuất thành công'),
-                    backgroundColor: AppColors.success,
-                  ),
-                );
-              }
+              messenger.showSnackBar(
+                const SnackBar(
+                  content: Text('Đã đăng xuất thành công'),
+                  backgroundColor: AppColors.success,
+                ),
+              );
             },
             child: Text(
               'Đăng xuất',

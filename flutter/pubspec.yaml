@@ -62,6 +62,7 @@ dependencies:
   
   # Environment variables
   flutter_dotenv: ^5.1.0
+  url_launcher: ^6.3.0
 
 dev_dependencies:
   flutter_test:
@@ -86,11 +87,10 @@ flutter:
   uses-material-design: true
 
   # To add assets to your application, add an assets section, like this:
-  assets:
-    # - assets/images/
-    # - assets/icons/
-    # Note: .env file is not included as an asset for Flutter Web
-    # Web uses environment.dart with default values instead
+  assets: []
+  # - Add asset folders/files here when available
+  # Note: .env file is not included as an asset for Flutter Web
+  # Web uses environment.dart with default values instead
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

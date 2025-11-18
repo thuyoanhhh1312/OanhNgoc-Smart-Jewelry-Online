@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../constants/app_colors.dart';
 import '../providers/product_provider.dart';
 import '../widgets/product_card.dart';
 
@@ -32,7 +31,6 @@ class _SearchScreenState extends State<SearchScreen> {
     if (_searchQuery.trim().isNotEmpty) {
       final productProvider =
           Provider.of<ProductProvider>(context, listen: false);
-      print('🔍 Performing search for: $_searchQuery');
       productProvider.searchProducts(
         _searchQuery.trim(),
         sortBy: _sortBy,
@@ -40,8 +38,6 @@ class _SearchScreenState extends State<SearchScreen> {
         maxPrice: _maxPrice,
         categories: _selectedCategories,
       ).then((_) {
-        print(
-            '🔍 Search completed. Results: ${productProvider.searchResults.length}');
       });
     }
   }
@@ -129,9 +125,7 @@ class _SearchScreenState extends State<SearchScreen> {
 
           // Debounce search with new timer
           if (value.trim().isNotEmpty) {
-            print('⏱️ Debouncing search for: $value');
             _debounceTimer = Timer(const Duration(milliseconds: 500), () {
-              print('⏱️ Debounce complete, performing search');
               _performSearch();
             });
           }
@@ -310,12 +304,7 @@ class _SearchScreenState extends State<SearchScreen> {
   Widget _buildSearchResults() {
     return Consumer<ProductProvider>(
       builder: (context, productProvider, child) {
-        print(
-            '🔎 [REBUILD] Loading: ${productProvider.isLoading}, Results: ${productProvider.searchResults.length}, HasMore: ${productProvider.searchHasMore}, Error: ${productProvider.error}');
-        print('🔎 [REBUILD] Current query: $_searchQuery, isEmpty: ${_searchQuery.isEmpty}');
-
         if (productProvider.isLoading && productProvider.searchResults.isEmpty) {
-          print('🔎 [STATE] Showing loading indicator');
           return Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -338,7 +327,6 @@ class _SearchScreenState extends State<SearchScreen> {
 
         if (productProvider.error != null &&
             productProvider.searchResults.isEmpty) {
-          print('🔎 [STATE] Showing error: ${productProvider.error}');
           return Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -394,18 +382,15 @@ class _SearchScreenState extends State<SearchScreen> {
         }
 
         if (_searchQuery.isEmpty) {
-          print('🔎 [STATE] Showing empty search state');
           return _buildEmptySearch();
         }
 
         final searchResults = productProvider.searchResults;
 
         if (searchResults.isEmpty) {
-          print('🔎 [STATE] Showing no results state');
           return _buildNoResults();
         }
 
-        print('🔎 [STATE] Showing ${searchResults.length} results in grid');
         return RefreshIndicator(
           onRefresh: () async => _performSearch(),
           color: const Color(0xFFD4A574),
@@ -422,7 +407,6 @@ class _SearchScreenState extends State<SearchScreen> {
             itemBuilder: (context, index) {
               // Load more indicator
               if (index == searchResults.length) {
-                print('🔎 [LOAD_MORE] Triggered at index $index');
                 // Trigger load more
                 Future.microtask(() {
                   productProvider.loadMoreSearchResults();
@@ -442,7 +426,6 @@ class _SearchScreenState extends State<SearchScreen> {
               }
 
               final product = searchResults[index];
-              print('🔎 [ITEM] Building product ${index}: ${product.name}');
               return ProductCard(
                 product: product,
                 onTap: () {
