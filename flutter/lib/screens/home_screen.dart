@@ -171,12 +171,12 @@ class _HomeScreenState extends State<HomeScreen> {
                 end: Alignment.bottomRight,
                 colors: [
                   AppColors.surface,
-                  AppColors.surface.withOpacity(0.98),
+                  AppColors.surface.withValues(alpha: 0.98),
                 ],
               ),
               boxShadow: [
                 BoxShadow(
-                  color: AppColors.primary.withOpacity(0.1),
+                  color: AppColors.primary.withValues(alpha: 0.1),
                   blurRadius: 12,
                   offset: const Offset(0, 4),
                 ),
@@ -200,7 +200,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   return LinearGradient(
                     colors: [
                       AppColors.primary,
-                      AppColors.primary.withOpacity(0.7),
+                      AppColors.primary.withValues(alpha: 0.7),
                     ],
                   ).createShader(bounds);
                 },
@@ -232,13 +232,13 @@ class _HomeScreenState extends State<HomeScreen> {
                           gradient: LinearGradient(
                             colors: [
                               AppColors.primary,
-                              AppColors.primary.withOpacity(0.8),
+                              AppColors.primary.withValues(alpha: 0.8),
                             ],
                           ),
                           shape: BoxShape.circle,
                           boxShadow: [
                             BoxShadow(
-                              color: AppColors.primary.withOpacity(0.3),
+                              color: AppColors.primary.withValues(alpha: 0.3),
                               blurRadius: 8,
                               offset: const Offset(0, 2),
                             ),
@@ -269,7 +269,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       },
                       style: TextButton.styleFrom(
                         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                        backgroundColor: AppColors.primary.withOpacity(0.15),
+                        backgroundColor: AppColors.primary.withValues(alpha: 0.15),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(20),
                         ),
@@ -394,16 +394,16 @@ class _HomeScreenState extends State<HomeScreen> {
             gradient: LinearGradient(
               colors: [
                 AppColors.surface,
-                AppColors.surface.withOpacity(0.95),
+                AppColors.surface.withValues(alpha: 0.95),
               ],
             ),
             borderRadius: BorderRadius.circular(14),
             border: Border.all(
-              color: AppColors.primary.withOpacity(0.2),
+              color: AppColors.primary.withValues(alpha: 0.2),
             ),
             boxShadow: [
               BoxShadow(
-                color: AppColors.primary.withOpacity(0.08),
+                color: AppColors.primary.withValues(alpha: 0.08),
                 blurRadius: 12,
                 offset: const Offset(0, 4),
               ),
@@ -414,7 +414,7 @@ class _HomeScreenState extends State<HomeScreen> {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: AppColors.primary.withOpacity(0.1),
+                  color: AppColors.primary.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: const Icon(
@@ -436,7 +436,7 @@ class _HomeScreenState extends State<HomeScreen> {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: AppColors.primary.withOpacity(0.1),
+                  color: AppColors.primary.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: const Icon(
@@ -464,7 +464,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 borderRadius: BorderRadius.circular(16),
                 boxShadow: [
                   BoxShadow(
-                    color: AppColors.primary.withOpacity(0.15),
+                    color: AppColors.primary.withValues(alpha: 0.15),
                     blurRadius: 20,
                     offset: const Offset(0, 8),
                   ),
@@ -507,7 +507,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             return LinearGradient(
                               colors: [
                                 AppColors.primary,
-                                AppColors.primary.withOpacity(0.6),
+                                AppColors.primary.withValues(alpha: 0.6),
                               ],
                             ).createShader(bounds);
                           },
@@ -532,7 +532,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   const SizedBox(width: 16),
                   Container(
                     decoration: BoxDecoration(
-                      color: AppColors.primary.withOpacity(0.1),
+                      color: AppColors.primary.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: TextButton(
@@ -681,7 +681,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         return LinearGradient(
                           colors: [
                             AppColors.primary,
-                            AppColors.primary.withOpacity(0.6),
+                            AppColors.primary.withValues(alpha: 0.6),
                           ],
                         ).createShader(bounds);
                       },
@@ -708,7 +708,7 @@ class _HomeScreenState extends State<HomeScreen> {
               if (onViewAll != null)
                 Container(
                   decoration: BoxDecoration(
-                    color: AppColors.primary.withOpacity(0.1),
+                    color: AppColors.primary.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: TextButton(

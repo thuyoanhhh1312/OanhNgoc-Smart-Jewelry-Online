@@ -12,9 +12,17 @@ import 'screens/main_screen.dart';
 import 'screens/search_screen.dart';
 import 'screens/cart_screen.dart';
 import 'screens/product_detail_screen.dart';
+import 'screens/checkout_screen.dart';
+import 'screens/order_success_screen.dart';
+import 'models/cart.dart';
+import 'models/order.dart';
+import 'models/order_success_arguments.dart';
 import 'providers/auth_provider.dart';
 import 'providers/cart_provider.dart';
 import 'providers/product_provider.dart';
+import 'providers/order_provider.dart';
+import 'providers/location_provider.dart';
+import 'providers/payment_provider.dart';
 
 void main() async {
   // Ensure Flutter is initialized
@@ -39,6 +47,9 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => AuthProvider()),
         ChangeNotifierProvider(create: (_) => CartProvider()),
         ChangeNotifierProvider(create: (_) => ProductProvider()),
+        ChangeNotifierProvider(create: (_) => OrderProvider()),
+        ChangeNotifierProvider(create: (_) => LocationProvider()),
+        ChangeNotifierProvider(create: (_) => PaymentProvider()),
       ],
       child: MaterialApp(
         title: AppStrings.appName,
@@ -52,6 +63,37 @@ class MyApp extends StatelessWidget {
               final productId = args?['id'] ?? '';
               return MaterialPageRoute(
                 builder: (context) => ProductDetailScreen(productId: productId),
+              );
+            case '/order-success':
+              final args = settings.arguments;
+              Order? order;
+              List<CartItem> purchasedItems = const [];
+
+              if (args is OrderSuccessArguments) {
+                order = args.order;
+                purchasedItems = args.purchasedItems;
+              } else if (args is Order) {
+                order = args;
+              } else if (args is Map && args['order'] is Order) {
+                order = args['order'] as Order;
+                final rawItems = args['items'];
+                if (rawItems is List<CartItem>) {
+                  purchasedItems = rawItems;
+                }
+              }
+
+              if (order != null) {
+                final resolvedOrder = order;
+                return MaterialPageRoute(
+                  builder: (context) => OrderSuccessScreen(
+                    order: resolvedOrder,
+                    purchasedItems: purchasedItems,
+                  ),
+                );
+              }
+
+              return MaterialPageRoute(
+                builder: (context) => const MainScreen(),
               );
             default:
               return null;
@@ -67,6 +109,7 @@ class MyApp extends StatelessWidget {
           '/home': (context) => const MainScreen(), // Alias for /main
           '/search': (context) => const SearchScreen(),
           '/cart': (context) => const CartScreen(),
+          '/checkout': (context) => const CheckoutScreen(),
         },
       ),
     );

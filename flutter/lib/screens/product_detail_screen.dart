@@ -21,10 +21,10 @@ class ProductDetailScreen extends StatefulWidget {
   });
 
   @override
-  _ProductDetailScreenState createState() => _ProductDetailScreenState();
+  ProductDetailScreenState createState() => ProductDetailScreenState();
 }
 
-class _ProductDetailScreenState extends State<ProductDetailScreen>
+class ProductDetailScreenState extends State<ProductDetailScreen>
     with TickerProviderStateMixin {
   Product? product;
   List<Product> similarProducts = [];
@@ -57,16 +57,12 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
 
   Future<void> _loadProductDetail() async {
     try {
-      print('=== ProductDetailScreen Loading ===');
-      print('Product ID: ${widget.productId}');
-      
       setState(() {
         isLoading = true;
       });
 
       // Load product detail
       final productData = await ProductService.getProductById(widget.productId);
-      print('Product loaded: ${productData.name}');
       setState(() {
         product = productData;
       });
@@ -83,23 +79,23 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
       }
 
       // Load reviews and rating summary
-      print('Loading reviews for product ID: ${product!.id}');
       await _loadReviews();
       await _loadRatingSummary();
 
       // Save to viewed products
       _saveToViewedProducts();
-      print('=== ProductDetailScreen Loaded Successfully ===');
     } catch (e) {
-      print('Error loading product detail: $e');
-      print('Stack trace: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Lỗi khi tải chi tiết sản phẩm: $e')),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Lỗi khi tải chi tiết sản phẩm: $e')),
+        );
+      }
     } finally {
-      setState(() {
-        isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          isLoading = false;
+        });
+      }
     }
   }
 
@@ -112,19 +108,15 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
       });
 
       final reviewData = await ProductService.getProductReviews(product!.id);
-      print('Review data response: $reviewData');
       
       // Handle response - backend returns { message: '...', reviews: [...] }
       if (reviewData['reviews'] != null) {
         setState(() {
           reviews = reviewData['reviews'] ?? [];
         });
-        print('Reviews loaded: ${reviews.length} reviews');
-      } else {
-        print('No reviews key in response');
       }
     } catch (e) {
-      print('Error loading reviews: $e');
+      // ignore error, show empty reviews
     } finally {
       setState(() {
         isLoadingReviews = false;
@@ -133,36 +125,23 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
   }
 
   Future<void> _loadRatingSummary() async {
-    if (product == null) {
-      print('ERROR: Product is null in _loadRatingSummary');
+    if (product == null || product!.id.isEmpty) {
       return;
     }
-    
-    if (product!.id.isEmpty) {
-      print('ERROR: Product ID is empty in _loadRatingSummary');
-      return;
-    }
-    
+
     try {
-      print('Calling API for reviews summary with product ID: "${product!.id}"');
       final summaryData = await ProductService.getProductReviewSummary(product!.id);
-      print('Rating summary response: $summaryData');
-      print('Response type: ${summaryData.runtimeType}');
-      print('Has data key: ${summaryData.containsKey("data")}');
       
       // Handle response - backend returns { message: '...', data: {...} }
       if (summaryData['data'] != null) {
         setState(() {
           reviewSummary = summaryData['data'];
         });
-        print('Rating summary loaded successfully: avgRating=${reviewSummary!['avgRating']}, totalReviews=${reviewSummary!['totalReviews']}');
       } else {
-        print('ERROR: No data key in summary response or invalid format');
-        print('Full response keys: ${summaryData.keys}');
+        reviewSummary = null;
       }
     } catch (e) {
-      print('ERROR loading rating summary: $e');
-      print('Stack trace: ${StackTrace.current}');
+      reviewSummary = null;
     }
   }
 
@@ -225,6 +204,8 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
         content: review['content'],
       );
 
+      if (!mounted) return;
+
       if (result['success']) {
         setState(() {
           _showReviewModal = false;
@@ -239,9 +220,11 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
         await _loadRatingSummary();
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Gửi đánh giá thất bại: $e')),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Gửi đánh giá thất bại: $e')),
+        );
+      }
     }
   }
 
@@ -281,7 +264,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
         leading: Container(
           margin: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: Colors.grey.withOpacity(0.1),
+            color: Colors.grey.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(10),
           ),
           child: Material(
@@ -300,7 +283,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
           Container(
             margin: const EdgeInsets.only(right: 8),
             decoration: BoxDecoration(
-              color: Colors.grey.withOpacity(0.1),
+              color: Colors.grey.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(10),
             ),
             child: Material(
@@ -324,7 +307,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
           Container(
             margin: const EdgeInsets.only(right: 12),
             decoration: BoxDecoration(
-              color: Colors.grey.withOpacity(0.1),
+              color: Colors.grey.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(10),
             ),
             child: Material(
@@ -357,7 +340,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
             // Divider
             Container(
               height: 8,
-              color: Colors.grey.withOpacity(0.08),
+              color: Colors.grey.withValues(alpha: 0.08),
             ),
             
             // Product info
@@ -369,7 +352,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
             // Divider
             Container(
               height: 8,
-              color: Colors.grey.withOpacity(0.08),
+              color: Colors.grey.withValues(alpha: 0.08),
             ),
             
             // Benefits section
@@ -378,7 +361,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
             // Divider
             Container(
               height: 8,
-              color: Colors.grey.withOpacity(0.08),
+              color: Colors.grey.withValues(alpha: 0.08),
             ),
             
             // Product details tabs
@@ -387,7 +370,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
             // Divider
             Container(
               height: 8,
-              color: Colors.grey.withOpacity(0.08),
+              color: Colors.grey.withValues(alpha: 0.08),
             ),
             
             // Similar products
@@ -396,7 +379,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
             // Divider
             Container(
               height: 8,
-              color: Colors.grey.withOpacity(0.08),
+              color: Colors.grey.withValues(alpha: 0.08),
             ),
             
             // Reviews section
@@ -425,24 +408,24 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
                 borderRadius: BorderRadius.circular(18),
                 gradient: LinearGradient(
                   colors: [
-                    Colors.grey.withOpacity(0.05),
-                    Colors.grey.withOpacity(0.02),
+                    Colors.grey.withValues(alpha: 0.05),
+                    Colors.grey.withValues(alpha: 0.02),
                   ],
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: const Color(0xFFD4AF37).withOpacity(0.15),
+                    color: const Color(0xFFD4AF37).withValues(alpha: 0.15),
                     blurRadius: 20,
                     offset: const Offset(0, 8),
                   ),
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
+                    color: Colors.black.withValues(alpha: 0.1),
                     blurRadius: 12,
                     offset: const Offset(0, 4),
                   ),
                 ],
                 border: Border.all(
-                  color: const Color(0xFFD4AF37).withOpacity(0.2),
+                  color: const Color(0xFFD4AF37).withValues(alpha: 0.2),
                   width: 1.5,
                 ),
               ),
@@ -465,7 +448,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
                         child: Container(
                           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                           decoration: BoxDecoration(
-                            color: Colors.black.withOpacity(0.7),
+                            color: Colors.black.withValues(alpha: 0.7),
                             borderRadius: BorderRadius.circular(20),
                           ),
                           child: Text(
@@ -510,12 +493,12 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
                         boxShadow: [
                           if (isSelected)
                             BoxShadow(
-                              color: const Color(0xFFD4AF37).withOpacity(0.4),
+                              color: const Color(0xFFD4AF37).withValues(alpha: 0.4),
                               blurRadius: 12,
                               offset: const Offset(0, 4),
                             ),
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.1),
+                            color: Colors.black.withValues(alpha: 0.1),
                             blurRadius: 6,
                             offset: const Offset(0, 2),
                           ),
@@ -523,7 +506,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
                         border: Border.all(
                           color: isSelected
                               ? const Color(0xFFD4AF37)
-                              : Colors.grey.withOpacity(0.2),
+                              : Colors.grey.withValues(alpha: 0.2),
                           width: isSelected ? 2.5 : 1.5,
                         ),
                       ),
@@ -544,7 +527,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
                                   gradient: LinearGradient(
                                     colors: [
                                       Colors.transparent,
-                                      const Color(0xFFD4AF37).withOpacity(0.15),
+                                      const Color(0xFFD4AF37).withValues(alpha: 0.15),
                                     ],
                                     begin: Alignment.topCenter,
                                     end: Alignment.bottomCenter,
@@ -594,7 +577,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
               borderRadius: BorderRadius.circular(12),
               boxShadow: [
                 BoxShadow(
-                  color: const Color(0xFFD4AF37).withOpacity(0.25),
+                  color: const Color(0xFFD4AF37).withValues(alpha: 0.25),
                   blurRadius: 12,
                   offset: const Offset(0, 4),
                 ),
@@ -623,10 +606,10 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
             decoration: BoxDecoration(
-              color: Colors.green.withOpacity(0.1),
+              color: Colors.green.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(10),
               border: Border.all(
-                color: Colors.green.withOpacity(0.3),
+                color: Colors.green.withValues(alpha: 0.3),
               ),
             ),
             child: Row(
@@ -658,13 +641,13 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   colors: [
-                    Colors.amber.withOpacity(0.15),
-                    Colors.amber.withOpacity(0.08),
+                    Colors.amber.withValues(alpha: 0.15),
+                    Colors.amber.withValues(alpha: 0.08),
                   ],
                 ),
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
-                  color: Colors.amber.withOpacity(0.3),
+                  color: Colors.amber.withValues(alpha: 0.3),
                   width: 1.5,
                 ),
               ),
@@ -733,9 +716,9 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.2),
+        color: color.withValues(alpha: 0.2),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: color.withOpacity(0.4)),
+        border: Border.all(color: color.withValues(alpha: 0.4)),
       ),
       child: Text(
         '$label ($count)',
@@ -765,12 +748,12 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
               borderRadius: BorderRadius.circular(14),
               boxShadow: [
                 BoxShadow(
-                  color: const Color(0xFFAD2A36).withOpacity(0.3),
+                  color: const Color(0xFFAD2A36).withValues(alpha: 0.3),
                   blurRadius: 16,
                   offset: const Offset(0, 6),
                 ),
                 BoxShadow(
-                  color: const Color(0xFFAD2A36).withOpacity(0.15),
+                  color: const Color(0xFFAD2A36).withValues(alpha: 0.15),
                   blurRadius: 8,
                   offset: const Offset(0, 2),
                 ),
@@ -811,7 +794,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
                         'Giao hàng miễn phí tận nhà',
                         style: TextStyle(
                           fontSize: 11,
-                          color: Colors.white.withOpacity(0.9),
+                          color: Colors.white.withValues(alpha: 0.9),
                           letterSpacing: 0.2,
                         ),
                       ),
@@ -837,7 +820,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
                     borderRadius: BorderRadius.circular(12),
                     boxShadow: [
                       BoxShadow(
-                        color: const Color(0xFF202E65).withOpacity(0.1),
+                        color: const Color(0xFF202E65).withValues(alpha: 0.1),
                         blurRadius: 8,
                         offset: const Offset(0, 2),
                       ),
@@ -897,7 +880,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
                     borderRadius: BorderRadius.circular(12),
                     boxShadow: [
                       BoxShadow(
-                        color: const Color(0xFF202E65).withOpacity(0.25),
+                        color: const Color(0xFF202E65).withValues(alpha: 0.25),
                         blurRadius: 12,
                         offset: const Offset(0, 4),
                       ),
@@ -946,7 +929,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
                               'Nhận ưu đãi',
                               style: TextStyle(
                                 fontSize: 10,
-                                color: Colors.white.withOpacity(0.85),
+                                color: Colors.white.withValues(alpha: 0.85),
                                 letterSpacing: 0.1,
                               ),
                             ),
@@ -1002,20 +985,20 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   colors: [
-                    color.withOpacity(0.15),
-                    color.withOpacity(0.05),
+                    color.withValues(alpha: 0.15),
+                    color.withValues(alpha: 0.05),
                   ],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
                 borderRadius: BorderRadius.circular(14),
                 border: Border.all(
-                  color: color.withOpacity(0.25),
+                  color: color.withValues(alpha: 0.25),
                   width: 1.5,
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: color.withOpacity(0.1),
+                    color: color.withValues(alpha: 0.1),
                     blurRadius: 12,
                     offset: const Offset(0, 4),
                   ),
@@ -1028,14 +1011,14 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
-                        colors: [color, color.withOpacity(0.7)],
+                        colors: [color, color.withValues(alpha: 0.7)],
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
                       ),
                       borderRadius: BorderRadius.circular(12),
                       boxShadow: [
                         BoxShadow(
-                          color: color.withOpacity(0.3),
+                          color: color.withValues(alpha: 0.3),
                           blurRadius: 8,
                           offset: const Offset(0, 2),
                         ),
@@ -1069,7 +1052,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
                       style: TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.w600,
-                        color: color.withOpacity(0.8),
+                        color: color.withValues(alpha: 0.8),
                         letterSpacing: 0.2,
                       ),
                       textAlign: TextAlign.center,
@@ -1093,7 +1076,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
-                color: const Color(0xFF202E65).withOpacity(0.2),
+                color: const Color(0xFF202E65).withValues(alpha: 0.2),
                 width: 1.5,
               ),
             ),
@@ -1129,12 +1112,12 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
-                color: Colors.grey.withOpacity(0.2),
+                color: Colors.grey.withValues(alpha: 0.2),
                 width: 1,
               ),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
+                  color: Colors.black.withValues(alpha: 0.05),
                   blurRadius: 8,
                   offset: const Offset(0, 2),
                 ),
@@ -1258,12 +1241,12 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
                     borderRadius: BorderRadius.circular(16),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.08),
+                        color: Colors.black.withValues(alpha: 0.08),
                         blurRadius: 12,
                         offset: const Offset(0, 4),
                       ),
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.04),
+                        color: Colors.black.withValues(alpha: 0.04),
                         blurRadius: 6,
                         offset: const Offset(0, 2),
                       ),
@@ -1321,7 +1304,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
                         borderRadius: BorderRadius.circular(10),
                         boxShadow: [
                           BoxShadow(
-                            color: const Color(0xFF4CAF50).withOpacity(0.3),
+                            color: const Color(0xFF4CAF50).withValues(alpha: 0.3),
                             blurRadius: 8,
                             offset: const Offset(0, 2),
                           ),
@@ -1374,18 +1357,18 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       colors: [
-                        Colors.amber.withOpacity(0.12),
-                        Colors.amber.withOpacity(0.06),
+                        Colors.amber.withValues(alpha: 0.12),
+                        Colors.amber.withValues(alpha: 0.06),
                       ],
                     ),
                     borderRadius: BorderRadius.circular(14),
                     border: Border.all(
-                      color: Colors.amber.withOpacity(0.2),
+                      color: Colors.amber.withValues(alpha: 0.2),
                       width: 1.5,
                     ),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.amber.withOpacity(0.08),
+                        color: Colors.amber.withValues(alpha: 0.08),
                         blurRadius: 12,
                         offset: const Offset(0, 4),
                       ),
@@ -1434,7 +1417,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
               padding: const EdgeInsets.symmetric(vertical: 32),
               alignment: Alignment.center,
               decoration: BoxDecoration(
-                color: Colors.grey.withOpacity(0.08),
+                color: Colors.grey.withValues(alpha: 0.08),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Column(
@@ -1442,7 +1425,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
                   Icon(
                     Icons.star_outline,
                     size: 48,
-                    color: Colors.grey.withOpacity(0.5),
+                    color: Colors.grey.withValues(alpha: 0.5),
                   ),
                   const SizedBox(height: 12),
                   Text(
@@ -1467,13 +1450,13 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
                   child: Container(
                     decoration: BoxDecoration(
                       border: Border.all(
-                        color: Colors.grey.withOpacity(0.15),
+                        color: Colors.grey.withValues(alpha: 0.15),
                         width: 1,
                       ),
                       borderRadius: BorderRadius.circular(12),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.04),
+                          color: Colors.black.withValues(alpha: 0.04),
                           blurRadius: 8,
                           offset: const Offset(0, 2),
                         ),

@@ -200,9 +200,7 @@ class ProductService {
       queryParams['sort_field'] = sortField;
       queryParams['sort_order'] = sortOrder;
       
-      print('🔍 Search params: $queryParams');
       final response = await ApiService.get('/search-product', queryParams: queryParams);
-      print('🔍 Search response: $response');
       return response;
     } catch (e) {
       throw Exception('Failed to search products: $e');
