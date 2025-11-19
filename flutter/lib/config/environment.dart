@@ -20,14 +20,10 @@ class Environment {
     try {
       // Load .env file on mobile/desktop platforms only
       if (!kIsWeb) {
-        try {
-          await dotenv.load(fileName: ".env");
-        } catch (e) {
-          print('Warning: Could not load .env file: $e');
-        }
+        await dotenv.load(fileName: ".env");
       }
     } catch (e) {
-      print('Error initializing environment: $e');
+      // Ignore errors while loading environment
     }
 
     // Cache all values safely
@@ -105,17 +101,5 @@ class Environment {
   static int get refreshTokenExpireTime => _refreshTokenExpireTime;
 
   // Helper methods
-  static void printConfig() {
-    if (_enableLogging) {
-      print('=== Environment Configuration ===');
-      print('Environment: $_appEnv');
-      print('API Base URL: $_apiBaseUrl');
-      print('Image Base URL: $_imageBaseUrl');
-      print('App Name: $_appName');
-      print('App Version: $_appVersion');
-      print('Enable Logging: $_enableLogging');
-      print('Platform: ${kIsWeb ? 'Web' : 'Mobile'}');
-      print('==============================');
-    }
-  }
+  static void printConfig() {}
 }

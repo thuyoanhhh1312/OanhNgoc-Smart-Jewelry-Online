@@ -14,10 +14,10 @@ class AddToCartModal extends StatefulWidget {
   });
 
   @override
-  _AddToCartModalState createState() => _AddToCartModalState();
+  AddToCartModalState createState() => AddToCartModalState();
 }
 
-class _AddToCartModalState extends State<AddToCartModal> {
+class AddToCartModalState extends State<AddToCartModal> {
   int quantity = 1;
 
   @override

@@ -27,13 +27,13 @@ class CartProvider extends ChangeNotifier {
 
   Future<void> loadCart() async {
     try {
-      _setLoading(true);
+      _isLoading = true;
       _cart = await CartService.loadCart();
-      _setLoading(false);
+      _isLoading = false;
       notifyListeners();
     } catch (e) {
       _setError(e.toString());
-      _setLoading(false);
+      _isLoading = false;
     }
   }
 
@@ -47,61 +47,61 @@ class CartProvider extends ChangeNotifier {
 
   Future<void> addToCart(Product product, {int quantity = 1}) async {
     try {
-      _setLoading(true);
+      _isLoading = true;
       _setError(null);
       
       _cart = await CartService.addToCart(product, quantity);
       
-      _setLoading(false);
+      _isLoading = false;
       notifyListeners();
     } catch (e) {
       _setError(e.toString());
-      _setLoading(false);
+      _isLoading = false;
     }
   }
 
   Future<void> updateQuantity(String itemId, int quantity) async {
     try {
-      _setLoading(true);
+      _isLoading = true;
       _setError(null);
       
       _cart = await CartService.updateCartItem(itemId, quantity);
       
-      _setLoading(false);
+      _isLoading = false;
       notifyListeners();
     } catch (e) {
       _setError(e.toString());
-      _setLoading(false);
+      _isLoading = false;
     }
   }
 
   Future<void> removeItem(String itemId) async {
     try {
-      _setLoading(true);
+      _isLoading = true;
       _setError(null);
       
       _cart = await CartService.removeFromCart(itemId);
       
-      _setLoading(false);
+      _isLoading = false;
       notifyListeners();
     } catch (e) {
       _setError(e.toString());
-      _setLoading(false);
+      _isLoading = false;
     }
   }
 
   Future<void> clearCart() async {
     try {
-      _setLoading(true);
+      _isLoading = true;
       _setError(null);
       
       _cart = await CartService.clearCart();
       
-      _setLoading(false);
+      _isLoading = false;
       notifyListeners();
     } catch (e) {
       _setError(e.toString());
-      _setLoading(false);
+      _isLoading = false;
     }
   }
 
@@ -123,11 +123,6 @@ class CartProvider extends ChangeNotifier {
 
   bool hasProduct(String productId) {
     return _cart.items.any((item) => item.product.id == productId);
-  }
-
-  void _setLoading(bool loading) {
-    _isLoading = loading;
-    notifyListeners();
   }
 
   void _setError(String? error) {

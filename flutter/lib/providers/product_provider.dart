@@ -217,8 +217,6 @@ class ProductProvider extends ChangeNotifier {
         limit: 20,
       );
 
-      print('📦 Search response received');
-      
       // API returns {data: [...], pagination: {...}}
       if (response['data'] != null) {
         final dataList = response['data'];
@@ -226,27 +224,22 @@ class ProductProvider extends ChangeNotifier {
           _searchResults = dataList
               .map((productJson) => Product.fromJson(productJson as Map<String, dynamic>))
               .toList();
-          print('✅ Loaded ${_searchResults.length} products from search');
           
           // Check if there are more results
           if (response['pagination'] != null) {
             final pagination = response['pagination'];
             _searchHasMore = _searchPage < (pagination['totalPages'] ?? 1);
-            print('📄 Page ${_searchPage} of ${pagination['totalPages']}, hasMore: $_searchHasMore');
           }
         } else {
           _searchResults = [];
-          print('⚠️ Data is not a list: ${dataList.runtimeType}');
         }
       } else {
         _searchResults = [];
-        print('⚠️ No data field in response');
       }
 
       _setLoading(false);
       notifyListeners();
     } catch (e) {
-      print('❌ Search error: $e');
       _setError(e.toString());
       _setLoading(false);
     }
@@ -254,13 +247,11 @@ class ProductProvider extends ChangeNotifier {
   
   Future<void> loadMoreSearchResults() async {
     if (_isLoading || !_searchHasMore || _lastSearchQuery.isEmpty) {
-      print('⚠️ Cannot load more: isLoading=$_isLoading, hasMore=$_searchHasMore, query=$_lastSearchQuery');
       return;
     }
 
     try {
       _searchPage++;
-      print('📄 Loading page $_searchPage...');
 
       // Map sortBy to valid server fields
       String sortField = 'product_name';
@@ -295,20 +286,16 @@ class ProductProvider extends ChangeNotifier {
               .toList();
           
           _searchResults.addAll(newProducts);
-          print('✅ Loaded ${newProducts.length} more products. Total: ${_searchResults.length}');
-          
           // Check if there are more results
           if (response['pagination'] != null) {
             final pagination = response['pagination'];
             _searchHasMore = _searchPage < (pagination['totalPages'] ?? 1);
-            print('📄 Page $_searchPage of ${pagination['totalPages']}, hasMore: $_searchHasMore');
           }
         }
       }
 
       notifyListeners();
     } catch (e) {
-      print('❌ Load more error: $e');
       _searchPage--; // Revert page increment on error
       _setError(e.toString());
     }

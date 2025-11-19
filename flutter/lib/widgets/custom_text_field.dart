@@ -65,7 +65,7 @@ class CustomTextField extends StatelessWidget {
             filled: true,
             fillColor: enabled 
                 ? AppColors.surface 
-                : AppColors.surfaceVariant.withOpacity(0.5),
+                : AppColors.surfaceVariant.withValues(alpha: 0.5),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
               borderSide: const BorderSide(color: AppColors.border),

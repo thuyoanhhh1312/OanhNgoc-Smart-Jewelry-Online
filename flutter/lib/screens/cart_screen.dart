@@ -132,13 +132,13 @@ class _CartScreenState extends State<CartScreen> {
             item: item,
             onQuantityChanged: (quantity) {
               if (quantity <= 0) {
-                cartProvider.removeItem(item.product.id);
+                cartProvider.removeItem(item.id);
               } else {
-                cartProvider.updateQuantity(item.product.id, quantity);
+                cartProvider.updateQuantity(item.id, quantity);
               }
             },
             onRemove: () {
-              cartProvider.removeItem(item.product.id);
+              cartProvider.removeItem(item.id);
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content: Text('Đã xóa ${item.product.name} khỏi giỏ hàng'),
@@ -175,11 +175,6 @@ class _CartScreenState extends State<CartScreen> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Coupon Code Input
-          _buildCouponInput(),
-          
-          const SizedBox(height: 16),
-          
           // Price Summary
           _buildPriceSummary(cartProvider),
           
@@ -192,72 +187,9 @@ class _CartScreenState extends State<CartScreen> {
     );
   }
 
-  Widget _buildCouponInput() {
-    return Row(
-      children: [
-        Expanded(
-          child: TextField(
-            decoration: InputDecoration(
-              hintText: 'Nhập mã giảm giá',
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            ),
-          ),
-        ),
-        const SizedBox(width: 12),
-        OutlinedButton(
-          onPressed: () {
-            // TODO: Apply coupon
-          },
-          child: const Text('Áp dụng'),
-        ),
-      ],
-    );
-  }
-
   Widget _buildPriceSummary(CartProvider cartProvider) {
     return Column(
       children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              'Tạm tính:',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: AppColors.textSecondary,
-              ),
-            ),
-            Text(
-              '${cartProvider.subtotal.toStringAsFixed(0)}đ',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: AppColors.textPrimary,
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 8),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              'Phí vận chuyển:',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: AppColors.textSecondary,
-              ),
-            ),
-            Text(
-              cartProvider.subtotal >= 500000 ? 'Miễn phí' : '30,000đ',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: cartProvider.subtotal >= 500000 
-                    ? AppColors.success 
-                    : AppColors.textPrimary,
-              ),
-            ),
-          ],
-        ),
-        const Divider(height: 24),
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [

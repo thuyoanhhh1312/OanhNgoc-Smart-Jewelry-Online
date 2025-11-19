@@ -151,12 +151,60 @@ class AuthProvider extends ChangeNotifier {
   }
 
   Future<bool> forgotPassword({required String email}) async {
+    return await sendPasswordResetOtp(email: email);
+  }
+
+  Future<bool> sendPasswordResetOtp({required String email}) async {
     try {
       _setLoading(true);
       _setError(null);
 
-      await AuthService.forgotPassword(email: email);
+      await AuthService.sendPasswordResetOtp(email: email);
       
+      _setLoading(false);
+      return true;
+    } catch (e) {
+      _setError(e.toString());
+      _setLoading(false);
+      return false;
+    }
+  }
+
+  Future<String?> verifyPasswordResetOtp({
+    required String email,
+    required String otp,
+  }) async {
+    try {
+      _setLoading(true);
+      _setError(null);
+
+      final token = await AuthService.verifyPasswordResetOtp(
+        email: email,
+        otp: otp,
+      );
+
+      _setLoading(false);
+      return token;
+    } catch (e) {
+      _setError(e.toString());
+      _setLoading(false);
+      return null;
+    }
+  }
+
+  Future<bool> resetPasswordWithToken({
+    required String resetToken,
+    required String newPassword,
+  }) async {
+    try {
+      _setLoading(true);
+      _setError(null);
+
+      await AuthService.resetPasswordWithToken(
+        resetToken: resetToken,
+        newPassword: newPassword,
+      );
+
       _setLoading(false);
       return true;
     } catch (e) {

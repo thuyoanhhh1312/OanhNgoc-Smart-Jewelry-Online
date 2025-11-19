@@ -25,12 +25,10 @@ class ProductCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: () {
-        print('ProductCard tapped: ${product.name}');
         if (onTap != null) {
           onTap!();
         } else {
           // Default navigation to product detail
-          print('Navigating to product detail with id: ${product.id}');
           Navigator.pushNamed(
             context,
             '/product',
@@ -140,7 +138,7 @@ class ProductCard extends StatelessWidget {
                           width: 32,
                           height: 32,
                           decoration: BoxDecoration(
-                            color: AppColors.surface.withOpacity(0.9),
+                            color: AppColors.surface.withValues(alpha: 0.9),
                             borderRadius: BorderRadius.circular(16),
                           ),
                           child: Icon(
@@ -157,7 +155,7 @@ class ProductCard extends StatelessWidget {
                     Positioned.fill(
                       child: Container(
                         decoration: BoxDecoration(
-                          color: AppColors.textPrimary.withOpacity(0.7),
+                          color: AppColors.textPrimary.withValues(alpha: 0.7),
                           borderRadius: const BorderRadius.vertical(
                             top: Radius.circular(16),
                           ),
@@ -258,7 +256,6 @@ class ProductCard extends StatelessWidget {
                         if (showAddToCart && product.inStock)
                           GestureDetector(
                             onTap: () {
-                              print('Add to cart tapped');
                               if (onAddToCart != null) {
                                 onAddToCart!();
                               }

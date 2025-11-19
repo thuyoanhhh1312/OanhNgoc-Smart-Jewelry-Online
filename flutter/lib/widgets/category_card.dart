@@ -23,7 +23,7 @@ class CategoryCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: AppColors.primary.withOpacity(0.1),
+              color: AppColors.primary.withValues(alpha: 0.1),
               blurRadius: 16,
               offset: const Offset(0, 4),
             ),
@@ -41,12 +41,12 @@ class CategoryCard extends StatelessWidget {
                   end: Alignment.bottomRight,
                   colors: [
                     AppColors.surface,
-                    AppColors.surface.withOpacity(0.95),
+                    AppColors.surface.withValues(alpha: 0.95),
                   ],
                 ),
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(
-                  color: AppColors.primary.withOpacity(0.1),
+                  color: AppColors.primary.withValues(alpha: 0.1),
                   width: 1.5,
                 ),
               ),
@@ -65,8 +65,8 @@ class CategoryCard extends StatelessWidget {
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
                           colors: [
-                            AppColors.primary.withOpacity(0.1),
-                            AppColors.primary.withOpacity(0.05),
+                            AppColors.primary.withValues(alpha: 0.1),
+                            AppColors.primary.withValues(alpha: 0.05),
                           ],
                         ),
                       ),
@@ -110,7 +110,7 @@ class CategoryCard extends StatelessWidget {
                         gradient: LinearGradient(
                           colors: [
                             AppColors.surface,
-                            AppColors.primary.withOpacity(0.03),
+                            AppColors.primary.withValues(alpha: 0.03),
                           ],
                           begin: Alignment.topCenter,
                           end: Alignment.bottomCenter,
@@ -178,8 +178,8 @@ class CategoryCard extends StatelessWidget {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            AppColors.primary.withOpacity(0.15),
-            AppColors.primary.withOpacity(0.05),
+            AppColors.primary.withValues(alpha: 0.15),
+            AppColors.primary.withValues(alpha: 0.05),
           ],
         ),
       ),
