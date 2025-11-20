@@ -16,9 +16,11 @@ const getNewsCategories = async () => {
 };
 
 // Lấy danh mục tin theo id (nếu cần)
-const getNewsCategoryById = async (id) => {
+const getNewsCategoryById = async (id, accessToken) => {
   try {
-    const res = await axios.get(`${API_URL}/news-categories/${id}`);
+    const res = await axiosInstance.get(`${API_URL}/admin/news-categories/${id}`, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
     return res.data;
   } catch (err) {
     console.error('Error fetching news category by id:', err);
