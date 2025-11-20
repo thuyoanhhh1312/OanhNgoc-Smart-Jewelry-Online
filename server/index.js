@@ -4,11 +4,13 @@ import cors from "cors";
 import apiRoutes from "./routes/apiRoutes.js"; // Đảm bảo file này cũng dùng export default nếu là ES Module
 import { errorHandler } from "./middlewares/errorHandler.js";
 import vnpayRouter from "./vnpay/payment.js";
+import goldPriceRoutes from "./routes/goldPriceRoutes.js";
 
 // Import Cron Jobs
 import birthdayEmailJob from "./jobs/birthdayEmailJob.js";
 import campaignSegmentEmailJob from "./jobs/campaignSegmentEmailJob.js";
 import monthlyRankUpdateJob from "./jobs/monthlyRankUpdateJob.js";
+import { startGoldPriceCronJob } from "./jobs/goldPriceCronJob.js";
 
 const app = express();
 
@@ -54,9 +56,11 @@ app.use((req, res, next) => {
   }
 });
 
-app.use("/api", apiRoutes);
+// Gold Prices routes
+app.use("/api/gold-prices", goldPriceRoutes);
 // VNPay routes
 app.use("/api/payment", vnpayRouter);
+app.use("/api", apiRoutes);
 
 // middleware xử lý lỗi toàn cục
 app.use(errorHandler);
@@ -71,6 +75,7 @@ app.listen(port, async () => {
   birthdayEmailJob();
   campaignSegmentEmailJob();
   monthlyRankUpdateJob();
+  startGoldPriceCronJob(); // 💰 Cron job giá vàng
   console.log("✅ All cron jobs initialized successfully!\n");
 });
 

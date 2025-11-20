@@ -61,6 +61,8 @@ import UserOrderHistory from './pages/UserOrderHistory';
 import BlogList from './pages/Blog/BlogList';
 import BlogDetail from './pages/Blog/BlogDetail';
 
+import GoldPricePage from './pages/GoldPricePage';
+
 import { useDispatch } from 'react-redux';
 function App() {
   const dispatch = useDispatch();
@@ -269,11 +271,9 @@ function App() {
             }
           />
         </Route>
-
         <Route path="/" element={<Home />} />
         <Route path="/cart" element={<Cart />} />
         <Route path="/order" element={<OrderPage />} />
-
         <Route path="/:slug" element={<ProductDetail />} />
         <Route path="/signin" element={<SignIn />} />
         <Route path="/signup" element={<SignUp />} />
@@ -286,7 +286,8 @@ function App() {
         {/* ⭐ Blog */}
         <Route path="/tin-tuc" element={<BlogList />} />
         <Route path="/tin-tuc/:slug" element={<BlogDetail />} />
-
+        // Thêm route
+        <Route path="/gold-prices" element={<GoldPricePage />} />
         <Route
           path="/order-success"
           element={
