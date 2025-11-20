@@ -10,7 +10,7 @@ import newsCategoryApi from '../../../api/newsCategoryApi';
 import DOMPurify from 'dompurify';
 
 const News = () => {
-  const { user } = useSelector((state) => ({ ...state }));
+  const user = useSelector((state) => state?.user);
   const [news, setNews] = useState([]);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState('');
@@ -122,8 +122,8 @@ const News = () => {
 
   // Template hiển thị nội dung preview
   const contentBodyTemplate = (rowData) => {
-    const excerpt = rowData.excerpt || rowData.content;
-    let text = excerpt.replace(/<[^>]*>/g, '').substring(0, 100);
+    const excerpt = rowData.excerpt || rowData.content || '';
+    let text = (excerpt || '').replace(/<[^>]*>/g, '').substring(0, 100);
     return <span>{text}...</span>;
   };
 

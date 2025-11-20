@@ -36,7 +36,7 @@ const Header = () => {
   const handlePromotionClick = () => {
     navigate('/promotions');
   };
-  const handleNewsClick = () => navigate('/tin-tuc'); // ← đường dẫn trang Tin tức
+  const handleNewsClick = () => navigate('/news'); // ← đường dẫn trang Tin tức
   // tô màu khi đang ở trang tương ứng
   const isActive = (pathPrefix) => location.pathname.startsWith(pathPrefix);
 

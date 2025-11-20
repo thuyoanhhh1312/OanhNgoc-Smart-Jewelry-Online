@@ -420,7 +420,7 @@ router.post(
   "/admin/news",
   authenticateToken,
   isAdminOrStaff,
-  // upload.single('thumbnail'),    // bật nếu có upload ảnh
+  upload.single("thumbnail"), // bật nếu có upload ảnh
   // validateRequest(createArticleSchema), // TODO: debug validation
   articleController.createNews
 );
@@ -429,7 +429,7 @@ router.put(
   "/admin/news/:id",
   authenticateToken,
   isAdminOrStaff,
-  // upload.single('thumbnail'),
+  upload.single("thumbnail"),
   // validateRequest(updateArticleSchema), // TODO: debug validation
   articleController.updateNews
 );

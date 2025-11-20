@@ -60,27 +60,11 @@ const getNewsBySlug = async (slug) => {
 // Tạo bài viết mới (admin/staff)
 const createNews = async (newsData, accessToken) => {
   try {
-    // Nếu có file thumbnail => FormData
-    let body = newsData;
-    let headers = { Authorization: `Bearer ${accessToken}` };
-
-    if (newsData.thumbnail instanceof File) {
-      const formData = new FormData();
-      Object.entries(newsData).forEach(([k, v]) => {
-        if (v !== undefined && v !== null) {
-          if (k === 'tags' && Array.isArray(v)) {
-            formData.append('tags', JSON.stringify(v));
-          } else {
-            formData.append(k, v);
-          }
-        }
-      });
-      body = formData;
-      headers['Content-Type'] = 'multipart/form-data';
-    }
-
-    const response = await axiosInstance.post(`${API_URL}/admin/news`, body, {
-      headers,
+    const response = await axiosInstance.post(`${API_URL}/admin/news`, newsData, {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        // Không set Content-Type, để axios tự động set khi là FormData
+      },
     });
     return response.data;
   } catch (error) {
@@ -92,26 +76,11 @@ const createNews = async (newsData, accessToken) => {
 // Cập nhật bài viết
 const updateNews = async (id, newsData, accessToken) => {
   try {
-    let body = newsData;
-    let headers = { Authorization: `Bearer ${accessToken}` };
-
-    if (newsData.thumbnail instanceof File) {
-      const formData = new FormData();
-      Object.entries(newsData).forEach(([k, v]) => {
-        if (v !== undefined && v !== null) {
-          if (k === 'tags' && Array.isArray(v)) {
-            formData.append('tags', JSON.stringify(v));
-          } else {
-            formData.append(k, v);
-          }
-        }
-      });
-      body = formData;
-      headers['Content-Type'] = 'multipart/form-data';
-    }
-
-    const response = await axiosInstance.put(`${API_URL}/admin/news/${id}`, body, {
-      headers,
+    const response = await axiosInstance.put(`${API_URL}/admin/news/${id}`, newsData, {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        // Không set Content-Type, để axios tự động set khi là FormData
+      },
     });
     return response.data;
   } catch (error) {
