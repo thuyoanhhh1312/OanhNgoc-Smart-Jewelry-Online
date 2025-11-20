@@ -75,13 +75,25 @@ const Header = () => {
           </div>
 
           {/*Tin tức / Blog */}
-          <div className="menuItem cursor-pointer py-2" onClick={handleNewsClick}>
+          <div className="menuItem group cursor-pointer py-2 relative">
             <a
-              className={`inline-flex items-center text-[18px] font-normal relative
-                ${isActive('/tin-tuc') ? 'text-[#ac2b36]' : 'text-[#000] hover:text-[#c48c46]'}`}
+              className={`inline-flex items-center text-[18px] font-normal relative group-hover:text-[#c48c46]
+                ${isActive('/tin-tuc') || isActive('/gold-prices') ? 'text-[#ac2b36]' : 'text-[#000]'}`}
             >
-              Blog
+              Tin Tức
             </a>
+            <div className="megaMenu w-[150px] shadow-header bg-[#fff] absolute ltr:left-0 opacity-0 invisible group-hover:opacity-100 group-hover:visible p-3 flex flex-col">
+              <div onClick={handleNewsClick} className="mb-2 cursor-pointer">
+                <span className="text-[#000000] text-[14px] hover:text-yellow-500 block py-2">
+                  Blog
+                </span>
+              </div>
+              <div onClick={() => navigate('/gold-prices')} className="cursor-pointer">
+                <span className="text-[#000000] text-[14px] hover:text-yellow-500 block py-2">
+                  Giá Vàng
+                </span>
+              </div>
+            </div>
           </div>
           {/* Khuyến Mãi */}
           <div className="menuItem cursor-pointer py-2" onClick={handlePromotionClick}>

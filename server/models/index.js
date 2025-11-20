@@ -44,6 +44,7 @@ const {
   PromotionCampaign,
   PromotionLog,
   CustomerRankHistory,
+  GoldPrice,
 } = db;
 
 // Associations:
