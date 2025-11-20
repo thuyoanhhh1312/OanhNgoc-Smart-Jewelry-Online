@@ -58,12 +58,9 @@ import PromotionsPage from './pages/PromotionsPage';
 import OrderSuccess from './pages/OrderSuccess';
 import UserOrderHistory from './pages/UserOrderHistory';
 
-import BlogList from './pages/Blog/BlogList';
-import BlogDetail from './pages/Blog/BlogDetail';
-
 import GoldPricePage from './pages/GoldPricePage';
 
-import News from './pages/admin/News/index';
+import AdminNews from './pages/admin/News/index';
 import AddNews from './pages/admin/News/add';
 import EditNews from './pages/admin/News/edit';
 
@@ -72,6 +69,8 @@ import AddNewsCategory from './pages/admin/NewsCategory/add';
 import EditNewsCategory from './pages/admin/NewsCategory/edit';
 
 import { useDispatch } from 'react-redux';
+import News from './pages/News';
+import NewsDetail from './pages/NewsDetail';
 function App() {
   const dispatch = useDispatch();
 
@@ -249,7 +248,7 @@ function App() {
             path="/admin/news"
             element={
               <AdminOrStaffRoute>
-                <News />
+                <AdminNews />
               </AdminOrStaffRoute>
             }
           />
@@ -345,9 +344,11 @@ function App() {
         <Route path="/product-by-category/:categoryName" element={<ProductCategoryPage />} />
         <Route path="/promotions" element={<PromotionsPage />} />
         {/* ⭐ Blog */}
-        <Route path="/tin-tuc" element={<BlogList />} />
-        <Route path="/tin-tuc/:slug" element={<BlogDetail />} />
-        // Thêm route
+
+        {/* ⭐ News (tin tức mới - dùng chung BlogList) */}
+        <Route path="/news" element={<News />} />
+        <Route path="/news/:slug" element={<NewsDetail />} />
+        {/* Gold Prices */}
         <Route path="/gold-prices" element={<GoldPricePage />} />
         <Route
           path="/order-success"

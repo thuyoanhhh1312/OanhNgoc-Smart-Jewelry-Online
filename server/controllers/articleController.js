@@ -1,4 +1,6 @@
 import db from "../models/index.js";
+import cloudinary from "../config/cloudinary.js";
+
 const { Article, ArticleCategory, Tag } = db;
 // GET /news?page=&limit=&q=&category_id=&status=
 
@@ -89,6 +91,19 @@ export const getNews = async (req, res, next) => {
     }
 
     const { rows, count } = await db.Article.findAndCountAll({
+      attributes: [
+        "article_id",
+        "article_category_id",
+        "title",
+        "slug",
+        "excerpt",
+        "thumbnail_url",
+        "status",
+        "view_count",
+        "published_at",
+        "created_at",
+        "updated_at",
+      ],
       where,
       include,
       order: [
@@ -113,6 +128,20 @@ export const getNews = async (req, res, next) => {
 export const getNewsBySlug = async (req, res, next) => {
   try {
     const row = await Article.findOne({
+      attributes: [
+        "article_id",
+        "article_category_id",
+        "title",
+        "slug",
+        "excerpt",
+        "content",
+        "thumbnail_url",
+        "status",
+        "view_count",
+        "published_at",
+        "created_at",
+        "updated_at",
+      ],
       where: { slug: req.params.slug },
       include: [
         {
@@ -129,6 +158,25 @@ export const getNewsBySlug = async (req, res, next) => {
     });
     if (!row)
       return res.status(404).json({ message: "Không tìm thấy bài viết" });
+
+    // Increment view_count - chỉ 1 lần per IP per slug per 60 giây
+    const skipViewCount = req.query.skipViewCount === "true";
+    if (!skipViewCount) {
+      const clientIP =
+        req.headers["x-forwarded-for"] || req.socket.remoteAddress || req.ip;
+      const viewKey = `view_${clientIP}_${req.params.slug}`;
+      const lastViewTime = req.app.locals[viewKey] || 0;
+      const now = Date.now();
+
+      // Chỉ increment nếu cách lần cuối > 60 giây
+      if (now - lastViewTime > 60000) {
+        req.app.locals[viewKey] = now;
+        row
+          .increment("view_count", { by: 1 })
+          .catch((err) => console.error("Error incrementing view_count:", err));
+      }
+    }
+
     res.json(row);
   } catch (err) {
     next(err);
@@ -139,6 +187,20 @@ export const getNewsBySlug = async (req, res, next) => {
 export const getNewsById = async (req, res, next) => {
   try {
     const row = await Article.findByPk(req.params.id, {
+      attributes: [
+        "article_id",
+        "article_category_id",
+        "title",
+        "slug",
+        "excerpt",
+        "content",
+        "thumbnail_url",
+        "status",
+        "view_count",
+        "published_at",
+        "created_at",
+        "updated_at",
+      ],
       include: [
         {
           model: ArticleCategory,
@@ -201,10 +263,14 @@ export const createNews = async (req, res, next) => {
     if (tags.length) {
       const tagRows = [];
       for (const name of tags) {
-        const slug = name.toLowerCase().trim().replace(/\s+/g, "-");
+        // Ensure name is a string
+        const tagName = String(name || "").trim();
+        if (!tagName) continue;
+
+        const slug = tagName.toLowerCase().replace(/\s+/g, "-");
         const [tag] = await Tag.findOrCreate({
           where: { slug },
-          defaults: { name, slug },
+          defaults: { name: tagName, slug },
           transaction: t,
         });
         tagRows.push(tag);
@@ -239,13 +305,29 @@ export const updateNews = async (req, res, next) => {
     }
     if (!Array.isArray(tags)) tags = [];
 
-    if (req.file?.path && !data.thumbnail_url)
-      data.thumbnail_url = req.file.path;
-
     const article = await Article.findByPk(id, { transaction: t });
     if (!article) {
       await t.rollback();
       return res.status(404).json({ message: "Không tìm thấy bài viết" });
+    }
+
+    // Nếu có file upload mới, xóa ảnh cũ trên Cloudinary
+    if (req.file?.path) {
+      if (article.thumbnail_url) {
+        try {
+          // Extract public_id từ Cloudinary URL
+          const urlParts = article.thumbnail_url.split("/");
+          const fileName = urlParts[urlParts.length - 1].split(".")[0];
+          const publicId = `products/${fileName}`;
+
+          // Xóa ảnh cũ
+          await cloudinary.uploader.destroy(publicId);
+        } catch (err) {
+          console.error("Lỗi xóa ảnh cũ:", err);
+          // Tiếp tục dù xóa ảnh cũ thất bại
+        }
+      }
+      data.thumbnail_url = req.file.path;
     }
 
     if (data.article_category_id) {
@@ -276,10 +358,13 @@ export const updateNews = async (req, res, next) => {
           if (tag) tagRows.push(tag);
         } else {
           // Nếu gửi name (string), tạo hoặc tìm
-          const slug = String(tagId).toLowerCase().trim().replace(/\s+/g, "-");
+          const tagName = String(tagId || "").trim();
+          if (!tagName) continue;
+
+          const slug = tagName.toLowerCase().replace(/\s+/g, "-");
           const [tag] = await Tag.findOrCreate({
             where: { slug },
-            defaults: { name: tagId, slug },
+            defaults: { name: tagName, slug },
             transaction: t,
           });
           tagRows.push(tag);

@@ -11,7 +11,7 @@ import tagApi from '../../../api/tagApi';
 import FullScreenLoader from '../../../components/ui/loading/FullScreenLoader';
 
 const EditNews = () => {
-  const { user } = useSelector((state) => ({ ...state }));
+  const user = useSelector((state) => state?.user);
   const { id } = useParams();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
@@ -97,7 +97,7 @@ const EditNews = () => {
       const reader = new FileReader();
       reader.onload = () => {
         setThumbnailPreview(reader.result);
-        setThumbnail(reader.result); // lưu base64
+        setThumbnail(file); // Lưu file object thay vì base64
       };
       reader.readAsDataURL(file);
     }
@@ -149,24 +149,24 @@ const EditNews = () => {
     setSubmitting(true);
 
     try {
-      const payload = {
-        title: formData.title.trim(),
-        slug: formData.slug.trim(),
-        excerpt: formData.excerpt.trim(),
-        content: formData.content.trim(),
-        article_category_id: Number(formData.article_category_id),
-        status: formData.status,
-        tags: selectedTags,
-      };
+      // Sử dụng FormData giống như sản phẩm
+      const payload = new FormData();
+      payload.append('title', formData.title.trim());
+      payload.append('slug', formData.slug.trim());
+      payload.append('excerpt', formData.excerpt.trim());
+      payload.append('content', formData.content.trim());
+      payload.append('article_category_id', Number(formData.article_category_id));
+      payload.append('status', formData.status);
+      payload.append('tags', JSON.stringify(selectedTags));
 
-      // Gửi thumbnail_url nếu có (base64 hoặc URL)
-      if (thumbnail) {
-        payload.thumbnail_url = thumbnail;
+      // Thêm file thumbnail nếu có
+      if (thumbnail instanceof File) {
+        payload.append('thumbnail', thumbnail);
       }
 
       // Chỉ gửi published_at nếu có giá trị
       if (formData.published_at) {
-        payload.published_at = new Date(formData.published_at).toISOString();
+        payload.append('published_at', new Date(formData.published_at).toISOString());
       }
 
       await newsApi.updateNews(id, payload, user?.token);
