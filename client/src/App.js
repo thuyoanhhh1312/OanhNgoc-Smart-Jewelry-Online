@@ -63,6 +63,14 @@ import BlogDetail from './pages/Blog/BlogDetail';
 
 import GoldPricePage from './pages/GoldPricePage';
 
+import News from './pages/admin/News/index';
+import AddNews from './pages/admin/News/add';
+import EditNews from './pages/admin/News/edit';
+
+import NewsCategory from './pages/admin/NewsCategory/index';
+import AddNewsCategory from './pages/admin/NewsCategory/add';
+import EditNewsCategory from './pages/admin/NewsCategory/edit';
+
 import { useDispatch } from 'react-redux';
 function App() {
   const dispatch = useDispatch();
@@ -235,6 +243,59 @@ function App() {
               </AdminOrStaffRoute>
             }
           />
+
+          {/* News */}
+          <Route
+            path="/admin/news"
+            element={
+              <AdminOrStaffRoute>
+                <News />
+              </AdminOrStaffRoute>
+            }
+          />
+          <Route
+            path="/admin/news/add"
+            element={
+              <AdminOrStaffRoute>
+                <AddNews />
+              </AdminOrStaffRoute>
+            }
+          />
+          <Route
+            path="/admin/news/edit/:id"
+            element={
+              <AdminOrStaffRoute>
+                <EditNews />
+              </AdminOrStaffRoute>
+            }
+          />
+
+          {/* News Categories */}
+          <Route
+            path="/admin/news-categories"
+            element={
+              <AdminOrStaffRoute>
+                <NewsCategory />
+              </AdminOrStaffRoute>
+            }
+          />
+          <Route
+            path="/admin/news-categories/add"
+            element={
+              <AdminOrStaffRoute>
+                <AddNewsCategory />
+              </AdminOrStaffRoute>
+            }
+          />
+          <Route
+            path="/admin/news-categories/edit/:id"
+            element={
+              <AdminOrStaffRoute>
+                <EditNewsCategory />
+              </AdminOrStaffRoute>
+            }
+          />
+
           {/* Orders */}
           <Route
             path="/admin/orders"

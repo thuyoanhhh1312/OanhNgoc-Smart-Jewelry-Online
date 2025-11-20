@@ -15,6 +15,37 @@ const getNews = async (params = {}) => {
   }
 };
 
+// Lấy danh sách bài viết cho admin (tất cả status, không filter)
+const getAdminNews = async (params = {}, accessToken) => {
+  try {
+    const response = await axiosInstance.get(`${API_URL}/admin/news`, {
+      params,
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    });
+    return response.data; // { data, meta }
+  } catch (error) {
+    console.error('Error fetching admin news:', error);
+    throw error;
+  }
+};
+
+// Lấy chi tiết bài viết theo ID (admin)
+const getNewsAdminById = async (id, accessToken) => {
+  try {
+    const response = await axiosInstance.get(`${API_URL}/admin/news/${id}`, {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching news by ID:', error);
+    throw error;
+  }
+};
+
 // Lấy chi tiết bài viết theo slug
 const getNewsBySlug = async (slug) => {
   try {
@@ -106,6 +137,8 @@ const deleteNews = async (id, accessToken) => {
 
 export default {
   getNews,
+  getAdminNews,
+  getNewsAdminById,
   getNewsBySlug,
   createNews,
   updateNews,
