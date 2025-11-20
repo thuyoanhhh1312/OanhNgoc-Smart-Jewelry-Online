@@ -21,16 +21,12 @@ import { useSelector, useDispatch } from 'react-redux';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import CloseIcon from '@mui/icons-material/Close';
 import { getProvinces, getDistricts, getWards } from '../api/vietnamLocationApi';
-import bankApi from '../api/bankApi';
 import vnpayApi from '../api/vnpayApi';
 
-// Thông tin ngân hàng MB Bank
+// Thông tin ngân hàng MB Bank (cho QR COD)
 const BANK_NAME = 'MB Bank';
 const BANK_CODE = BanksObject.mbbank.bin;
 const BANK_ACCOUNT = '0816837690';
-
-// Thông tin tài khoản ví MoMo của bạn
-const MOMO_ACCOUNT = '99MM23332M53758772';
 
 const CheckoutPage = () => {
   const { user } = useSelector((state) => ({ ...state }));
@@ -61,13 +57,8 @@ const CheckoutPage = () => {
     promotion: null,
   });
 
-  // Thanh toán
+  // Thanh toán (chỉ COD và VNPay)
   const [paymentMethod, setPaymentMethod] = useState('cod');
-
-  // Danh sách tài khoản ngân hàng (lấy từ backend)
-  const [bankAccounts, setBankAccounts] = useState([]);
-  // Tài khoản ngân hàng được chọn khi paymentMethod='ck'
-  const [selectedBankAccountId, setSelectedBankAccountId] = useState(null);
 
   // Tính tiền
   const [subTotal, setSubTotal] = useState(totalAmount || 0);
@@ -135,22 +126,6 @@ const CheckoutPage = () => {
     }
     fetchWardsData();
   }, [district]);
-
-  // Load danh sách ngân hàng từ backend khi trang mount
-  useEffect(() => {
-    const fetchBankAccounts = async () => {
-      try {
-        const data = await bankApi.getBankAccounts({ all: false });
-        setBankAccounts(data);
-        if (data.length > 0) {
-          setSelectedBankAccountId(data[0].id);
-        }
-      } catch (error) {
-        toast.error('Lỗi khi tải danh sách tài khoản ngân hàng');
-      }
-    };
-    fetchBankAccounts();
-  }, []);
 
   // Hàm giúp tìm tên theo code trong danh sách
   function findNameByCode(list, code) {
@@ -249,17 +224,30 @@ const CheckoutPage = () => {
       const res = await orderApi.checkout(orderData, user?.token);
       toast.success('Đặt hàng thành công! Mã đơn hàng: ' + res.order.order_id);
       dispatch({ type: 'CLEAR_CART' });
+
+      // ✅ VNPay full payment: Redirect sang VNPay thanh toán toàn bộ
       if (paymentMethod === 'vnpay') {
         try {
           const vnpRes = await vnpayApi.createPaymentUrl(res.order.order_id, total);
           window.location.href = vnpRes.paymentUrl; // Chuyển đến trang thanh toán VNPay
-          return; // Dừng lại sau khi redirect
+          return; // ✅ Dừng lại, không navigate
         } catch (err) {
           toast.error('Không thể tạo liên kết thanh toán VNPay!');
         }
       }
 
-      navigate('/order-success', { state: { order: res.order } });
+      // ✅ COD: Bắt buộc cọc 10% qua VNPay trước
+      if (paymentMethod === 'cod') {
+        try {
+          const depositAmount = total * 0.1;
+          const vnpRes = await vnpayApi.createPaymentUrl(res.order.order_id, depositAmount);
+          toast.info('Vui lòng cọc 10% qua VNPay trước khi hoàn tất đơn hàng');
+          window.location.href = vnpRes.paymentUrl; // Chuyển đến trang thanh toán VNPay (10% deposit)
+          return; // ✅ Dừng lại
+        } catch (err) {
+          toast.error('Không thể tạo liên kết cọc VNPay!');
+        }
+      }
     } catch (error) {
       toast.error(
         'Lỗi khi đặt hàng: ' +
@@ -270,52 +258,7 @@ const CheckoutPage = () => {
     }
   };
 
-  // Tạo QR động
-  useEffect(() => {
-    let amount = 0;
-    if (paymentMethod === 'cod') {
-      amount = Math.round(total * 0.1);
-    } else if (paymentMethod === 'momo' || paymentMethod === 'ck') {
-      amount = Math.round(total);
-    }
-
-    let qrStr = '';
-
-    if (paymentMethod === 'cod') {
-      const qrPay = QRPay.initVietQR({
-        bankBin: BANK_CODE,
-        bankNumber: BANK_ACCOUNT,
-        amount: amount.toString(),
-        purpose: 'Thanh toan đat coc',
-      });
-      qrStr = qrPay.build();
-    } else if (paymentMethod === 'momo') {
-      const MOMO_ACCOUNT = '99MM23332M53758772';
-      const momoQR = QRPay.initVietQR({
-        bankBin: BanksObject.banviet.bin,
-        bankNumber: MOMO_ACCOUNT,
-        amount: amount.toString(),
-        purpose: 'Thanh toan don hang qua MoMo',
-      });
-      momoQR.additionalData.reference = 'MOMOW2W' + MOMO_ACCOUNT.slice(-3);
-      momoQR.setUnreservedField('80', '046');
-      qrStr = momoQR.build();
-    } else if (paymentMethod === 'ck') {
-      // Lấy bank được chọn từ danh sách
-      const selectedBank = bankAccounts.find((b) => b.id === selectedBankAccountId);
-      if (selectedBank) {
-        const qrPay = QRPay.initVietQR({
-          bankBin: selectedBank.bank_code || BanksObject.mbbank.bin, // fallback nếu ko có code
-          bankNumber: selectedBank.account_number,
-          amount: amount.toString(),
-          purpose: 'Thanh toan don hang',
-        });
-        qrStr = qrPay.build();
-      }
-    }
-
-    setQrValue(qrStr);
-  }, [paymentMethod, subTotal, total]);
+  // Không dùng QR code cho COD nữa (dùng VNPay deposit)
 
   return (
     <MainLayout>
@@ -630,121 +573,56 @@ const CheckoutPage = () => {
               Thanh toán tiền mặt khi nhận hàng (COD)
             </Button>
             <Button
-              variant={paymentMethod === 'momo' ? 'contained' : 'outlined'}
-              onClick={() => setPaymentMethod('momo')}
+              variant={paymentMethod === 'vnpay' ? 'contained' : 'outlined'}
+              onClick={() => setPaymentMethod('vnpay')}
               fullWidth
               sx={{
                 justifyContent: 'flex-start',
-                ...(paymentMethod === 'momo' && {
+                ...(paymentMethod === 'vnpay' && {
                   backgroundColor: '#003468',
                   color: '#fff',
                   '&:hover': { backgroundColor: '#002954' },
                 }),
               }}
             >
-              Thanh toán bằng MoMo
-            </Button>
-            <Button
-              variant={paymentMethod === 'ck' ? 'contained' : 'outlined'}
-              onClick={() => setPaymentMethod('ck')}
-              fullWidth
-              sx={{
-                justifyContent: 'flex-start',
-                ...(paymentMethod === 'ck' && {
-                  backgroundColor: '#003468',
-                  color: '#fff',
-                  '&:hover': { backgroundColor: '#002954' },
-                }),
-              }}
-            >
-              Thanh toán bằng ngân hàng
+              Thanh toán qua VNPay
             </Button>
           </Stack>
-          <Button
-            variant={paymentMethod === 'vnpay' ? 'contained' : 'outlined'}
-            onClick={() => setPaymentMethod('vnpay')}
-            fullWidth
-            sx={{
-              justifyContent: 'flex-start',
-              ...(paymentMethod === 'vnpay' && {
-                backgroundColor: '#003468',
-                color: '#fff',
-                '&:hover': { backgroundColor: '#002954' },
-              }),
-            }}
-          >
-            Thanh toán qua VNPay
-          </Button>
-
-          {paymentMethod === 'ck' && (
-            <Box mt={3} mb={2}>
-              <Typography variant="subtitle1" color="text.primary" gutterBottom>
-                Chọn ngân hàng
-              </Typography>
-              <FormControl fullWidth>
-                <Select
-                  value={selectedBankAccountId || ''}
-                  onChange={(e) => setSelectedBankAccountId(e.target.value)}
-                  displayEmpty
-                >
-                  <MenuItem disabled value="">
-                    Chọn ngân hàng
-                  </MenuItem>
-                  {bankAccounts.map((bank) => (
-                    <MenuItem key={bank.id} value={bank.id}>
-                      {bank.bank_name} - {bank.account_number}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            </Box>
-          )}
           {paymentMethod === 'vnpay' && (
             <Typography mt={2} color="text.secondary">
-              Sau khi đặt hàng, bạn sẽ được chuyển đến cổng thanh toán VNPay.
+              Sau khi đặt hàng, bạn sẽ được chuyển đến cổng thanh toán VNPay để thanh toán toàn bộ.
             </Typography>
           )}
 
-          {(paymentMethod === 'cod' || paymentMethod === 'momo' || paymentMethod === 'ck') && (
+          {paymentMethod === 'cod' && (
             <Box
               mt={3}
               p={2}
               borderRadius={2}
-              border="0px solid"
-              borderColor="primary.main"
+              border="1px solid"
+              borderColor="warning.main"
               textAlign="center"
-              maxWidth={300}
+              maxWidth={400}
               mx="auto"
               sx={{
                 display: 'flex',
                 flexDirection: 'column',
                 alignItems: 'center',
                 justifyContent: 'center',
+                backgroundColor: '#fff3cd',
               }}
             >
-              <QRCodeSVG value={qrValue} size={180} />
-              <Typography mt={1} fontWeight="medium" color="text.primary">
-                Số tiền:{' '}
-                <strong>
-                  {paymentMethod === 'cod'
-                    ? Math.round(total * 0.1).toLocaleString('vi-VN')
-                    : Math.round(total).toLocaleString('vi-VN')}{' '}
-                  đ
-                </strong>
+              <Typography fontWeight="bold" color="#856404" mb={1}>
+                ⚠️ Bắt buộc cọc 10% qua VNPay
               </Typography>
-              <Typography variant="body2" color="text.secondary">
-                {paymentMethod === 'momo'
-                  ? 'Ví MoMo'
-                  : paymentMethod === 'ck'
-                    ? bankAccounts.find((b) => b.id === selectedBankAccountId)?.bank_name || ''
-                    : 'MB Bank'}
+              <Typography color="text.secondary" mb={1}>
+                Sau khi đặt hàng, bạn sẽ thanh toán 10% cọc qua VNPay.
               </Typography>
-              <Typography variant="body2" color="text.secondary" mb={1}>
-                {paymentMethod === 'momo'
-                  ? '99MM23332M53758772'
-                  : paymentMethod === 'ck'
-                    ? bankAccounts.find((b) => b.id === selectedBankAccountId)?.account_number || ''
-                    : '0816837690'}
+              <Typography fontWeight="medium" color="error">
+                Số tiền cọc: <strong>{Math.round(total * 0.1).toLocaleString('vi-VN')} đ</strong>
+              </Typography>
+              <Typography variant="body2" color="text.secondary" mt={1}>
+                Thanh toán 90% còn lại khi nhận hàng
               </Typography>
             </Box>
           )}
