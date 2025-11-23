@@ -383,6 +383,93 @@ table, tr {
   margin-left: 15px;
 }
 
+/* ===== Ant Design Custom Styles for Sign Up Form ===== */
+/* DatePicker */
+.ant-picker-large {
+  height: 48px !important;
+  border-radius: 8px !important;
+  font-size: 14px !important;
+}
+
+.ant-picker-large .ant-picker-input > input {
+  font-size: 14px !important;
+}
+
+.ant-picker:hover,
+.ant-picker-focused {
+  border-color: #465fff !important;
+}
+
+.ant-picker-focused {
+  box-shadow: 0 0 0 2px rgba(70, 95, 255, 0.1) !important;
+}
+
+.ant-picker-dropdown table,
+.ant-picker-dropdown .ant-picker-content {
+  width: 100%;
+  margin: 0;
+  border-collapse: collapse;
+}
+
+.ant-picker-dropdown th,
+.ant-picker-dropdown td {
+  padding: 0;
+  text-align: center;
+  background: transparent;
+  border: none;
+}
+
+.ant-picker-dropdown .ant-picker-cell {
+  padding: 4px 0;
+}
+
+.ant-picker-dropdown .ant-picker-cell-inner {
+  width: 32px;
+  height: 32px;
+  line-height: 32px;
+  margin: 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Select */
+.ant-select-custom .ant-select-selector {
+  height: 48px !important;
+  border-radius: 8px !important;
+  padding: 0 16px !important;
+  display: flex !important;
+  align-items: center !important;
+}
+
+.ant-select-custom .ant-select-selection-search-input {
+  height: 48px !important;
+}
+
+.ant-select-custom .ant-select-selection-placeholder,
+.ant-select-custom .ant-select-selection-item {
+  line-height: 48px !important;
+  font-size: 14px !important;
+}
+
+.ant-select-custom:hover .ant-select-selector,
+.ant-select-custom.ant-select-focused .ant-select-selector {
+  border-color: #465fff !important;
+}
+
+.ant-select-custom.ant-select-focused .ant-select-selector {
+  box-shadow: 0 0 0 2px rgba(70, 95, 255, 0.1) !important;
+}
+
+/* Select dropdown */
+.ant-select-dropdown .ant-select-item-option-selected {
+  background-color: #ecf3ff !important;
+  color: #465fff !important;
+}
+
+.ant-select-dropdown .ant-select-item-option-active {
+  background-color: #f2f7ff !important;
+}
 
 
 
