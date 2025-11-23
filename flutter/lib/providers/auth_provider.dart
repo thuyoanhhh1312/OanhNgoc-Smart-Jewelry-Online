@@ -97,6 +97,8 @@ class AuthProvider extends ChangeNotifier {
     required String password,
     required String fullName,
     String? phoneNumber,
+    String? gender,
+    String? birthday,
   }) async {
     try {
       _setLoading(true);
@@ -107,6 +109,8 @@ class AuthProvider extends ChangeNotifier {
         password: password,
         fullName: fullName,
         phoneNumber: phoneNumber,
+        gender: gender,
+        birthday: birthday,
       );
 
       // Handle different response formats

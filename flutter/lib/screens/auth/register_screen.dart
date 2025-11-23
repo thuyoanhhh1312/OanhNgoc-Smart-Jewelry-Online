@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:provider/provider.dart';
 import '../../constants/app_colors.dart';
-import '../../constants/app_strings.dart';
 import '../../providers/auth_provider.dart';
 import '../../widgets/custom_text_field.dart';
 import '../../widgets/custom_button.dart';
@@ -30,6 +29,9 @@ class _RegisterScreenState extends State<RegisterScreen>
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
   bool _agreeToTerms = false;
+  
+  String? _selectedGender;
+  DateTime? _selectedBirthday;
 
   @override
   void initState() {
@@ -87,11 +89,18 @@ class _RegisterScreenState extends State<RegisterScreen>
 
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     
+    String? formattedBirthday;
+    if (_selectedBirthday != null) {
+      formattedBirthday = '${_selectedBirthday!.year}-${_selectedBirthday!.month.toString().padLeft(2, '0')}-${_selectedBirthday!.day.toString().padLeft(2, '0')}';
+    }
+    
     final success = await authProvider.register(
       fullName: _nameController.text.trim(),
       email: _emailController.text.trim(),
       phoneNumber: _phoneController.text.trim(),
       password: _passwordController.text,
+      gender: _selectedGender,
+      birthday: formattedBirthday,
     );
 
     if (success && mounted) {
@@ -235,7 +244,7 @@ class _RegisterScreenState extends State<RegisterScreen>
         // Full Name Field
         CustomTextField(
           controller: _nameController,
-          label: 'Họ và tên',
+          hint: 'Họ và tên',
           prefixIcon: Icons.person_outline,
           validator: (value) {
             if (value == null || value.isEmpty) {
@@ -253,7 +262,7 @@ class _RegisterScreenState extends State<RegisterScreen>
         // Email Field
         CustomTextField(
           controller: _emailController,
-          label: AppStrings.email,
+          hint: 'Email',
           keyboardType: TextInputType.emailAddress,
           prefixIcon: Icons.email_outlined,
           validator: (value) {
@@ -272,7 +281,7 @@ class _RegisterScreenState extends State<RegisterScreen>
         // Phone Field
         CustomTextField(
           controller: _phoneController,
-          label: 'Số điện thoại',
+          hint: 'Số điện thoại',
           keyboardType: TextInputType.phone,
           prefixIcon: Icons.phone_outlined,
           validator: (value) {
@@ -288,10 +297,20 @@ class _RegisterScreenState extends State<RegisterScreen>
         
         const SizedBox(height: 16),
         
+        // Gender Dropdown
+        _buildGenderDropdown(),
+        
+        const SizedBox(height: 16),
+        
+        // Birthday Picker
+        _buildBirthdayPicker(),
+        
+        const SizedBox(height: 16),
+        
         // Password Field
         CustomTextField(
           controller: _passwordController,
-          label: AppStrings.password,
+          hint: 'Mật khẩu',
           obscureText: _obscurePassword,
           prefixIcon: Icons.lock_outline,
           suffixIcon: IconButton(
@@ -321,7 +340,7 @@ class _RegisterScreenState extends State<RegisterScreen>
         // Confirm Password Field
         CustomTextField(
           controller: _confirmPasswordController,
-          label: 'Xác nhận mật khẩu',
+          hint: 'Xác nhận mật khẩu',
           obscureText: _obscureConfirmPassword,
           prefixIcon: Icons.lock_outline,
           suffixIcon: IconButton(
@@ -508,6 +527,103 @@ class _RegisterScreenState extends State<RegisterScreen>
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildGenderDropdown() {
+    return DropdownButtonFormField<String>(
+      value: _selectedGender,
+      decoration: InputDecoration(
+        hintText: 'Giới tính',
+        prefixIcon: const Icon(Icons.wc_outlined, color: AppColors.textSecondary, size: 20),
+        filled: true,
+        fillColor: AppColors.surface,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: AppColors.border),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: AppColors.border),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: AppColors.primary, width: 2),
+        ),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+      ),
+      dropdownColor: AppColors.surface,
+      items: const [
+        DropdownMenuItem(value: 'Nam', child: Text('Nam')),
+        DropdownMenuItem(value: 'Nữ', child: Text('Nữ')),
+        DropdownMenuItem(value: 'Khác', child: Text('Khác')),
+      ],
+      onChanged: (value) {
+        setState(() {
+          _selectedGender = value;
+        });
+      },
+    );
+  }
+
+  Widget _buildBirthdayPicker() {
+    return InkWell(
+      onTap: () async {
+        final DateTime? picked = await showDatePicker(
+          context: context,
+          initialDate: _selectedBirthday ?? DateTime(2000, 1, 1),
+          firstDate: DateTime(1900),
+          lastDate: DateTime.now(),
+          builder: (context, child) {
+            return Theme(
+              data: Theme.of(context).copyWith(
+                colorScheme: const ColorScheme.light(
+                  primary: AppColors.primary,
+                  onPrimary: AppColors.textOnPrimary,
+                  surface: AppColors.surface,
+                  onSurface: AppColors.textPrimary,
+                ),
+              ),
+              child: child!,
+            );
+          },
+        );
+        
+        if (picked != null && picked != _selectedBirthday) {
+          setState(() {
+            _selectedBirthday = picked;
+          });
+        }
+      },
+      child: Container(
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: AppColors.border,
+          ),
+        ),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        child: Row(
+          children: [
+            const Icon(Icons.calendar_today_outlined, color: AppColors.textSecondary, size: 20),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                _selectedBirthday == null
+                    ? 'Ngày sinh'
+                    : '${_selectedBirthday!.day}/${_selectedBirthday!.month}/${_selectedBirthday!.year}',
+                style: TextStyle(
+                  color: _selectedBirthday == null
+                      ? AppColors.textLight
+                      : AppColors.textPrimary,
+                  fontSize: 16,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
