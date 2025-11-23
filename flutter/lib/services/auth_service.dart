@@ -8,6 +8,8 @@ class AuthService {
     required String password,
     required String fullName,
     String? phoneNumber,
+    String? gender,
+    String? birthday,
   }) async {
     try {
       final response = await ApiService.post('/auth/register', body: {
@@ -15,6 +17,8 @@ class AuthService {
         'password': password,
         'name': fullName, // Backend expects 'name', not 'fullName'
         'phoneNumber': phoneNumber,
+        'gender': gender,
+        'birthday': birthday,
       });
 
       // Handle response - could be Map or other type

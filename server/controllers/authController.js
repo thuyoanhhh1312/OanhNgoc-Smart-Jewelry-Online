@@ -22,7 +22,7 @@ const generateRandomPhone = () => {
 
 // Đăng ký người dùng (User + Customer)
 export const registerUser = async (req, res, next) => {
-  const { name, email, password } = req.body;
+  const { name, email, password, gender, birthday } = req.body;
 
   // Kiểm tra các trường bắt buộc
   if (!name || !email || !password) {
@@ -67,7 +67,8 @@ export const registerUser = async (req, res, next) => {
         name,
         email,
         phone: randomPhone,  // Sử dụng số điện thoại ngẫu nhiên
-        gender: null,
+        gender: gender || null,
+        birthday: birthday || null,
         address: null
       },
       { transaction: t }
