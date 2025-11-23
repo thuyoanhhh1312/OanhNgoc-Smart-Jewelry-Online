@@ -25,11 +25,21 @@ export const registerUser = async (req, res, next) => {
   const { name, email, password, gender, birthday } = req.body;
 
   // Kiểm tra các trường bắt buộc
-  if (!name || !email || !password) {
+  if (!name || !email || !password || !birthday || !gender) {
     return next({
       statusCode: 400,
       code: ERROR_CODES.VALIDATION_ERROR,
-      message: 'Vui lòng nhập đầy đủ họ tên, email và mật khẩu.'
+      message: 'Vui lòng nhập đầy đủ họ tên, email, mật khẩu, ngày sinh và giới tính.'
+    });
+  }
+
+  // Validate gender
+  const validGenders = ['Nam', 'Nữ', 'Khác'];
+  if (!validGenders.includes(gender)) {
+    return next({
+      statusCode: 400,
+      code: ERROR_CODES.VALIDATION_ERROR,
+      message: 'Giới tính phải là "Nam", "Nữ" hoặc "Khác".'
     });
   }
 
@@ -67,8 +77,8 @@ export const registerUser = async (req, res, next) => {
         name,
         email,
         phone: randomPhone,  // Sử dụng số điện thoại ngẫu nhiên
-        gender: gender || null,
-        birthday: birthday || null,
+        gender: gender,
+        birthday: birthday,
         address: null
       },
       { transaction: t }
@@ -109,6 +119,7 @@ export const registerUser = async (req, res, next) => {
         email: newCustomer.email,
         phone: newCustomer.phone,
         gender: newCustomer.gender,
+        birthday: newCustomer.birthday,
         address: newCustomer.address
       }
     });
