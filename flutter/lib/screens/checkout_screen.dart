@@ -9,6 +9,10 @@ import '../models/order_success_arguments.dart';
 import '../services/payment_service.dart';
 import '../theme/app_colors.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../constants/app_colors.dart' as colors;
+import '../widgets/luxury/luxury_buttons.dart';
+import '../widgets/luxury/luxury_product_widgets.dart';
+import '../widgets/luxury/luxury_layout_widgets.dart';
 
 const _codBankName = 'MB Bank';
 const _codBankCode = 'MBbank';
@@ -248,18 +252,19 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: colors.AppColors.softWhite,
       appBar: AppBar(
         elevation: 0,
-        backgroundColor: Colors.white,
+        backgroundColor: colors.AppColors.softWhite,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          icon: const Icon(Icons.arrow_back, color: colors.AppColors.roseGold),
           onPressed: () => Navigator.pop(context),
         ),
         title: const Text(
           'Thanh toán',
           style: TextStyle(
-            color: Colors.black,
-            fontSize: 18,
+            color: colors.AppColors.warmBlack,
+            fontSize: 20,
             fontWeight: FontWeight.bold,
           ),
         ),
@@ -299,38 +304,14 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                   const SizedBox(height: 24),
 
                   // Submit Button
-                  SizedBox(
+                  LuxuryPrimaryButton(
+                    onPressed: orderProvider.isSubmitting
+                        ? null
+                        : _handleSubmitOrder,
+                    text: 'ĐẶT HÀNG',
                     width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: orderProvider.isSubmitting
-                          ? null
-                          : _handleSubmitOrder,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.goldColor,
-                        disabledBackgroundColor: Colors.grey[300],
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                      ),
-                      child: orderProvider.isSubmitting
-                          ? const SizedBox(
-                            height: 20,
-                            width: 20,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              valueColor: AlwaysStoppedAnimation(Colors.white),
-                            ),
-                          )
-                          : const Text(
-                            'ĐẶT HÀNG',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 16,
-                            ),
-                          ),
-                    ),
+                    height: 56,
+                    isLoading: orderProvider.isSubmitting,
                   ),
                   const SizedBox(height: 16),
                 ],

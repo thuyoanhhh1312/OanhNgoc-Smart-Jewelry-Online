@@ -106,10 +106,12 @@ class _PersonalInfoScreenState extends State<PersonalInfoScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppColors.softWhite,
       appBar: AppBar(
         title: const Text('Thông tin cá nhân'),
-        backgroundColor: AppColors.primary,
-        foregroundColor: AppColors.textOnPrimary,
+        backgroundColor: AppColors.roseGold,
+        foregroundColor: Colors.white,
+        iconTheme: const IconThemeData(color: Colors.white),
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -170,7 +172,9 @@ class _PersonalInfoScreenState extends State<PersonalInfoScreen> {
                             ),
                             child: DropdownButtonHideUnderline(
                               child: DropdownButton<String>(
-                                value: _gender,
+                                value: _gender != null && ['male', 'female', 'other'].contains(_gender) 
+                                    ? _gender 
+                                    : null,
                                 isExpanded: true,
                                 items: const [
                                   DropdownMenuItem(value: 'male', child: Text('Nam')),

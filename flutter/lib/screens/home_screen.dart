@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../constants/app_colors.dart';
-import '../constants/app_strings.dart';
 import '../providers/auth_provider.dart';
 import '../providers/product_provider.dart';
 import '../providers/cart_provider.dart';
-import '../widgets/product_card.dart';
+
 import '../widgets/category_card.dart';
 import '../widgets/promo_banner.dart';
+import '../widgets/luxury/luxury_layout_widgets.dart';
+import '../widgets/luxury/luxury_product_widgets.dart';
 import '../models/product.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -73,11 +74,12 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: AppColors.softWhite,
       body: SafeArea(
         child: RefreshIndicator(
           onRefresh: _refreshData,
-          color: AppColors.primary,
+          color: AppColors.roseGold,
+          backgroundColor: Colors.white,
           child: CustomScrollView(
             controller: _scrollController,
             slivers: [
@@ -162,25 +164,17 @@ class _HomeScreenState extends State<HomeScreen> {
           floating: true,
           pinned: false,
           expandedHeight: 0,
-          backgroundColor: AppColors.surface,
+          backgroundColor: AppColors.softWhite,
           elevation: 0,
           flexibleSpace: Container(
             decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  AppColors.surface,
-                  AppColors.surface.withValues(alpha: 0.98),
-                ],
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: AppColors.primary.withValues(alpha: 0.1),
-                  blurRadius: 12,
-                  offset: const Offset(0, 4),
+              color: AppColors.softWhite,
+              border: const Border(
+                bottom: BorderSide(
+                  color: AppColors.champagne,
+                  width: 1,
                 ),
-              ],
+              ),
             ),
           ),
           title: Column(
@@ -192,20 +186,21 @@ class _HomeScreenState extends State<HomeScreen> {
                     : 'Chào mừng đến với',
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
                   color: AppColors.textSecondary,
+                  fontWeight: FontWeight.w500,
                   letterSpacing: 0.2,
                 ),
               ),
               ShaderMask(
                 shaderCallback: (bounds) {
-                  return LinearGradient(
+                  return const LinearGradient(
                     colors: [
-                      AppColors.primary,
-                      AppColors.primary.withValues(alpha: 0.7),
+                      AppColors.roseGold,
+                      AppColors.roseGoldDark,
                     ],
                   ).createShader(bounds);
                 },
                 child: Text(
-                  AppStrings.appName,
+                  'Oanh Ngọc Jewelry',
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
                     color: Colors.white,
                     fontWeight: FontWeight.bold,
@@ -426,7 +421,7 @@ class _HomeScreenState extends State<HomeScreen> {
               const SizedBox(width: 12),
               Expanded(
                 child: Text(
-                  AppStrings.searchHint,
+                  'Tìm kiếm sản phẩm...',
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                     color: AppColors.textLight,
                     letterSpacing: 0.3,
@@ -436,12 +431,12 @@ class _HomeScreenState extends State<HomeScreen> {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: AppColors.primary.withValues(alpha: 0.1),
+                  color: AppColors.roseGold.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: const Icon(
                   Icons.tune,
-                  color: AppColors.primary,
+                  color: AppColors.roseGold,
                   size: 20,
                 ),
               ),
@@ -543,9 +538,9 @@ class _HomeScreenState extends State<HomeScreen> {
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Text(
-                            AppStrings.viewAll,
+                            'Xem tất cả',
                             style: TextStyle(
-                              color: AppColors.primary,
+                              color: AppColors.roseGold,
                               fontWeight: FontWeight.w600,
                             ),
                           ),
@@ -553,7 +548,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           const Icon(
                             Icons.arrow_forward,
                             size: 16,
-                            color: AppColors.primary,
+                            color: AppColors.roseGold,
                           ),
                         ],
                       ),
@@ -602,11 +597,11 @@ class _HomeScreenState extends State<HomeScreen> {
         }
 
         return _buildProductSection(
-          title: AppStrings.featuredProducts,
+          title: 'Sản phẩm nổi bật',
           products: productProvider.featuredProducts,
           onViewAll: () {
             Navigator.of(context).pushNamed('/products', arguments: {
-              'title': AppStrings.featuredProducts,
+              'title': 'Sản phẩm nổi bật',
               'isFeatured': true,
             });
           },
@@ -623,11 +618,11 @@ class _HomeScreenState extends State<HomeScreen> {
         }
 
         return _buildProductSection(
-          title: AppStrings.newArrivals,
+          title: 'Hàng mới về',
           products: productProvider.newArrivals,
           onViewAll: () {
             Navigator.of(context).pushNamed('/products', arguments: {
-              'title': AppStrings.newArrivals,
+              'title': 'Hàng mới về',
               'sortBy': 'created_desc',
             });
           },
@@ -644,17 +639,33 @@ class _HomeScreenState extends State<HomeScreen> {
         }
 
         return _buildProductSection(
-          title: AppStrings.bestSellers,
+          title: 'Bán chạy nhất',
           products: productProvider.bestSellers,
           onViewAll: () {
             Navigator.of(context).pushNamed('/products', arguments: {
-              'title': AppStrings.bestSellers,
+              'title': 'Bán chạy nhất',
               'sortBy': 'sales_desc',
             });
           },
         );
       },
     );
+  }
+
+  ProductBadge? _getProductBadge(Product product) {
+    if (product.hasDiscount) {
+      return ProductBadge.sale(text: '-${product.discountPercentage.round()}%');
+    }
+    if (product.isFeatured) {
+      return ProductBadge.hot();
+    }
+    if (DateTime.now().difference(product.createdAt).inDays <= 7) {
+      return ProductBadge.newProduct();
+    }
+    if (product.reviewsCount > 50) {
+      return ProductBadge.bestseller();
+    }
+    return null;
   }
 
   Widget _buildProductSection({
@@ -665,79 +676,16 @@ class _HomeScreenState extends State<HomeScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const SizedBox(height: 32),
+        const SizedBox(height: 24),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    ShaderMask(
-                      shaderCallback: (bounds) {
-                        return LinearGradient(
-                          colors: [
-                            AppColors.primary,
-                            AppColors.primary.withValues(alpha: 0.6),
-                          ],
-                        ).createShader(bounds);
-                      },
-                      child: Text(
-                        title,
-                        style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Container(
-                      width: 40,
-                      height: 3,
-                      decoration: BoxDecoration(
-                        color: AppColors.primary,
-                        borderRadius: BorderRadius.circular(1.5),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              if (onViewAll != null)
-                Container(
-                  decoration: BoxDecoration(
-                    color: AppColors.primary.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: TextButton(
-                    onPressed: onViewAll,
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          AppStrings.viewAll,
-                          style: TextStyle(
-                            color: AppColors.primary,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        const SizedBox(width: 4),
-                        const Icon(
-                          Icons.arrow_forward,
-                          size: 16,
-                          color: AppColors.primary,
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-            ],
+          child: SectionTitle(
+            title: title,
+            onSeeAll: onViewAll,
           ),
         ),
         
-        const SizedBox(height: 20),
+        const SizedBox(height: 16),
         
         // Hiển thị full sản phẩm với lazy loading
         Padding(
@@ -749,143 +697,30 @@ class _HomeScreenState extends State<HomeScreen> {
               crossAxisCount: 2,
               crossAxisSpacing: 12,
               mainAxisSpacing: 12,
-              childAspectRatio: 0.7,
+              childAspectRatio: 0.75,
             ),
-            itemCount: products.length, // Hiển thị tất cả sản phẩm
+            itemCount: products.length,
             itemBuilder: (context, index) {
               final product = products[index];
-              return _buildLazyProductCard(product, index);
+              return LuxuryProductCard(
+                imageUrl: product.mainImage,
+                name: product.name,
+                price: product.price,
+                originalPrice: product.originalPrice,
+                rating: product.rating,
+                soldCount: product.reviewsCount,
+                badge: _getProductBadge(product),
+                onTap: () {
+                  Navigator.of(context).pushNamed(
+                    '/product-detail',
+                    arguments: product,
+                  );
+                },
+              );
             },
           ),
         ),
       ],
-    );
-  }
-
-  // Widget lazy loading cho product card
-  Widget _buildLazyProductCard(Product product, int index) {
-    return FutureBuilder<Widget>(
-      future: _loadProductCard(product, index),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          // Placeholder khi đang load
-          return Container(
-            decoration: BoxDecoration(
-              color: AppColors.surface,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: AppColors.border),
-            ),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Container(
-                  width: 60,
-                  height: 60,
-                  decoration: BoxDecoration(
-                    color: AppColors.background,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: const Center(
-                    child: SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Container(
-                  width: 80,
-                  height: 8,
-                  decoration: BoxDecoration(
-                    color: AppColors.background,
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Container(
-                  width: 60,
-                  height: 6,
-                  decoration: BoxDecoration(
-                    color: AppColors.background,
-                    borderRadius: BorderRadius.circular(3),
-                  ),
-                ),
-              ],
-            ),
-          );
-        }
-        
-        if (snapshot.hasError) {
-          // Error state
-          return Container(
-            decoration: BoxDecoration(
-              color: AppColors.surface,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: AppColors.error),
-            ),
-            child: const Center(
-              child: Icon(
-                Icons.error_outline,
-                color: AppColors.error,
-                size: 24,
-              ),
-            ),
-          );
-        }
-        
-        return snapshot.data ?? const SizedBox();
-      },
-    );
-  }
-
-  // Simulate lazy loading với delay
-  Future<Widget> _loadProductCard(Product product, int index) async {
-    // Thêm delay để simulate lazy loading
-    await Future.delayed(Duration(milliseconds: 100 * (index % 5)));
-    
-    return ProductCard(
-      product: product,
-      onTap: () {
-        Navigator.of(context).pushNamed(
-          '/product',
-          arguments: {'id': product.id},
-        );
-      },
-      onAddToCart: () => _addToCart(product),
-      onToggleWishlist: () => _toggleWishlist(product),
-    );
-  }
-
-  void _addToCart(Product product) {
-    final cartProvider = Provider.of<CartProvider>(context, listen: false);
-    cartProvider.addToCart(product);
-    
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('${product.name} đã được thêm vào giỏ hàng'),
-        backgroundColor: AppColors.success,
-        action: SnackBarAction(
-          label: 'Xem giỏ hàng',
-          textColor: AppColors.textOnPrimary,
-          onPressed: () {
-            Navigator.of(context).pushNamed('/cart');
-          },
-        ),
-      ),
-    );
-  }
-
-  void _toggleWishlist(Product product) {
-    // TODO: Implement wishlist functionality
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('${product.name} đã được thêm vào danh sách yêu thích'),
-        backgroundColor: AppColors.success,
-      ),
     );
   }
 }
