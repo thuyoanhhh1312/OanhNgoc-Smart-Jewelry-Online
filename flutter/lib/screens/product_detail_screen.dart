@@ -11,6 +11,10 @@ import '../widgets/rating_summary.dart';
 import '../widgets/add_to_cart_modal.dart';
 import '../widgets/review_modal.dart';
 import '../widgets/loading_widget.dart';
+import '../constants/app_colors.dart';
+import '../widgets/luxury/luxury_buttons.dart';
+import '../widgets/luxury/luxury_product_widgets.dart';
+import '../widgets/luxury/luxury_layout_widgets.dart';
 
 class ProductDetailScreen extends StatefulWidget {
   final String productId;
@@ -251,83 +255,25 @@ class ProductDetailScreenState extends State<ProductDetailScreen>
     }
 
     return Scaffold(
-      appBar: AppBar(
-        elevation: 0,
-        backgroundColor: Colors.white,
-        titleTextStyle: const TextStyle(
-          color: Color(0xFF1A1A1A),
-          fontSize: 18,
-          fontWeight: FontWeight.bold,
-          letterSpacing: 0.3,
-        ),
-        title: Text(product!.name),
-        leading: Container(
-          margin: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: Colors.grey.withValues(alpha: 0.1),
-            borderRadius: BorderRadius.circular(10),
-          ),
-          child: Material(
-            color: Colors.transparent,
-            child: InkWell(
-              onTap: () => Navigator.pop(context),
-              borderRadius: BorderRadius.circular(10),
-              child: const Icon(
-                Icons.arrow_back,
-                color: Color(0xFF1A1A1A),
-              ),
-            ),
-          ),
-        ),
+      backgroundColor: AppColors.softWhite,
+      appBar: LuxuryAppBar(
+        title: product!.name,
         actions: [
-          Container(
-            margin: const EdgeInsets.only(right: 8),
-            decoration: BoxDecoration(
-              color: Colors.grey.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Material(
-              color: Colors.transparent,
-              child: InkWell(
-                onTap: () {
-                  // Share functionality
-                },
-                borderRadius: BorderRadius.circular(10),
-                child: const Padding(
-                  padding: EdgeInsets.all(8),
-                  child: Icon(
-                    Icons.share,
-                    color: Color(0xFF1A1A1A),
-                    size: 22,
-                  ),
-                ),
-              ),
-            ),
+          LuxuryIconButton(
+            icon: Icons.share_outlined,
+            onPressed: () {
+              // Share functionality
+            },
           ),
-          Container(
-            margin: const EdgeInsets.only(right: 12),
-            decoration: BoxDecoration(
-              color: Colors.grey.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Material(
-              color: Colors.transparent,
-              child: InkWell(
-                onTap: () {
-                  // Add to wishlist functionality
-                },
-                borderRadius: BorderRadius.circular(10),
-                child: Padding(
-                  padding: const EdgeInsets.all(8),
-                  child: Icon(
-                    Icons.favorite_border,
-                    color: Colors.red.shade400,
-                    size: 22,
-                  ),
-                ),
-              ),
-            ),
+          const SizedBox(width: 8),
+          LuxuryIconButton(
+            icon: Icons.favorite_border,
+            iconColor: AppColors.roseGold,
+            onPressed: () {
+              // Add to wishlist functionality
+            },
           ),
+          const SizedBox(width: 12),
         ],
       ),
       body: SingleChildScrollView(
@@ -405,27 +351,11 @@ class ProductDetailScreenState extends State<ProductDetailScreen>
             child: Container(
               margin: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(18),
-                gradient: LinearGradient(
-                  colors: [
-                    Colors.grey.withValues(alpha: 0.05),
-                    Colors.grey.withValues(alpha: 0.02),
-                  ],
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: const Color(0xFFD4AF37).withValues(alpha: 0.15),
-                    blurRadius: 20,
-                    offset: const Offset(0, 8),
-                  ),
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.1),
-                    blurRadius: 12,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
+                borderRadius: BorderRadius.circular(20),
+                color: Colors.white,
+                boxShadow: AppColors.lightShadow,
                 border: Border.all(
-                  color: const Color(0xFFD4AF37).withValues(alpha: 0.2),
+                  color: AppColors.champagne,
                   width: 1.5,
                 ),
               ),
@@ -505,8 +435,8 @@ class ProductDetailScreenState extends State<ProductDetailScreen>
                         ],
                         border: Border.all(
                           color: isSelected
-                              ? const Color(0xFFD4AF37)
-                              : Colors.grey.withValues(alpha: 0.2),
+                              ? AppColors.roseGold
+                              : AppColors.champagne,
                           width: isSelected ? 2.5 : 1.5,
                         ),
                       ),
@@ -527,7 +457,7 @@ class ProductDetailScreenState extends State<ProductDetailScreen>
                                   gradient: LinearGradient(
                                     colors: [
                                       Colors.transparent,
-                                      const Color(0xFFD4AF37).withValues(alpha: 0.15),
+                                      AppColors.roseGold.withValues(alpha: 0.15),
                                     ],
                                     begin: Alignment.topCenter,
                                     end: Alignment.bottomCenter,
@@ -560,45 +490,17 @@ class ProductDetailScreenState extends State<ProductDetailScreen>
               fontSize: 26,
               fontWeight: FontWeight.bold,
               letterSpacing: 0.3,
-              color: Color(0xFF1A1A1A),
+              color: AppColors.warmBlack,
             ),
           ),
           const SizedBox(height: 12),
           
-          // Price with gradient
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [Color(0xFFD4AF37), Color(0xFFB8932E)],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              borderRadius: BorderRadius.circular(12),
-              boxShadow: [
-                BoxShadow(
-                  color: const Color(0xFFD4AF37).withValues(alpha: 0.25),
-                  blurRadius: 12,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-            ),
-            child: Text(
-              '${product!.price.toStringAsFixed(0).replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]},')} ₫',
-              style: const TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-                letterSpacing: 0.5,
-                shadows: [
-                  Shadow(
-                    offset: Offset(0, 2),
-                    blurRadius: 4,
-                    color: Color.fromARGB(100, 0, 0, 0),
-                  ),
-                ],
-              ),
-            ),
+          // Price with ProductPriceText
+          ProductPriceText(
+            price: product!.price,
+            originalPrice: product!.originalPrice,
+            fontSize: 24,
+            fontWeight: FontWeight.bold,
           ),
           const SizedBox(height: 16),
           
@@ -806,138 +708,36 @@ class ProductDetailScreenState extends State<ProductDetailScreen>
           ),
           const SizedBox(height: 16),
           
-          // Add to cart and call buttons
+          // Add to cart and Buy now buttons
           Row(
             children: [
               // Add to cart button
               Expanded(
-                child: Container(
-                  decoration: BoxDecoration(
-                    border: Border.all(
-                      color: const Color(0xFF202E65),
-                      width: 2,
-                    ),
-                    borderRadius: BorderRadius.circular(12),
-                    boxShadow: [
-                      BoxShadow(
-                        color: const Color(0xFF202E65).withValues(alpha: 0.1),
-                        blurRadius: 8,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
-                  ),
-                  child: Material(
-                    color: Colors.transparent,
-                    child: InkWell(
-                      onTap: () {
-                        setState(() {
-                          _showAddToCartModal = true;
-                        });
-                      },
-                      borderRadius: BorderRadius.circular(12),
-                      child: Container(
-                        height: 48,
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            const Icon(
-                              Icons.shopping_bag_outlined,
-                              color: Color(0xFF202E65),
-                              size: 20,
-                            ),
-                            const SizedBox(width: 8),
-                            Text(
-                              'Thêm vào giỏ',
-                              style: const TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.bold,
-                                color: Color(0xFF202E65),
-                                letterSpacing: 0.2,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
+                child: LuxurySecondaryButton(
+                  onPressed: () {
+                    setState(() {
+                      _showAddToCartModal = true;
+                    });
+                  },
+                  text: 'Thêm vào giỏ',
+                  icon: Icons.shopping_bag_outlined,
+                  height: 52,
                 ),
               ),
               const SizedBox(width: 12),
               
-              // Call button
+              // Buy now button
               Expanded(
-                child: Container(
-                  decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [Color(0xFF202E65), Color(0xFF1A1F4D)],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                    borderRadius: BorderRadius.circular(12),
-                    boxShadow: [
-                      BoxShadow(
-                        color: const Color(0xFF202E65).withValues(alpha: 0.25),
-                        blurRadius: 12,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
-                  ),
-                  child: Material(
-                    color: Colors.transparent,
-                    child: InkWell(
-                      onTap: () {
-                        // Call functionality
-                      },
-                      borderRadius: BorderRadius.circular(12),
-                      child: SizedBox(
-                        height: 48,
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            const Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(
-                                  Icons.phone_in_talk_rounded,
-                                  color: Colors.white,
-                                  size: 18,
-                                ),
-                                SizedBox(width: 6),
-                                Text(
-                                  'Gọi ngay',
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.white,
-                                    letterSpacing: 0.2,
-                                    shadows: [
-                                      Shadow(
-                                        offset: Offset(0, 1),
-                                        blurRadius: 2,
-                                        color: Color.fromARGB(80, 0, 0, 0),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ),
-                            Text(
-                              'Nhận ưu đãi',
-                              style: TextStyle(
-                                fontSize: 10,
-                                color: Colors.white.withValues(alpha: 0.85),
-                                letterSpacing: 0.1,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
+                flex: 2,
+                child: LuxuryPrimaryButton(
+                  onPressed: () {
+                    setState(() {
+                      _showBuyNowModal = true;
+                    });
+                  },
+                  text: 'Mua ngay',
+                  icon: Icons.flash_on,
+                  height: 52,
                 ),
               ),
             ],

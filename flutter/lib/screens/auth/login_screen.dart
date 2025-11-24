@@ -2,10 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:provider/provider.dart';
 import '../../constants/app_colors.dart';
-import '../../constants/app_strings.dart';
 import '../../providers/auth_provider.dart';
 import '../../widgets/custom_text_field.dart';
-import '../../widgets/custom_button.dart';
+import '../../widgets/luxury/luxury_buttons.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -91,9 +90,10 @@ class _LoginScreenState extends State<LoginScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppColors.softWhite,
       body: Container(
         decoration: const BoxDecoration(
-          gradient: AppColors.backgroundGradient,
+          gradient: AppColors.champagneGradient,
         ),
         child: SafeArea(
           child: SingleChildScrollView(
@@ -155,46 +155,49 @@ class _LoginScreenState extends State<LoginScreen>
   Widget _buildHeader() {
     return Column(
       children: [
-        // Logo
+        // Logo - Luxury Rose Gold
         Container(
-          width: 80,
-          height: 80,
+          width: 100,
+          height: 100,
           decoration: BoxDecoration(
-            color: AppColors.primary,
-            borderRadius: BorderRadius.circular(20),
+            gradient: AppColors.primaryGradient,
+            borderRadius: BorderRadius.circular(28),
             boxShadow: [
               BoxShadow(
-                color: AppColors.primary.withValues(alpha: 0.3),
-                blurRadius: 20,
-                spreadRadius: 2,
+                color: AppColors.roseGold.withValues(alpha: 0.4),
+                blurRadius: 24,
+                offset: const Offset(0, 8),
+                spreadRadius: 0,
               ),
             ],
           ),
           child: const Icon(
-            Icons.diamond,
-            size: 40,
-            color: AppColors.textOnPrimary,
+            Icons.diamond_outlined,
+            size: 48,
+            color: AppColors.softWhite,
           ),
         ),
         
-        const SizedBox(height: 24),
+        const SizedBox(height: 32),
         
-        // Welcome Text
+        // Welcome Text - Luxury Typography
         Text(
           'Chào mừng trở lại!',
-          style: Theme.of(context).textTheme.displaySmall?.copyWith(
-            color: AppColors.textPrimary,
-            fontWeight: FontWeight.bold,
+          style: Theme.of(context).textTheme.displayMedium?.copyWith(
+            color: AppColors.warmBlack,
+            fontWeight: FontWeight.w700,
+            letterSpacing: 0.5,
           ),
         ),
         
         const SizedBox(height: 8),
         
         Text(
-          'Đăng nhập để tiếp tục mua sắm',
+          'Đăng nhập để tiếp tục mua sắm trang sức cao cấp',
           style: Theme.of(context).textTheme.bodyLarge?.copyWith(
             color: AppColors.textSecondary,
           ),
+          textAlign: TextAlign.center,
         ),
       ],
     );
@@ -206,7 +209,7 @@ class _LoginScreenState extends State<LoginScreen>
         // Email Field
         CustomTextField(
           controller: _emailController,
-          label: AppStrings.email,
+          hint: 'Email',
           keyboardType: TextInputType.emailAddress,
           prefixIcon: Icons.email_outlined,
           validator: (value) {
@@ -220,18 +223,19 @@ class _LoginScreenState extends State<LoginScreen>
           },
         ),
         
-        const SizedBox(height: 16),
+        const SizedBox(height: 20),
         
         // Password Field
         CustomTextField(
           controller: _passwordController,
-          label: AppStrings.password,
+          hint: 'Mật khẩu',
           obscureText: _obscurePassword,
           prefixIcon: Icons.lock_outline,
           suffixIcon: IconButton(
             icon: Icon(
               _obscurePassword ? Icons.visibility_off : Icons.visibility,
-              color: AppColors.textSecondary,
+              color: AppColors.warmGray,
+              size: 20,
             ),
             onPressed: () {
               setState(() {
@@ -257,12 +261,12 @@ class _LoginScreenState extends State<LoginScreen>
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        // Remember Me
+        // Remember Me - Luxury Checkbox
         Row(
           children: [
             SizedBox(
-              width: 20,
-              height: 20,
+              width: 22,
+              height: 22,
               child: Checkbox(
                 value: _rememberMe,
                 onChanged: (value) {
@@ -270,31 +274,29 @@ class _LoginScreenState extends State<LoginScreen>
                     _rememberMe = value ?? false;
                   });
                 },
-                activeColor: AppColors.primary,
+                activeColor: AppColors.roseGold,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(4),
+                ),
               ),
             ),
-            const SizedBox(width: 8),
+            const SizedBox(width: 10),
             Text(
               'Ghi nhớ đăng nhập',
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                 color: AppColors.textSecondary,
+                fontWeight: FontWeight.w500,
               ),
             ),
           ],
         ),
         
-        // Forgot Password
-        TextButton(
+        // Forgot Password - Rose Gold
+        LuxuryGhostButton(
+          text: 'Quên mật khẩu?',
           onPressed: () {
             Navigator.of(context).pushNamed('/forgot-password');
           },
-          child: Text(
-            AppStrings.forgotPassword,
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: AppColors.primary,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
         ),
       ],
     );
@@ -303,10 +305,12 @@ class _LoginScreenState extends State<LoginScreen>
   Widget _buildLoginButton() {
     return Consumer<AuthProvider>(
       builder: (context, authProvider, child) {
-        return CustomButton(
-          onPressed: authProvider.isLoading ? null : _login,
+        return LuxuryPrimaryButton(
+          text: 'Đăng nhập',
+          onPressed: _login,
           isLoading: authProvider.isLoading,
-          child: Text(AppStrings.login),
+          width: double.infinity,
+          height: 56,
         );
       },
     );
@@ -315,17 +319,28 @@ class _LoginScreenState extends State<LoginScreen>
   Widget _buildDivider() {
     return Row(
       children: [
-        const Expanded(child: Divider()),
+        Expanded(
+          child: Container(
+            height: 1,
+            color: AppColors.champagne,
+          ),
+        ),
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
+          padding: const EdgeInsets.symmetric(horizontal: 20),
           child: Text(
             'Hoặc đăng nhập với',
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: AppColors.textSecondary,
+              color: AppColors.warmGray,
+              fontWeight: FontWeight.w500,
             ),
           ),
         ),
-        const Expanded(child: Divider()),
+        Expanded(
+          child: Container(
+            height: 1,
+            color: AppColors.champagne,
+          ),
+        ),
       ],
     );
   }
@@ -361,12 +376,36 @@ class _LoginScreenState extends State<LoginScreen>
     required String label,
     required VoidCallback onPressed,
   }) {
-    return OutlinedButton.icon(
-      onPressed: onPressed,
-      icon: FaIcon(icon, size: 18),
-      label: Text(label),
-      style: OutlinedButton.styleFrom(
-        padding: const EdgeInsets.symmetric(vertical: 12),
+    return Container(
+      height: 52,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: AppColors.champagne,
+          width: 1.5,
+        ),
+        boxShadow: AppColors.lightShadow,
+      ),
+      child: InkWell(
+        onTap: onPressed,
+        borderRadius: BorderRadius.circular(12),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            FaIcon(icon, size: 20, color: AppColors.warmBlack),
+            const SizedBox(width: 12),
+            Text(
+              label,
+              style: const TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w600,
+                color: AppColors.warmBlack,
+                letterSpacing: 0.3,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -376,22 +415,17 @@ class _LoginScreenState extends State<LoginScreen>
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         Text(
-          '${AppStrings.dontHaveAccount} ',
+          'Chưa có tài khoản? ',
           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
             color: AppColors.textSecondary,
+            fontWeight: FontWeight.w500,
           ),
         ),
-        TextButton(
+        LuxuryGhostButton(
+          text: 'Đăng ký ngay',
           onPressed: () {
             Navigator.of(context).pushReplacementNamed('/register');
           },
-          child: Text(
-            AppStrings.register,
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: AppColors.primary,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
         ),
       ],
     );

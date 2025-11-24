@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../constants/app_colors.dart';
 
+/// Luxury Custom TextField - Rose Gold Elegant Theme
+/// TextField sang trọng với border radius 14px và màu rose gold khi focus
 class CustomTextField extends StatelessWidget {
   final TextEditingController? controller;
   final String? label;
@@ -38,8 +40,9 @@ class CustomTextField extends StatelessWidget {
           Text(
             label!,
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: AppColors.textPrimary,
+              color: AppColors.roseGoldDark,
               fontWeight: FontWeight.w500,
+              letterSpacing: 0.3,
             ),
           ),
           const SizedBox(height: 8),
@@ -57,33 +60,33 @@ class CustomTextField extends StatelessWidget {
             prefixIcon: prefixIcon != null
                 ? Icon(
                     prefixIcon,
-                    color: AppColors.textSecondary,
+                    color: AppColors.warmGray,
                     size: 20,
                   )
                 : null,
             suffixIcon: suffixIcon,
             filled: true,
             fillColor: enabled 
-                ? AppColors.surface 
+                ? Colors.white 
                 : AppColors.surfaceVariant.withValues(alpha: 0.5),
             border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: AppColors.border),
+              borderRadius: BorderRadius.circular(14),
+              borderSide: const BorderSide(color: AppColors.warmGray),
             ),
             enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: AppColors.border),
+              borderRadius: BorderRadius.circular(14),
+              borderSide: const BorderSide(color: AppColors.warmGray),
             ),
             focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: AppColors.primary, width: 2),
+              borderRadius: BorderRadius.circular(14),
+              borderSide: const BorderSide(color: AppColors.roseGold, width: 2),
             ),
             errorBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(14),
               borderSide: const BorderSide(color: AppColors.error),
             ),
             focusedErrorBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(14),
               borderSide: const BorderSide(color: AppColors.error, width: 2),
             ),
             contentPadding: const EdgeInsets.symmetric(
@@ -91,11 +94,11 @@ class CustomTextField extends StatelessWidget {
               horizontal: 16,
             ),
             hintStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: AppColors.textLight,
+              color: AppColors.warmGray,
             ),
           ),
           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-            color: AppColors.textPrimary,
+            color: AppColors.warmBlack,
           ),
         ),
       ],

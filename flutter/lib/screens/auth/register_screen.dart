@@ -4,7 +4,7 @@ import 'package:provider/provider.dart';
 import '../../constants/app_colors.dart';
 import '../../providers/auth_provider.dart';
 import '../../widgets/custom_text_field.dart';
-import '../../widgets/custom_button.dart';
+import '../../widgets/luxury/luxury_buttons.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -118,7 +118,7 @@ class _RegisterScreenState extends State<RegisterScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: AppColors.softWhite,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -126,13 +126,14 @@ class _RegisterScreenState extends State<RegisterScreen>
           onPressed: () => Navigator.of(context).pop(),
           icon: const Icon(
             Icons.arrow_back_ios,
-            color: AppColors.textPrimary,
+            color: AppColors.roseGold,
+            size: 22,
           ),
         ),
       ),
       body: Container(
         decoration: const BoxDecoration(
-          gradient: AppColors.backgroundGradient,
+          gradient: AppColors.champagneGradient,
         ),
         child: SafeArea(
           child: SingleChildScrollView(
@@ -192,43 +193,45 @@ class _RegisterScreenState extends State<RegisterScreen>
   Widget _buildHeader() {
     return Column(
       children: [
-        // Logo
+        // Logo - Luxury Rose Gold
         Container(
-          width: 80,
-          height: 80,
+          width: 100,
+          height: 100,
           decoration: BoxDecoration(
-            color: AppColors.primary,
-            borderRadius: BorderRadius.circular(20),
+            gradient: AppColors.primaryGradient,
+            borderRadius: BorderRadius.circular(28),
             boxShadow: [
               BoxShadow(
-                color: AppColors.primary.withValues(alpha: 0.3),
-                blurRadius: 20,
-                spreadRadius: 2,
+                color: AppColors.roseGold.withValues(alpha: 0.4),
+                blurRadius: 24,
+                offset: const Offset(0, 8),
+                spreadRadius: 0,
               ),
             ],
           ),
           child: const Icon(
-            Icons.diamond,
-            size: 40,
-            color: AppColors.textOnPrimary,
+            Icons.diamond_outlined,
+            size: 48,
+            color: AppColors.softWhite,
           ),
         ),
         
-        const SizedBox(height: 24),
+        const SizedBox(height: 32),
         
-        // Welcome Text
+        // Welcome Text - Luxury Typography
         Text(
           'Tạo tài khoản mới',
-          style: Theme.of(context).textTheme.displaySmall?.copyWith(
-            color: AppColors.textPrimary,
-            fontWeight: FontWeight.bold,
+          style: Theme.of(context).textTheme.displayMedium?.copyWith(
+            color: AppColors.warmBlack,
+            fontWeight: FontWeight.w700,
+            letterSpacing: 0.5,
           ),
         ),
         
         const SizedBox(height: 8),
         
         Text(
-          'Đăng ký để trải nghiệm mua sắm tuyệt vời',
+          'Đăng ký để trải nghiệm mua sắm trang sức cao cấp',
           style: Theme.of(context).textTheme.bodyLarge?.copyWith(
             color: AppColors.textSecondary,
           ),
@@ -436,10 +439,12 @@ class _RegisterScreenState extends State<RegisterScreen>
   Widget _buildRegisterButton() {
     return Consumer<AuthProvider>(
       builder: (context, authProvider, child) {
-        return CustomButton(
-          onPressed: authProvider.isLoading ? null : _register,
+        return LuxuryPrimaryButton(
+          text: 'Đăng ký',
+          onPressed: _register,
           isLoading: authProvider.isLoading,
-          child: const Text('Đăng ký'),
+          width: double.infinity,
+          height: 56,
         );
       },
     );
@@ -448,17 +453,28 @@ class _RegisterScreenState extends State<RegisterScreen>
   Widget _buildDivider() {
     return Row(
       children: [
-        const Expanded(child: Divider()),
+        Expanded(
+          child: Container(
+            height: 1,
+            color: AppColors.champagne,
+          ),
+        ),
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
+          padding: const EdgeInsets.symmetric(horizontal: 20),
           child: Text(
             'Hoặc đăng ký với',
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: AppColors.textSecondary,
+              color: AppColors.warmGray,
+              fontWeight: FontWeight.w500,
             ),
           ),
         ),
-        const Expanded(child: Divider()),
+        Expanded(
+          child: Container(
+            height: 1,
+            color: AppColors.champagne,
+          ),
+        ),
       ],
     );
   }
@@ -494,12 +510,36 @@ class _RegisterScreenState extends State<RegisterScreen>
     required String label,
     required VoidCallback onPressed,
   }) {
-    return OutlinedButton.icon(
-      onPressed: onPressed,
-      icon: FaIcon(icon, size: 18),
-      label: Text(label),
-      style: OutlinedButton.styleFrom(
-        padding: const EdgeInsets.symmetric(vertical: 12),
+    return Container(
+      height: 52,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: AppColors.champagne,
+          width: 1.5,
+        ),
+        boxShadow: AppColors.lightShadow,
+      ),
+      child: InkWell(
+        onTap: onPressed,
+        borderRadius: BorderRadius.circular(12),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            FaIcon(icon, size: 20, color: AppColors.warmBlack),
+            const SizedBox(width: 12),
+            Text(
+              label,
+              style: const TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w600,
+                color: AppColors.warmBlack,
+                letterSpacing: 0.3,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -512,19 +552,14 @@ class _RegisterScreenState extends State<RegisterScreen>
           'Đã có tài khoản? ',
           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
             color: AppColors.textSecondary,
+            fontWeight: FontWeight.w500,
           ),
         ),
-        TextButton(
+        LuxuryGhostButton(
+          text: 'Đăng nhập',
           onPressed: () {
             Navigator.of(context).pushReplacementNamed('/login');
           },
-          child: Text(
-            'Đăng nhập',
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: AppColors.primary,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
         ),
       ],
     );

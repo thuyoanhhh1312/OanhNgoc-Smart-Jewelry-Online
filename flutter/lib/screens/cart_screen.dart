@@ -4,6 +4,9 @@ import '../constants/app_colors.dart';
 import '../providers/cart_provider.dart';
 import '../providers/auth_provider.dart';
 import '../widgets/cart_item_card.dart';
+import '../widgets/luxury/luxury_buttons.dart';
+import '../widgets/luxury/luxury_product_widgets.dart';
+import '../widgets/luxury/luxury_layout_widgets.dart';
 
 class CartScreen extends StatefulWidget {
   const CartScreen({super.key});
@@ -16,7 +19,7 @@ class _CartScreenState extends State<CartScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: AppColors.softWhite,
       appBar: _buildAppBar(),
       body: Consumer<CartProvider>(
         builder: (context, cartProvider, child) {
@@ -42,14 +45,14 @@ class _CartScreenState extends State<CartScreen> {
 
   PreferredSizeWidget _buildAppBar() {
     return AppBar(
-      backgroundColor: AppColors.surface,
+      backgroundColor: AppColors.softWhite,
       elevation: 0,
       title: Consumer<CartProvider>(
         builder: (context, cartProvider, child) {
           return Text(
             'Giỏ hàng (${cartProvider.itemCount})',
             style: Theme.of(context).textTheme.titleLarge?.copyWith(
-              color: AppColors.textPrimary,
+              color: AppColors.warmBlack,
               fontWeight: FontWeight.bold,
             ),
           );
@@ -57,6 +60,7 @@ class _CartScreenState extends State<CartScreen> {
       ),
       centerTitle: true,
       automaticallyImplyLeading: false,
+      iconTheme: const IconThemeData(color: AppColors.roseGold),
       actions: [
         Consumer<CartProvider>(
           builder: (context, cartProvider, child) {
@@ -67,7 +71,7 @@ class _CartScreenState extends State<CartScreen> {
               child: Text(
                 'Xóa tất cả',
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: AppColors.error,
+                  color: AppColors.roseGold,
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -80,42 +84,19 @@ class _CartScreenState extends State<CartScreen> {
 
   Widget _buildEmptyCart() {
     return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.shopping_cart_outlined,
-            size: 80,
-            color: AppColors.textSecondary,
-          ),
-          const SizedBox(height: 24),
-          Text(
-            'Giỏ hàng trống',
-            style: Theme.of(context).textTheme.titleLarge?.copyWith(
-              color: AppColors.textSecondary,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Hãy thêm sản phẩm vào giỏ hàng để tiếp tục mua sắm',
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: AppColors.textLight,
-            ),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 32),
-          ElevatedButton(
-            onPressed: () {
-              // Navigate to home tab by popping to main screen and switching to home
-              Navigator.of(context).pushNamedAndRemoveUntil(
-                '/main',
-                (route) => false,
-              );
-            },
-            child: const Text('Tiếp tục mua sắm'),
-          ),
-        ],
+      child: LuxuryEmptyState(
+        icon: Icons.shopping_cart_outlined,
+        title: 'Giỏ hàng trống',
+        subtitle: 'Hãy thêm sản phẩm vào giỏ hàng để tiếp tục mua sắm',
+        action: LuxuryPrimaryButton(
+          onPressed: () {
+            Navigator.of(context).pushNamedAndRemoveUntil(
+              '/main',
+              (route) => false,
+            );
+          },
+          text: 'Tiếp tục mua sắm',
+        ),
       ),
     );
   }
@@ -196,16 +177,14 @@ class _CartScreenState extends State<CartScreen> {
             Text(
               'Tổng cộng:',
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                color: AppColors.textPrimary,
+                color: AppColors.warmBlack,
                 fontWeight: FontWeight.bold,
               ),
             ),
-            Text(
-              '${cartProvider.total.toStringAsFixed(0)}đ',
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                color: AppColors.primary,
-                fontWeight: FontWeight.bold,
-              ),
+            ProductPriceText(
+              price: cartProvider.total,
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
             ),
           ],
         ),
@@ -216,21 +195,11 @@ class _CartScreenState extends State<CartScreen> {
   Widget _buildCheckoutButton(CartProvider cartProvider) {
     return Consumer<AuthProvider>(
       builder: (context, authProvider, child) {
-        return SizedBox(
+        return LuxuryPrimaryButton(
+          onPressed: cartProvider.items.isEmpty ? null : () => _proceedToCheckout(authProvider),
+          text: authProvider.isLoggedIn ? 'Thanh toán' : 'Đăng nhập để thanh toán',
           width: double.infinity,
-          child: ElevatedButton(
-            onPressed: cartProvider.items.isEmpty ? null : () => _proceedToCheckout(authProvider),
-            style: ElevatedButton.styleFrom(
-              padding: const EdgeInsets.symmetric(vertical: 16),
-            ),
-            child: Text(
-              authProvider.isLoggedIn ? 'Thanh toán' : 'Đăng nhập để thanh toán',
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                color: AppColors.textOnPrimary,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ),
+          height: 56,
         );
       },
     );

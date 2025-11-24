@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import '../models/cart.dart';
 import '../models/order.dart';
 import '../theme/app_colors.dart';
+import '../constants/app_colors.dart' as colors;
+import '../widgets/luxury/luxury_buttons.dart';
 
 class OrderSuccessScreen extends StatefulWidget {
   final Order order;
@@ -56,6 +58,7 @@ class _OrderSuccessScreenState extends State<OrderSuccessScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: colors.AppColors.softWhite,
       body: SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 32),
@@ -67,11 +70,15 @@ class _OrderSuccessScreenState extends State<OrderSuccessScreen>
               ScaleTransition(
                 scale: _scaleAnimation,
                 child: Container(
-                  width: 100,
-                  height: 100,
+                  width: 120,
+                  height: 120,
                   decoration: BoxDecoration(
-                    color: Colors.green.withValues(alpha: 0.1),
+                    color: colors.AppColors.champagne,
                     shape: BoxShape.circle,
+                    border: Border.all(
+                      color: colors.AppColors.roseGold,
+                      width: 3,
+                    ),
                   ),
                   child: const Icon(
                     Icons.check_circle,
@@ -89,7 +96,7 @@ class _OrderSuccessScreenState extends State<OrderSuccessScreen>
                 style: TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
-                  color: Colors.black,
+                  color: colors.AppColors.warmBlack,
                 ),
               ),
               const SizedBox(height: 12),
@@ -107,8 +114,10 @@ class _OrderSuccessScreenState extends State<OrderSuccessScreen>
               // Order Details Card
               Container(
                 decoration: BoxDecoration(
-                  border: Border.all(color: Colors.grey[300]!),
-                  borderRadius: BorderRadius.circular(12),
+                  color: Colors.white,
+                  border: Border.all(color: colors.AppColors.champagne, width: 1.5),
+                  borderRadius: BorderRadius.circular(20),
+                  boxShadow: colors.AppColors.lightShadow,
                 ),
                 padding: const EdgeInsets.all(20),
                 child: Column(
@@ -130,7 +139,7 @@ class _OrderSuccessScreenState extends State<OrderSuccessScreen>
                           style: const TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.bold,
-                            color: AppColors.goldColor,
+                            color: colors.AppColors.roseGold,
                           ),
                         ),
                       ],
@@ -282,8 +291,12 @@ class _OrderSuccessScreenState extends State<OrderSuccessScreen>
               // Next Steps
               Container(
                 decoration: BoxDecoration(
-                  color: AppColors.creamColor,
-                  borderRadius: BorderRadius.circular(12),
+                  color: colors.AppColors.champagne,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: colors.AppColors.roseGold.withValues(alpha: 0.3),
+                    width: 1,
+                  ),
                 ),
                 padding: const EdgeInsets.all(16),
                 child: Column(
@@ -308,54 +321,24 @@ class _OrderSuccessScreenState extends State<OrderSuccessScreen>
               const SizedBox(height: 32),
 
               // Action Buttons
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: () => Navigator.of(context).pushNamedAndRemoveUntil(
-                    '/home',
-                    (route) => false,
-                  ),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.goldColor,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                  child: const Text(
-                    'TIẾP TỤC MUA SẮM',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                    ),
-                  ),
+              LuxuryPrimaryButton(
+                onPressed: () => Navigator.of(context).pushNamedAndRemoveUntil(
+                  '/home',
+                  (route) => false,
                 ),
+                text: 'TIẾP TỤC MUA SẮM',
+                width: double.infinity,
+                height: 56,
               ),
               const SizedBox(height: 12),
-              SizedBox(
-                width: double.infinity,
-                child: OutlinedButton(
-                  onPressed: () => Navigator.of(context).pushNamedAndRemoveUntil(
-                    '/main',
-                    (route) => false,
-                  ),
-                  style: OutlinedButton.styleFrom(
-                    side: const BorderSide(color: AppColors.goldColor),
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                  child: const Text(
-                    'XEM ĐƠN HÀNG CỦA TÔI',
-                    style: TextStyle(
-                      color: AppColors.goldColor,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                    ),
-                  ),
+              LuxurySecondaryButton(
+                onPressed: () => Navigator.of(context).pushNamedAndRemoveUntil(
+                  '/main',
+                  (route) => false,
                 ),
+                text: 'XEM ĐƠN HÀNG CỦA TÔI',
+                width: double.infinity,
+                height: 56,
               ),
               const SizedBox(height: 16),
             ],
@@ -458,7 +441,7 @@ class _OrderSuccessScreenState extends State<OrderSuccessScreen>
             style: const TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.bold,
-              color: AppColors.goldColor,
+              color: colors.AppColors.roseGold,
             ),
           ),
         ],
@@ -474,7 +457,7 @@ class _OrderSuccessScreenState extends State<OrderSuccessScreen>
           width: 28,
           height: 28,
           decoration: const BoxDecoration(
-            color: AppColors.goldColor,
+            color: colors.AppColors.roseGold,
             shape: BoxShape.circle,
           ),
           child: Center(

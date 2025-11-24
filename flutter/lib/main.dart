@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'config/environment.dart';
-import 'constants/app_theme.dart';
+import 'theme/app_theme.dart';
 import 'constants/app_strings.dart';
 import 'screens/splash_screen.dart';
 import 'screens/onboarding_screen.dart';
@@ -66,6 +66,32 @@ class MyApp extends StatelessWidget {
             case '/product':
               final args = settings.arguments as Map<String, dynamic>?;
               final productId = args?['id'] ?? '';
+              return MaterialPageRoute(
+                builder: (context) => ProductDetailScreen(productId: productId),
+              );
+            case '/product-detail':
+              // Handle both Product object and productId
+              final args = settings.arguments;
+              String productId;
+              
+              if (args is String) {
+                // If arguments is a String, use it as productId
+                productId = args;
+              } else if (args != null && args.toString().contains('Product')) {
+                // If arguments is a Product object, extract its id
+                try {
+                  final product = args as dynamic;
+                  productId = product.id as String;
+                } catch (e) {
+                  productId = '';
+                }
+              } else if (args is Map<String, dynamic>) {
+                // If arguments is a Map, extract productId
+                productId = args['id'] ?? args['productId'] ?? '';
+              } else {
+                productId = '';
+              }
+              
               return MaterialPageRoute(
                 builder: (context) => ProductDetailScreen(productId: productId),
               );

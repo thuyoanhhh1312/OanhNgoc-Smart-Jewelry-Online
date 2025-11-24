@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/product_provider.dart';
 import '../widgets/product_card.dart';
+import '../constants/app_colors.dart';
+import '../widgets/luxury/luxury_product_widgets.dart';
 
 class SearchScreen extends StatefulWidget {
   const SearchScreen({super.key});
@@ -55,7 +57,7 @@ class _SearchScreenState extends State<SearchScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFFAFAFA),
+      backgroundColor: AppColors.softWhite,
       appBar: _buildAppBar(),
       body: Column(
         children: [
@@ -76,18 +78,19 @@ class _SearchScreenState extends State<SearchScreen> {
 
   PreferredSizeWidget _buildAppBar() {
     return AppBar(
-      backgroundColor: const Color(0xFFFFFFFF),
-      elevation: 0.5,
+      backgroundColor: AppColors.softWhite,
+      elevation: 0,
       title: Text(
         'Tìm kiếm sản phẩm',
         style: Theme.of(context).textTheme.titleLarge?.copyWith(
-          color: const Color(0xFF1A1A1A),
+          color: AppColors.warmBlack,
           fontWeight: FontWeight.w700,
           fontSize: 20,
         ),
       ),
       centerTitle: false,
       automaticallyImplyLeading: false,
+      iconTheme: const IconThemeData(color: AppColors.roseGold),
       actions: [
         if (_searchQuery.isNotEmpty)
           IconButton(
