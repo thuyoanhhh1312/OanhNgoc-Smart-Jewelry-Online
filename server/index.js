@@ -1,7 +1,7 @@
 // server.js hoặc index.js
 import express from "express";
 import cors from "cors";
-import apiRoutes from "./routes/apiRoutes.js"; // Đảm bảo file này cũng dùng export default nếu là ES Module
+import apiRoutes from "./routes/apiRoutes.js";
 import { errorHandler } from "./middlewares/errorHandler.js";
 import vnpayRouter from "./vnpay/payment.js";
 import goldPriceRoutes from "./routes/goldPriceRoutes.js";

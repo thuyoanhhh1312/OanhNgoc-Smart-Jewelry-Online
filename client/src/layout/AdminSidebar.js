@@ -14,6 +14,7 @@ import AccountBalanceIcon from '@mui/icons-material/AccountBalance'; // bank acc
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import MoreHorizIcon from '@mui/icons-material/MoreHoriz';
 import NewspaperIcon from '@mui/icons-material/Newspaper'; // icon tin tức
+import RateReviewIcon from '@mui/icons-material/RateReview'; // icon đánh giá
 
 const allNavItems = [
   {
@@ -40,6 +41,11 @@ const allNavItems = [
     icon: <NewspaperIcon fontSize="medium" />,
     name: 'News',
     path: '/admin/news',
+  },
+  {
+    icon: <RateReviewIcon fontSize="medium" />,
+    name: 'Reviews',
+    path: '/admin/reviews',
   },
   {
     icon: <ListAltIcon fontSize="medium" />,

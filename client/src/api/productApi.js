@@ -212,6 +212,42 @@ const getProductReviewSummary = async (productId) => {
   }
 };
 
+const getProductReviewSummaryDetailed = async (productId) => {
+  try {
+    const response = await axios.get(`${API_URL}/products/${productId}/reviews/summary-detailed`);
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching product review summary detailed:', error);
+    throw error;
+  }
+};
+
+// PUBLIC: Lấy tóm tắt đánh giá công khai (chỉ rating)
+const getProductReviewSummaryPublic = async (productId) => {
+  try {
+    const response = await axios.get(`${API_URL}/products/${productId}/reviews/summary-public`);
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching product review summary (public):', error);
+    throw error;
+  }
+};
+
+// ADMIN: Lấy tóm tắt đánh giá quản lý (sentiment + rating + suspicious)
+const getProductReviewSummaryAdmin = async (productId, accessToken) => {
+  try {
+    const response = await axios.get(`${API_URL}/admin/products/${productId}/reviews/summary`, {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching product review summary (admin):', error);
+    throw error;
+  }
+};
+
 const searchProduct = async ({
   keyword = '',
   categoryId = null,
@@ -307,6 +343,9 @@ export default {
   getProductReviews,
   addProductReview,
   getProductReviewSummary,
+  getProductReviewSummaryDetailed,
+  getProductReviewSummaryPublic,
+  getProductReviewSummaryAdmin,
   searchProduct,
   getProductWithReviewSummary,
   getProductsByCategory,
