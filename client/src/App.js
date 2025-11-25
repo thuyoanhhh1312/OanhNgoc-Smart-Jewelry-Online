@@ -68,6 +68,8 @@ import NewsCategory from './pages/admin/NewsCategory/index';
 import AddNewsCategory from './pages/admin/NewsCategory/add';
 import EditNewsCategory from './pages/admin/NewsCategory/edit';
 
+import ReviewManagement from './pages/admin/Review/ReviewManagement';
+
 import { useDispatch } from 'react-redux';
 import News from './pages/News';
 import NewsDetail from './pages/NewsDetail';
@@ -327,6 +329,16 @@ function App() {
             element={
               <AdminOrStaffRoute>
                 <AdminBankAccounts />
+              </AdminOrStaffRoute>
+            }
+          />
+
+          {/* Reviews Management */}
+          <Route
+            path="/admin/reviews"
+            element={
+              <AdminOrStaffRoute>
+                <ReviewManagement />
               </AdminOrStaffRoute>
             }
           />

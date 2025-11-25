@@ -328,6 +328,56 @@ router.get(
   "/products/:id/reviews/summary",
   productReviewController.getReviewSummary
 );
+router.get(
+  "/products/:id/reviews/summary-detailed",
+  productReviewController.getReviewSummaryWithSuspicious
+);
+
+// PUBLIC: Only rating distribution (cho khách hàng)
+router.get(
+  "/products/:id/reviews/summary-public",
+  productReviewController.getReviewSummaryPublic
+);
+
+// ADMIN: Full sentiment + rating + suspicious (cho quản lý)
+router.get(
+  "/admin/products/:id/reviews/summary",
+  authenticateToken,
+  isAdmin,
+  productReviewController.getReviewSummaryPublicDetailed
+);
+
+// ADMIN: Lấy tất cả reviews từ tất cả sản phẩm (cho admin dashboard)
+router.get(
+  "/admin/reviews",
+  authenticateToken,
+  isAdminOrStaff,
+  productReviewController.getAllReviewsAdmin
+);
+
+// ADMIN: Thống kê cảm xúc theo sản phẩm
+router.get(
+  "/admin/reviews/sentiment-stats",
+  authenticateToken,
+  isAdminOrStaff,
+  productReviewController.getSentimentStatsByProduct
+);
+
+// ADMIN: Lấy reviews bất thường
+router.get(
+  "/admin/reviews/suspicious",
+  authenticateToken,
+  isAdminOrStaff,
+  productReviewController.getSuspiciousReviews
+);
+
+// ADMIN: Ẩn/Hiển thị review
+router.patch(
+  "/admin/reviews/:reviewId/visibility",
+  authenticateToken,
+  isAdminOrStaff,
+  productReviewController.toggleReviewVisibility
+);
 
 router.post(
   "/products/:id/reviews",

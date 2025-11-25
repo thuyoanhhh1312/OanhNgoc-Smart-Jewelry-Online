@@ -1,13 +1,12 @@
-import db from '../models/index.js';
-import { Op, fn, col, literal, Sequelize } from 'sequelize';
-import slugify from 'slugify';
-
+import db from "../models/index.js";
+import { Op, fn, col, literal, Sequelize } from "sequelize";
+import slugify from "slugify";
 
 export const getAllProducts = async (req, res) => {
   const { keyword } = req.query;
   try {
     let whereClause = {};
-    if (keyword && keyword.trim() !== '') {
+    if (keyword && keyword.trim() !== "") {
       whereClause = {
         [Op.or]: [
           { product_name: { [Op.like]: `%${keyword}%` } },
@@ -21,21 +20,24 @@ export const getAllProducts = async (req, res) => {
       include: [
         {
           model: db.Category,
-          attributes: ['category_name'],
+          attributes: ["category_name"],
         },
         {
           model: db.SubCategory,
-          attributes: ['subcategory_name'],
+          attributes: ["subcategory_name"],
         },
         {
           model: db.ProductImage,
-          attributes: ['image_id', 'image_url', 'alt_text', 'is_main'],
+          attributes: ["image_id", "image_url", "alt_text", "is_main"],
         },
       ],
     });
     res.status(200).json(products);
   } catch (error) {
-    res.status(500).json({ message: "Lỗi khi lấy danh sách sản phẩm", error: error.message });
+    res.status(500).json({
+      message: "Lỗi khi lấy danh sách sản phẩm",
+      error: error.message,
+    });
   }
 };
 
@@ -43,7 +45,7 @@ export const getAllProductsWithRatingSummary = async (req, res) => {
   const { keyword } = req.query;
   try {
     let whereClause = {};
-    if (keyword && keyword.trim() !== '') {
+    if (keyword && keyword.trim() !== "") {
       whereClause = {
         [Op.or]: [
           { product_name: { [Op.like]: `%${keyword}%` } },
@@ -55,23 +57,25 @@ export const getAllProductsWithRatingSummary = async (req, res) => {
     const products = await db.Product.findAll({
       where: whereClause,
       attributes: [
-        'product_id',
-        'product_name',
-        'slug',
-        'description',
-        'price',
-        'quantity',
-        'sold_quantity',
-        'created_at',
-        'updated_at',
-        [fn('COUNT', col('ProductReviews.review_id')), 'totalReviews'],
-        [fn('IFNULL', fn('AVG', col('ProductReviews.rating')), 0), 'avgRating'],
+        "product_id",
+        "product_name",
+        "slug",
+        "description",
+        "price",
+        "quantity",
+        "sold_quantity",
+        "created_at",
+        "updated_at",
+        [fn("COUNT", col("ProductReviews.review_id")), "totalReviews"],
+        [fn("IFNULL", fn("AVG", col("ProductReviews.rating")), 0), "avgRating"],
         [
           fn(
-            'SUM',
-            literal(`CASE WHEN ProductReviews.sentiment = 'POS' THEN 1 ELSE 0 END`)
+            "SUM",
+            literal(
+              `CASE WHEN ProductReviews.sentiment = 'POS' THEN 1 ELSE 0 END`
+            )
           ),
-          'positiveCount',
+          "positiveCount",
         ],
       ],
       include: [
@@ -79,34 +83,45 @@ export const getAllProductsWithRatingSummary = async (req, res) => {
           model: db.ProductReview,
           attributes: [],
           required: false,
+          where: {
+            use_for_stats: true, // Chỉ tính reviews với use_for_stats = true (loại meta-reviews)
+          },
         },
         {
           model: db.Category,
-          attributes: ['category_name'],
+          attributes: ["category_name"],
         },
         {
           model: db.SubCategory,
-          attributes: ['subcategory_name'],
+          attributes: ["subcategory_name"],
         },
         {
           model: db.ProductImage,
-          attributes: ['image_id', 'image_url', 'alt_text', 'is_main'],
+          attributes: ["image_id", "image_url", "alt_text", "is_main"],
         },
       ],
-      group: ['Product.product_id', 'Category.category_id', 'SubCategory.subcategory_id', 'ProductImages.image_id'],
-      order: [[literal('positiveCount'), 'DESC'], ['product_name', 'ASC']],
+      group: [
+        "Product.product_id",
+        "Category.category_id",
+        "SubCategory.subcategory_id",
+        "ProductImages.image_id",
+      ],
+      order: [
+        [literal("positiveCount"), "DESC"],
+        ["product_name", "ASC"],
+      ],
     });
 
     res.status(200).json(products);
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Lỗi khi lấy danh sách sản phẩm", error: error.message });
+    res.status(500).json({
+      message: "Lỗi khi lấy danh sách sản phẩm",
+      error: error.message,
+    });
   }
 };
 
 // Các hàm còn lại không đổi, ví dụ như getProductById, createProduct, updateProduct, deleteProduct...
-
-
 
 export const getProductById = async (req, res) => {
   const { id } = req.params;
@@ -115,15 +130,15 @@ export const getProductById = async (req, res) => {
       include: [
         {
           model: db.Category,
-          attributes: ['category_name'],
+          attributes: ["category_name"],
         },
         {
           model: db.SubCategory,
-          attributes: ['subcategory_name'],
+          attributes: ["subcategory_name"],
         },
         {
           model: db.ProductImage,
-          attributes: ['image_id', 'image_url', 'alt_text', 'is_main'],
+          attributes: ["image_id", "image_url", "alt_text", "is_main"],
         },
       ],
     });
@@ -132,9 +147,27 @@ export const getProductById = async (req, res) => {
       return res.status(404).json({ message: "Không tìm thấy sản phẩm" });
     }
 
-    res.status(200).json(product);
+    // Tính avgRating từ reviews có use_for_stats = true
+    const reviews = await db.ProductReview.findAll({
+      where: { product_id: id },
+      attributes: ["rating", "use_for_stats"],
+    });
+
+    const reviewsForStats = reviews.filter((r) => r.use_for_stats !== false);
+    const avgRating =
+      reviewsForStats.length > 0
+        ? (
+            reviewsForStats.reduce((sum, r) => sum + r.rating, 0) /
+            reviewsForStats.length
+          ).toFixed(2)
+        : 0;
+
+    const productData = product.toJSON();
+    productData.avgRating = parseFloat(avgRating);
+    productData.totalReviews = reviews.length;
+
+    res.status(200).json(productData);
   } catch (error) {
-    console.error('Lỗi khi lấy sản phẩm:', error);
     res.status(500).json({
       message: "Lỗi khi lấy sản phẩm",
       error: error.message,
@@ -151,21 +184,23 @@ export const getProductBySlug = async (req, res, next) => {
       include: [
         {
           model: db.Category,
-          attributes: ['category_name'],
+          attributes: ["category_name"],
         },
         {
           model: db.SubCategory,
-          attributes: ['subcategory_name'],
+          attributes: ["subcategory_name"],
         },
         {
           model: db.ProductImage,
-          attributes: ['image_id', 'image_url', 'alt_text', 'is_main'],
+          attributes: ["image_id", "image_url", "alt_text", "is_main"],
         },
       ],
     });
 
     if (!product) {
-      return res.status(404).json({ message: 'Không tìm thấy sản phẩm với slug này' });
+      return res
+        .status(404)
+        .json({ message: "Không tìm thấy sản phẩm với slug này" });
     }
 
     const reviews = await db.ProductReview.findAll({
@@ -173,34 +208,53 @@ export const getProductBySlug = async (req, res, next) => {
       include: [
         {
           model: db.Customer,
-          attributes: ['name', 'email', 'phone'],
+          attributes: ["name", "email", "phone"],
         },
       ],
-      order: [['created_at', 'DESC']],
+      order: [["created_at", "DESC"]],
     });
 
+    // Tính avgRating chỉ từ reviews có use_for_stats = true
+    const reviewsForStats = reviews.filter((r) => r.use_for_stats !== false);
+    const avgRating =
+      reviewsForStats.length > 0
+        ? (
+            reviewsForStats.reduce((sum, r) => sum + r.rating, 0) /
+            reviewsForStats.length
+          ).toFixed(2)
+        : 0;
+
     return res.status(200).json({
-      message: 'Lấy sản phẩm thành công',
-      product,
+      message: "Lấy sản phẩm thành công",
+      product: { ...product.toJSON(), avgRating: parseFloat(avgRating) },
       reviews,
     });
   } catch (err) {
-    console.error('Lỗi khi lấy sản phẩm theo slug:', err);
     return next({
       statusCode: 500,
-      message: 'Lỗi khi lấy sản phẩm theo slug',
+      message: "Lỗi khi lấy sản phẩm theo slug",
       error: err.message,
     });
   }
 };
 
-
 export const createProduct = async (req, res) => {
   try {
-    const { product_name, description, price, quantity, category_id, subcategory_id } = req.body;
+    const {
+      product_name,
+      description,
+      price,
+      quantity,
+      category_id,
+      subcategory_id,
+    } = req.body;
     const imageFiles = req.files;
 
-    const slug = slugify(product_name, { lower: true, locale: 'vi', strict: true });
+    const slug = slugify(product_name, {
+      lower: true,
+      locale: "vi",
+      strict: true,
+    });
 
     const newProduct = await db.Product.create({
       product_name,
@@ -224,8 +278,10 @@ export const createProduct = async (req, res) => {
 
     res.status(201).json(newProduct);
   } catch (error) {
-    console.error('Lỗi khi tạo sản phẩm:', error);
-    res.status(500).json({ message: "Lỗi khi tạo sản phẩm", error: error.message });
+    res.status(500).json({
+      message: "Lỗi khi tạo sản phẩm",
+      error: error.message,
+    });
   }
 };
 
@@ -269,7 +325,6 @@ export const createProduct = async (req, res) => {
 //   }
 // };
 
-
 export const updateProduct = async (req, res) => {
   const { id } = req.params;
   const {
@@ -288,7 +343,9 @@ export const updateProduct = async (req, res) => {
     try {
       existingImageIdsParsed = JSON.parse(existingImageIds);
     } catch (e) {
-      return res.status(400).json({ message: 'existingImageIds không đúng định dạng JSON' });
+      return res
+        .status(400)
+        .json({ message: "existingImageIds không đúng định dạng JSON" });
     }
   }
 
@@ -301,7 +358,11 @@ export const updateProduct = async (req, res) => {
     // Cập nhật thông tin sản phẩm
     if (product_name) {
       product.product_name = product_name;
-      product.slug = slugify(product_name, { lower: true, locale: 'vi', strict: true });
+      product.slug = slugify(product_name, {
+        lower: true,
+        locale: "vi",
+        strict: true,
+      });
     }
     product.description = description || product.description;
     product.price = price || product.price;
@@ -309,24 +370,30 @@ export const updateProduct = async (req, res) => {
     product.category_id = category_id || product.category_id;
     product.subcategory_id = subcategory_id || product.subcategory_id;
 
-    if (typeof is_active !== 'undefined') {
+    if (typeof is_active !== "undefined") {
       product.is_active = is_active;
     }
 
     // Lấy danh sách ảnh hiện có
-    const currentImages = await db.ProductImage.findAll({ where: { product_id: id } });
+    const currentImages = await db.ProductImage.findAll({
+      where: { product_id: id },
+    });
 
     // Xác định ảnh cần xóa (không có trong danh sách giữ lại)
-    const imagesToDelete = currentImages.filter(img => !existingImageIdsParsed.includes(img.image_id));
+    const imagesToDelete = currentImages.filter(
+      (img) => !existingImageIdsParsed.includes(img.image_id)
+    );
 
     // Xóa ảnh không giữ lại
-    await Promise.all(imagesToDelete.map(img => img.destroy()));
+    await Promise.all(imagesToDelete.map((img) => img.destroy()));
 
     // Thêm ảnh mới nếu có
     const imageFiles = req.files;
     if (imageFiles && imageFiles.length > 0) {
       // Xem có ảnh chính chưa, nếu không có thì ảnh đầu tiên mới upload sẽ là ảnh chính
-      const hasMainImage = await db.ProductImage.findOne({ where: { product_id: id, is_main: true } });
+      const hasMainImage = await db.ProductImage.findOne({
+        where: { product_id: id, is_main: true },
+      });
       const imagesToCreate = imageFiles.map((file, index) => ({
         product_id: id,
         image_url: file.path,
@@ -339,8 +406,10 @@ export const updateProduct = async (req, res) => {
     await product.save();
     res.status(200).json(product);
   } catch (error) {
-    console.error('Lỗi khi cập nhật sản phẩm:', error);
-    res.status(500).json({ message: "Lỗi khi cập nhật sản phẩm", error: error.message });
+    res.status(500).json({
+      message: "Lỗi khi cập nhật sản phẩm",
+      error: error.message,
+    });
   }
 };
 
@@ -354,7 +423,10 @@ export const deleteProduct = async (req, res) => {
     await product.destroy();
     res.status(200).json({ message: "Sản phẩm đã được xóa" });
   } catch (error) {
-    res.status(500).json({ message: "Lỗi khi xóa sản phẩm", error: error.message });
+    res.status(500).json({
+      message: "Lỗi khi xóa sản phẩm",
+      error: error.message,
+    });
   }
 };
 
@@ -364,32 +436,34 @@ export const getSimilarProducts = async (req, res) => {
   try {
     const products = await db.Product.findAll({
       where: {
-        category_id,  // Lọc theo category_id
-        subcategory_id,  // Lọc theo subcategory_id
+        category_id, // Lọc theo category_id
+        subcategory_id, // Lọc theo subcategory_id
       },
       include: [
         {
           model: db.Category,
-          attributes: ['category_name'],
+          attributes: ["category_name"],
         },
         {
           model: db.SubCategory,
-          attributes: ['subcategory_name'],
+          attributes: ["subcategory_name"],
         },
         {
           model: db.ProductImage,
-          attributes: ['image_id', 'image_url', 'alt_text', 'is_main'],
+          attributes: ["image_id", "image_url", "alt_text", "is_main"],
         },
       ],
     });
 
     if (products.length === 0) {
-      return res.status(404).json({ message: "Không tìm thấy sản phẩm tương tự" });
+      return res
+        .status(404)
+        .json({ message: "Không tìm thấy sản phẩm tương tự" });
     }
 
-    res.status(200).json(products); // Trả về các sản phẩm tương tự
+    res.status(200).json(products);
   } catch (error) {
-    console.error('Lỗi khi lấy sản phẩm tương tự:', error);
+    console.error("Lỗi khi lấy sản phẩm tương tự:", error);
     res.status(500).json({
       message: "Lỗi khi lấy sản phẩm tương tự",
       error: error.message,
@@ -407,23 +481,35 @@ export const getProductsByCategoryWithRatingSummary = async (req, res) => {
 
     const products = await db.Product.findAll({
       attributes: [
-        'product_id',
-        'product_name',
-        'description',
-        'price',
-        'quantity',
-        'sold_quantity',
-        'created_at',
-        'updated_at',
-        'slug',
-        [Sequelize.fn('COUNT', Sequelize.col('ProductReviews.review_id')), 'totalReviews'],
-        [Sequelize.fn('IFNULL', Sequelize.fn('AVG', Sequelize.col('ProductReviews.rating')), 0), 'avgRating'],
+        "product_id",
+        "product_name",
+        "description",
+        "price",
+        "quantity",
+        "sold_quantity",
+        "created_at",
+        "updated_at",
+        "slug",
+        [
+          Sequelize.fn("COUNT", Sequelize.col("ProductReviews.review_id")),
+          "totalReviews",
+        ],
         [
           Sequelize.fn(
-            'SUM',
-            Sequelize.literal(`CASE WHEN ProductReviews.sentiment = 'POS' THEN 1 ELSE 0 END`)
+            "IFNULL",
+            Sequelize.fn("AVG", Sequelize.col("ProductReviews.rating")),
+            0
           ),
-          'positiveCount',
+          "avgRating",
+        ],
+        [
+          Sequelize.fn(
+            "SUM",
+            Sequelize.literal(
+              `CASE WHEN ProductReviews.sentiment = 'POS' THEN 1 ELSE 0 END`
+            )
+          ),
+          "positiveCount",
         ],
       ],
       include: [
@@ -431,29 +517,43 @@ export const getProductsByCategoryWithRatingSummary = async (req, res) => {
           model: db.ProductReview,
           attributes: [],
           required: false,
+          where: {
+            use_for_stats: true, // Chỉ tính reviews với use_for_stats = true (loại meta-reviews)
+          },
         },
         {
           model: db.Category,
-          attributes: ['category_name'],
-          where: { category_name },  // Lọc theo category_name ở đây
+          attributes: ["category_name"],
+          where: { category_name }, // Lọc theo category_name ở đây
         },
         {
           model: db.SubCategory,
-          attributes: ['subcategory_name'],
+          attributes: ["subcategory_name"],
         },
         {
           model: db.ProductImage,
-          attributes: ['image_id', 'image_url', 'alt_text', 'is_main'],
+          attributes: ["image_id", "image_url", "alt_text", "is_main"],
         },
       ],
-      group: ['Product.product_id', 'Category.category_id', 'SubCategory.subcategory_id', 'ProductImages.image_id'],
-      order: [[Sequelize.literal('positiveCount'), 'DESC'], ['product_name', 'ASC']],
+      group: [
+        "Product.product_id",
+        "Category.category_id",
+        "SubCategory.subcategory_id",
+        "ProductImages.image_id",
+      ],
+      order: [
+        [Sequelize.literal("positiveCount"), "DESC"],
+        ["product_name", "ASC"],
+      ],
     });
 
     res.status(200).json(products);
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: "Lỗi khi lấy danh sách sản phẩm theo category", error: error.message });
+    res.status(500).json({
+      message: "Lỗi khi lấy danh sách sản phẩm theo category",
+      error: error.message,
+    });
   }
 };
 
@@ -463,7 +563,7 @@ export const getCategoryesWithSubCategory = async (req, res) => {
       include: [
         {
           model: db.SubCategory,
-          attributes: ['subcategory_id', 'subcategory_name'],
+          attributes: ["subcategory_id", "subcategory_name"],
         },
       ],
     });
@@ -476,17 +576,17 @@ export const filterProducts = async (req, res) => {
   try {
     const {
       keyword,
-      category_id,        // có thể chuỗi "1,2,3"
-      subcategory_id,     // có thể chuỗi "11,22"
-      is_active,          // true/false/null
-      dateType,           // created_at hoặc updated_at
-      startDate,          // ISO string
-      endDate,            // ISO string
+      category_id, // có thể chuỗi "1,2,3"
+      subcategory_id, // có thể chuỗi "11,22"
+      is_active, // true/false/null
+      dateType, // created_at hoặc updated_at
+      startDate, // ISO string
+      endDate, // ISO string
     } = req.query;
 
     const whereClause = {};
 
-    if (keyword && keyword.trim() !== '') {
+    if (keyword && keyword.trim() !== "") {
       whereClause[Op.or] = [
         { product_name: { [Op.like]: `%${keyword}%` } },
         { description: { [Op.like]: `%${keyword}%` } },
@@ -495,21 +595,25 @@ export const filterProducts = async (req, res) => {
 
     if (category_id) {
       // Nếu nhiều id truyền dạng chuỗi '1,2,3' thì convert thành array
-      const catIds = category_id.split(',').map((id) => Number(id.trim()));
+      const catIds = category_id.split(",").map((id) => Number(id.trim()));
       whereClause.category_id = { [Op.in]: catIds };
     }
 
     if (subcategory_id) {
-      const subIds = subcategory_id.split(',').map((id) => Number(id.trim()));
+      const subIds = subcategory_id.split(",").map((id) => Number(id.trim()));
       whereClause.subcategory_id = { [Op.in]: subIds };
     }
 
-    if (typeof is_active !== 'undefined' && is_active !== null && is_active !== '') {
+    if (
+      typeof is_active !== "undefined" &&
+      is_active !== null &&
+      is_active !== ""
+    ) {
       // is_active truyền string "true" hoặc "false"
-      whereClause.is_active = is_active === 'true';
+      whereClause.is_active = is_active === "true";
     }
 
-    if (dateType && (dateType === 'created_at' || dateType === 'updated_at')) {
+    if (dateType && (dateType === "created_at" || dateType === "updated_at")) {
       if (startDate && endDate) {
         whereClause[dateType] = {
           [Op.between]: [new Date(startDate), new Date(endDate)],
@@ -530,23 +634,26 @@ export const filterProducts = async (req, res) => {
       include: [
         {
           model: db.Category,
-          attributes: ['category_name'],
+          attributes: ["category_name"],
         },
         {
           model: db.SubCategory,
-          attributes: ['subcategory_name'],
+          attributes: ["subcategory_name"],
         },
         {
           model: db.ProductImage,
-          attributes: ['image_id', 'image_url', 'alt_text', 'is_main'],
+          attributes: ["image_id", "image_url", "alt_text", "is_main"],
         },
       ],
     });
 
     res.status(200).json(products);
   } catch (error) {
-    console.error("Lỗi khi lọc sản phẩm:", error);
-    res.status(500).json({ message: "Lỗi khi lọc sản phẩm", error: error.message });
+    console.error(error);
+    res.status(500).json({
+      message: "Lỗi khi lọc sản phẩm",
+      error: error.message,
+    });
   }
 };
 
@@ -555,23 +662,26 @@ export const getTopRatedProductsBySentiment = async (req, res, next) => {
     // 1. Lấy danh sách product_id, avg_rating, pos_review_count theo sentiment POS, limit 5
     const topReviews = await db.ProductReview.findAll({
       attributes: [
-        'product_id',
-        [Sequelize.fn('AVG', Sequelize.col('rating')), 'avg_rating'],
-        [Sequelize.fn('COUNT', Sequelize.col('review_id')), 'pos_review_count'],
+        "product_id",
+        [Sequelize.fn("AVG", Sequelize.col("rating")), "avg_rating"],
+        [Sequelize.fn("COUNT", Sequelize.col("review_id")), "pos_review_count"],
       ],
-      where: { sentiment: 'POS' },
-      group: ['product_id'],
+      where: { sentiment: "POS" },
+      group: ["product_id"],
       order: [
-        [Sequelize.literal('pos_review_count'), 'DESC'],
-        [Sequelize.literal('avg_rating'), 'DESC'],
+        [Sequelize.literal("pos_review_count"), "DESC"],
+        [Sequelize.literal("avg_rating"), "DESC"],
       ],
       limit: 5,
       raw: true,
     });
 
-    const productIds = topReviews.map(r => r.product_id);
+    const productIds = topReviews.map((r) => r.product_id);
     if (productIds.length === 0) {
-      return res.status(200).json({ message: 'Không có sản phẩm được đánh giá tích cực', products: [] });
+      return res.status(200).json({
+        message: "Không có sản phẩm được đánh giá tích cực",
+        products: [],
+      });
     }
 
     // 2. Lấy chi tiết sản phẩm với product_id trên, kèm ảnh chính
@@ -583,8 +693,8 @@ export const getTopRatedProductsBySentiment = async (req, res, next) => {
       include: [
         {
           model: db.ProductImage,
-          as: 'ProductImages',
-          attributes: ['image_id', 'image_url', 'alt_text'],
+          as: "ProductImages",
+          attributes: ["image_id", "image_url", "alt_text"],
           where: { is_main: true },
           required: false,
         },
@@ -592,8 +702,8 @@ export const getTopRatedProductsBySentiment = async (req, res, next) => {
     });
 
     // 3. Map avg_rating và pos_review_count vào từng product
-    const productsWithStats = products.map(product => {
-      const stats = topReviews.find(r => r.product_id === product.product_id);
+    const productsWithStats = products.map((product) => {
+      const stats = topReviews.find((r) => r.product_id === product.product_id);
       return {
         ...product.toJSON(),
         avg_rating: stats ? parseFloat(stats.avg_rating).toFixed(2) : null,
@@ -602,17 +712,15 @@ export const getTopRatedProductsBySentiment = async (req, res, next) => {
     });
 
     return res.status(200).json({
-      message: 'Lấy danh sách 5 sản phẩm được đánh giá tích cực nhiều nhất thành công',
+      message:
+        "Lấy danh sách 5 sản phẩm được đánh giá tích cực nhiều nhất thành công",
       products: productsWithStats,
     });
   } catch (error) {
-    console.error('Lỗi lấy sản phẩm theo sentiment POS:', error);
     return next({
       statusCode: 500,
-      message: 'Lỗi khi lấy sản phẩm đánh giá tốt theo sentiment',
+      message: "Lỗi khi lấy sản phẩm đánh giá tốt theo sentiment",
       error: error.message,
     });
   }
 };
-
-

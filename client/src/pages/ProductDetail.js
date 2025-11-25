@@ -8,6 +8,8 @@ import { useDispatch, useSelector } from 'react-redux';
 import ReviewModal from '../components/ReviewMoal';
 import { ToastContainer, toast } from 'react-toastify';
 import RatingSummary from '../components/RatingSummary';
+import ReviewSummaryDetailed from '../components/ReviewSummaryDetailed';
+import ReviewSummaryAdmin from '../components/ReviewSummaryAdmin';
 import ReviewTabs from '../components/ReviewTabs';
 import AddToCartModal from '../components/AddToCartModal';
 
@@ -75,8 +77,16 @@ const ProductDetail = () => {
   const getRatingSummary = async () => {
     try {
       if (!product) return;
-      const res = await productApi.getProductReviewSummary(product.product_id);
-      setReviewSummary(res?.data);
+
+      // Nếu user là admin, gọi endpoint admin (có sentiment + suspicious)
+      if (user?.role === 'admin' || user?.role === 'staff') {
+        const res = await productApi.getProductReviewSummaryAdmin(product.product_id, user?.token);
+        setReviewSummary(res?.data);
+      } else {
+        // Khách hàng thường gọi endpoint public (chỉ rating)
+        const res = await productApi.getProductReviewSummaryPublic(product.product_id);
+        setReviewSummary(res?.data);
+      }
     } catch (error) {
       console.error(error);
     }
@@ -312,14 +322,15 @@ const ProductDetail = () => {
               Viết đánh giá của bạn
             </button>
           )}
-          {reviewSummary && (
-            <RatingSummary
-              avgRating={reviewSummary.avgRating}
-              totalReviews={reviewSummary.totalReviews}
-              ratingDistribution={reviewSummary.ratingDistribution}
-              positiveCount={reviewSummary.sentimentCount?.POS}
-            />
-          )}
+
+          {/* Hiển thị summary dựa trên role */}
+          {reviewSummary &&
+            (user?.role === 'admin' || user?.role === 'staff' ? (
+              <ReviewSummaryAdmin summary={{ data: reviewSummary }} />
+            ) : (
+              <ReviewSummaryDetailed summary={{ data: reviewSummary }} />
+            ))}
+
           {reviews && reviews.length > 0 && <ReviewTabs reviews={reviews} />}
         </section>
 
