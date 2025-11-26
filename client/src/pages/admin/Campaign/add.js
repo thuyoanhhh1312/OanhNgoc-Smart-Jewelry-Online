@@ -58,7 +58,7 @@ const AddCampaign = () => {
       await Swal.fire({
         icon: 'success',
         title: 'Thành công',
-        text: 'Thêm chiến dịch thành công!',
+        text: 'Thêm chương trình thành công!',
         confirmButtonText: 'OK',
       });
       navigate('/admin/campaigns');
@@ -66,7 +66,7 @@ const AddCampaign = () => {
       await Swal.fire({
         icon: 'error',
         title: 'Lỗi',
-        text: error.response?.data?.message || 'Không thể thêm chiến dịch. Vui lòng thử lại!',
+        text: error.response?.data?.message || 'Không thể thêm chương trình. Vui lòng thử lại!',
         confirmButtonText: 'OK',
       });
     } finally {
@@ -76,11 +76,11 @@ const AddCampaign = () => {
 
   return (
     <div className="bg-white p-6 rounded-lg shadow-md max-w-2xl mx-auto">
-      <h2 className="text-2xl font-semibold mb-6">➕ Thêm Chiến dịch Khuyến mãi Mới</h2>
+      <h2 className="text-2xl font-semibold mb-6">Thêm Chương trình Khuyến mãi Mới</h2>
       <form onSubmit={handleSubmit} className="space-y-5">
         <div>
           <Label htmlFor="name">
-            Tên Chiến dịch <span className="text-red-600">*</span>
+            Tên Chương trình <span className="text-red-600">*</span>
           </Label>
           <Input
             id="name"
@@ -100,7 +100,7 @@ const AddCampaign = () => {
             name="description"
             value={formData.description}
             onChange={handleChange}
-            placeholder="Mô tả chi tiết về chiến dịch..."
+            placeholder="Mô tả chi tiết về chương trình..."
             className="w-full border border-gray-300 rounded px-3 py-2 min-h-[100px]"
           />
         </div>
@@ -155,7 +155,7 @@ const AddCampaign = () => {
             disabled={loading}
             className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 rounded"
           >
-            {loading ? 'Đang xử lý...' : '✅ Thêm Chiến dịch'}
+            {loading ? 'Đang xử lý...' : ' Thêm Chương Trình'}
           </Button>
           <Button
             type="button"

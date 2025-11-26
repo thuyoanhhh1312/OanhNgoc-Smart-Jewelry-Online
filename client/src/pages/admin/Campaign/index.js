@@ -33,7 +33,7 @@ const CampaignList = () => {
       setCampaigns(response.data || []);
     } catch (error) {
       console.error('Error fetching campaigns:', error);
-      Swal.fire('Lỗi', 'Không thể tải danh sách chiến dịch', 'error');
+      Swal.fire('Lỗi', 'Không thể tải danh sách chương trình', 'error');
     } finally {
       setLoading(false);
     }
@@ -53,9 +53,9 @@ const CampaignList = () => {
       try {
         await campaignApi.deleteCampaign(id, user?.token);
         setCampaigns(campaigns.filter((campaign) => campaign.campaign_id !== id));
-        Swal.fire('Đã xóa!', 'Chiến dịch đã được xóa thành công.', 'success');
+        Swal.fire('Đã xóa!', 'Chương trình đã được xóa thành công.', 'success');
       } catch (error) {
-        Swal.fire('Lỗi', 'Không thể xóa chiến dịch', 'error');
+        Swal.fire('Lỗi', 'Không thể xóa chương trình', 'error');
       }
     }
   };
@@ -78,10 +78,10 @@ const CampaignList = () => {
   return (
     <div className="bg-white p-6 rounded-lg shadow-md">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-semibold">📦 Quản lý Chiến dịch Khuyến mãi</h1>
+        <h1 className="text-3xl font-semibold">Quản lý Chương Trình Khuyến mãi</h1>
         <Link to="/admin/campaigns/add">
           <button className="bg-blue-600 hover:bg-blue-700 transition text-white px-5 py-2 rounded-lg shadow">
-            ➕ Thêm Chiến dịch
+            Thêm Chương Trình
           </button>
         </Link>
       </div>
@@ -90,7 +90,7 @@ const CampaignList = () => {
       <div className="mb-4 flex gap-3">
         <input
           type="text"
-          placeholder="🔍 Tìm kiếm theo tên..."
+          placeholder="Tìm kiếm theo tên..."
           className="border border-gray-300 rounded px-4 py-2 w-64"
           value={filters.search}
           onChange={(e) => setFilters({ ...filters, search: e.target.value })}
@@ -119,11 +119,11 @@ const CampaignList = () => {
         loading={loading}
         stripedRows
         responsiveLayout="scroll"
-        emptyMessage="Không có chiến dịch nào"
+        emptyMessage="Không có chương trình nào"
       >
         <Column
           field="name"
-          header="Tên Chiến dịch"
+          header="Tên Chương trình"
           sortable
           headerClassName="bg-gray-200"
           style={{ minWidth: '200px' }}
@@ -164,7 +164,7 @@ const CampaignList = () => {
           headerClassName="bg-gray-200"
         />
         <Column
-          header="Số Khuyến mãi"
+          header="Số Lượng Khuyến mãi"
           body={promotionCountBodyTemplate}
           style={{ width: '140px', textAlign: 'center' }}
           headerClassName="bg-gray-200"
@@ -176,19 +176,14 @@ const CampaignList = () => {
             <div className="flex gap-2 justify-center">
               <Link to={`/admin/campaigns/edit/${rowData.campaign_id}`}>
                 <button className="bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-1 rounded">
-                  ✏️ Sửa
-                </button>
-              </Link>
-              <Link to={`/admin/campaigns/${rowData.campaign_id}/promotions`}>
-                <button className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded">
-                  🎁 KM
+                  Sửa
                 </button>
               </Link>
               <button
                 onClick={() => handleDelete(rowData.campaign_id)}
                 className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded"
               >
-                🗑️ Xóa
+                Xóa
               </button>
             </div>
           )}

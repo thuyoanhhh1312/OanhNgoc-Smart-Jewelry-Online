@@ -84,7 +84,7 @@ const AddPromotion = () => {
 
   return (
     <div className="bg-white p-6 rounded-lg shadow-md max-w-lg mx-auto">
-      <h2 className="text-2xl font-semibold mb-6">🎁 Thêm Khuyến mãi Mới</h2>
+      <h2 className="text-2xl font-semibold mb-6">Thêm Khuyến mãi Mới</h2>
       <form onSubmit={handleSubmit} className="space-y-5">
         <div>
           <Label htmlFor="promotion_code">

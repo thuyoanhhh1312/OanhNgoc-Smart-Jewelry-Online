@@ -1,6 +1,7 @@
 import { DataTable } from 'primereact/datatable';
 import { Column } from 'primereact/column';
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import promotionLogApi from '../../../api/promotionLogApi';
 import campaignApi from '../../../api/campaignApi';
 import { useSelector } from 'react-redux';
@@ -9,6 +10,7 @@ import Swal from 'sweetalert2';
 import { Badge } from 'primereact/badge';
 
 const PromotionLogList = () => {
+  const navigate = useNavigate();
   const { user } = useSelector((state) => ({ ...state }));
   const [logs, setLogs] = useState([]);
   const [campaigns, setCampaigns] = useState([]);
@@ -55,61 +57,8 @@ const PromotionLogList = () => {
     }
   };
 
-  const handleSendManually = async () => {
-    const { value: formValues } = await Swal.fire({
-      title: '📧 Gửi Email Khuyến mãi Thủ công',
-      html:
-        '<select id="swal-campaign" class="swal2-input">' +
-        '<option value="">Chọn Campaign</option>' +
-        campaigns.map((c) => `<option value="${c.campaign_id}">${c.name}</option>`).join('') +
-        '</select>' +
-        '<label class="swal2-checkbox">' +
-        '<input type="checkbox" id="swal-force" />' +
-        '<span>Gửi lại cho người đã nhận</span>' +
-        '</label>',
-      focusConfirm: false,
-      showCancelButton: true,
-      confirmButtonText: 'Gửi',
-      cancelButtonText: 'Hủy',
-      preConfirm: () => {
-        return {
-          campaign_id: document.getElementById('swal-campaign').value,
-          force_resend: document.getElementById('swal-force').checked,
-        };
-      },
-    });
-
-    if (formValues && formValues.campaign_id) {
-      setSendLoading(true);
-      try {
-        const response = await promotionLogApi.sendPromotionManually(
-          {
-            campaign_id: parseInt(formValues.campaign_id),
-            force_resend: formValues.force_resend,
-          },
-          user?.token,
-        );
-
-        await Swal.fire({
-          icon: 'success',
-          title: 'Thành công',
-          html: `
-            <div class="text-left">
-              <p>✅ Đã gửi: <strong>${response.summary.sent}</strong> email</p>
-              <p>⏭️ Bỏ qua: <strong>${response.summary.skipped}</strong> email</p>
-              <p>❌ Thất bại: <strong>${response.summary.failed}</strong> email</p>
-            </div>
-          `,
-          confirmButtonText: 'OK',
-        });
-
-        fetchLogs();
-      } catch (error) {
-        Swal.fire('Lỗi', error.response?.data?.message || 'Không thể gửi email', 'error');
-      } finally {
-        setSendLoading(false);
-      }
-    }
+  const handleSendManually = () => {
+    navigate('/admin/promotion-logs/send');
   };
 
   const formatDate = (dateStr) => (dateStr ? dayjs(dateStr).format('DD/MM/YYYY HH:mm') : '');
@@ -141,13 +90,12 @@ const PromotionLogList = () => {
   return (
     <div className="bg-white p-6 rounded-lg shadow-md">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-semibold">📊 Lịch sử Gửi Email Khuyến mãi</h1>
+        <h1 className="text-3xl font-semibold">Lịch sử Gửi Email Khuyến mãi</h1>
         <button
           onClick={handleSendManually}
-          disabled={sendLoading}
-          className="bg-green-600 hover:bg-green-700 transition text-white px-5 py-2 rounded-lg shadow disabled:opacity-50"
+          className="bg-green-600 hover:bg-green-700 transition text-white px-5 py-2 rounded-lg shadow"
         >
-          {sendLoading ? 'Đang gửi...' : '📧 Gửi Email Thủ công'}
+          ✉️ Gửi Email Thủ công
         </button>
       </div>
 
@@ -198,7 +146,7 @@ const PromotionLogList = () => {
         onClick={fetchLogs}
         className="mb-4 bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded"
       >
-        🔍 Áp dụng Bộ lọc
+        Áp dụng Bộ lọc
       </button>
 
       <DataTable
@@ -278,7 +226,7 @@ const PromotionLogList = () => {
 
       <div className="mt-4 text-gray-600">
         <p>
-          📊 Tổng số log: <strong>{logs.length}</strong>
+          Tổng số log: <strong>{logs.length}</strong>
         </p>
       </div>
     </div>
