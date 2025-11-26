@@ -43,7 +43,7 @@ const EditCampaign = () => {
           is_active: campaign.is_active,
         });
       } catch (error) {
-        Swal.fire('Lỗi', 'Không thể tải thông tin chiến dịch', 'error');
+        Swal.fire('Lỗi', 'Không thể tải thông tin chương trình', 'error');
         navigate('/admin/campaigns');
       } finally {
         setFetchLoading(false);
@@ -91,7 +91,7 @@ const EditCampaign = () => {
       await Swal.fire({
         icon: 'success',
         title: 'Thành công',
-        text: 'Cập nhật chiến dịch thành công!',
+        text: 'Cập nhật chương trình thành công!',
         confirmButtonText: 'OK',
       });
       navigate('/admin/campaigns');
@@ -99,7 +99,7 @@ const EditCampaign = () => {
       await Swal.fire({
         icon: 'error',
         title: 'Lỗi',
-        text: error.response?.data?.message || 'Không thể cập nhật chiến dịch. Vui lòng thử lại!',
+        text: error.response?.data?.message || 'Không thể cập nhật chương trình. Vui lòng thử lại!',
         confirmButtonText: 'OK',
       });
     } finally {
@@ -117,11 +117,11 @@ const EditCampaign = () => {
 
   return (
     <div className="bg-white p-6 rounded-lg shadow-md max-w-2xl mx-auto">
-      <h2 className="text-2xl font-semibold mb-6">✏️ Chỉnh sửa Chiến dịch Khuyến mãi</h2>
+      <h2 className="text-2xl font-semibold mb-6">Chỉnh sửa Chương Trình Khuyến mãi</h2>
       <form onSubmit={handleSubmit} className="space-y-5">
         <div>
           <Label htmlFor="name">
-            Tên Chiến dịch <span className="text-red-600">*</span>
+            Tên Chương Trình <span className="text-red-600">*</span>
           </Label>
           <Input
             id="name"
@@ -141,7 +141,7 @@ const EditCampaign = () => {
             name="description"
             value={formData.description}
             onChange={handleChange}
-            placeholder="Mô tả chi tiết về chiến dịch..."
+            placeholder="Mô tả chi tiết về chương trình..."
             className="w-full border border-gray-300 rounded px-3 py-2 min-h-[100px]"
           />
         </div>
@@ -196,7 +196,7 @@ const EditCampaign = () => {
             disabled={loading}
             className="flex-1 bg-green-600 hover:bg-green-700 text-white py-2 rounded"
           >
-            {loading ? 'Đang xử lý...' : '💾 Lưu thay đổi'}
+            {loading ? 'Đang xử lý...' : 'Lưu thay đổi'}
           </Button>
           <Button
             type="button"

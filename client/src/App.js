@@ -33,6 +33,12 @@ import Promotion from './pages/admin/Promotion/index';
 import AddPromotion from './pages/admin/Promotion/add';
 import EditPromotion from './pages/admin/Promotion/edit';
 
+import Campaign from './pages/admin/Campaign/index';
+import AddCampaign from './pages/admin/Campaign/add';
+import EditCampaign from './pages/admin/Campaign/edit';
+
+import PromotionLog from './pages/admin/PromotionLog/index';
+
 import Order from './pages/admin/Order/index';
 import EditOrder from './pages/admin/Order/edit';
 
@@ -232,6 +238,41 @@ function App() {
             element={
               <AdminOrStaffRoute>
                 <EditPromotion />
+              </AdminOrStaffRoute>
+            }
+          />
+
+          {/* Campaigns */}
+          <Route
+            path="/admin/campaigns"
+            element={
+              <AdminOrStaffRoute>
+                <Campaign />
+              </AdminOrStaffRoute>
+            }
+          />
+          <Route
+            path="/admin/campaigns/add"
+            element={
+              <AdminOrStaffRoute>
+                <AddCampaign />
+              </AdminOrStaffRoute>
+            }
+          />
+          <Route
+            path="/admin/campaigns/edit/:id"
+            element={
+              <AdminOrStaffRoute>
+                <EditCampaign />
+              </AdminOrStaffRoute>
+            }
+          />
+          {/* Promotion Logs */}
+          <Route
+            path="/admin/promotion-logs"
+            element={
+              <AdminOrStaffRoute>
+                <PromotionLog />
               </AdminOrStaffRoute>
             }
           />

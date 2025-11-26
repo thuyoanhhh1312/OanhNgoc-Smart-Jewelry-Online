@@ -34,8 +34,18 @@ const allNavItems = [
   },
   {
     icon: <LocalOfferIcon fontSize="medium" />,
+    name: 'Campaign',
+    path: '/admin/campaigns',
+  },
+  {
+    icon: <LocalOfferIcon fontSize="medium" />,
     name: 'Promotion',
     path: '/admin/promotions',
+  },
+  {
+    icon: <LocalOfferIcon fontSize="medium" />,
+    name: 'Promotion Logs',
+    path: '/admin/promotion-logs',
   },
   {
     icon: <NewspaperIcon fontSize="medium" />,
