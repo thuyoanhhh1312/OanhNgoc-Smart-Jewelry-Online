@@ -134,6 +134,12 @@ router.delete(
 
 // Customer routes
 router.get("/customers", customerController.getAllCustomers);
+router.get(
+  "/customers/emails",
+  authenticateToken,
+  isAdminOrStaff,
+  customerController.getCustomerEmails
+);
 router.get("/customers/:id", customerController.getCustomerById);
 router.delete(
   "/customers/:id",

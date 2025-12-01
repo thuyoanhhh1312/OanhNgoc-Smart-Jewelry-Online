@@ -5,7 +5,7 @@ import {
   hasPromotionLogSent,
   createPromotionLog,
 } from "../utils/promotionHelper.js";
-import { sendEmail, formatDate } from "../utils/emailHelper.js";
+import { sendEmail } from "../utils/emailHelper.js";
 import {
   EMAIL_TEMPLATES,
   SEGMENT_TARGETS,
@@ -95,7 +95,7 @@ const birthdayEmailJob = () => {
             customer.name,
             promotion.promotion_code,
             promotion.discount,
-            formatDate(promotion.end_date)
+            null
           );
 
           const success = await sendEmail(

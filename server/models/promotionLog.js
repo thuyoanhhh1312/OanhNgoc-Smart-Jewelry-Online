@@ -8,6 +8,7 @@ const PromotionLog = sequelize.define(
       type: DataTypes.INTEGER,
       primaryKey: true,
       autoIncrement: true,
+      field: "id", // DB column is `id`
     },
 
     customer_id: {

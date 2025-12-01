@@ -21,10 +21,6 @@ export const getActiveCampaigns = async () => {
         {
           model: Promotion,
           as: "promotions",
-          where: {
-            start_date: { [Op.lte]: now },
-            end_date: { [Op.gte]: now },
-          },
           required: false,
         },
       ],
@@ -44,13 +40,9 @@ export const getActiveCampaigns = async () => {
  */
 export const getPromotionsBySegment = async (segment) => {
   try {
-    const now = new Date();
-
     const promotions = await Promotion.findAll({
       where: {
         segment_target: segment,
-        start_date: { [Op.lte]: now },
-        end_date: { [Op.gte]: now },
       },
     });
 

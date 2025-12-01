@@ -38,6 +38,7 @@ import AddCampaign from './pages/admin/Campaign/add';
 import EditCampaign from './pages/admin/Campaign/edit';
 
 import PromotionLog from './pages/admin/PromotionLog/index';
+import SendPromotion from './pages/admin/PromotionLog/Send';
 
 import Order from './pages/admin/Order/index';
 import EditOrder from './pages/admin/Order/edit';
@@ -273,6 +274,14 @@ function App() {
             element={
               <AdminOrStaffRoute>
                 <PromotionLog />
+              </AdminOrStaffRoute>
+            }
+          />
+          <Route
+            path="/admin/promotion-logs/send"
+            element={
+              <AdminOrStaffRoute>
+                <SendPromotion />
               </AdminOrStaffRoute>
             }
           />
