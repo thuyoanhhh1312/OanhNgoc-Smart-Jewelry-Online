@@ -12,6 +12,43 @@ export const getCustomerById = async (req, res) => {
   }
 };
 
+// Lấy danh sách email khách hàng (dùng cho chọn gửi email thủ công)
+export const getCustomerEmails = async (req, res) => {
+  try {
+    const { keyword } = req.query;
+    const where = {};
+
+    if (keyword && keyword.trim() !== '') {
+      where[Op.or] = [
+        { name: { [Op.like]: `%${keyword}%` } },
+        { email: { [Op.like]: `%${keyword}%` } },
+      ];
+    }
+
+    const customers = await db.Customer.findAll({
+      attributes: ['customer_id', 'name', 'email', 'segment_type'],
+      where,
+      include: [
+        {
+          model: db.User,
+          attributes: [],
+          where: { role_id: 2 }, // chỉ lấy user role customer
+          required: true,
+        },
+      ],
+      order: [['name', 'ASC']],
+      limit: 500,
+    });
+
+    res.status(200).json(customers);
+  } catch (err) {
+    res.status(500).json({
+      message: 'Lỗi khi lấy danh sách email khách hàng',
+      error: err.message,
+    });
+  }
+};
+
 // Xóa khách hàng
 export const deleteCustomer = async (req, res) => {
   const { id } = req.params;

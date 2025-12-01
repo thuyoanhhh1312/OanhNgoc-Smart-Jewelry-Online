@@ -7,6 +7,7 @@ const Button = ({
   startIcon,
   endIcon,
   onClick,
+  type = "button",
   className = "",
   disabled = false,
 }) => {
@@ -26,6 +27,7 @@ const Button = ({
 
   return (
     <button
+      type={type}
       className={`inline-flex items-center justify-center gap-2 rounded-lg transition ${className} ${
         sizeClasses[size]
       } ${variantClasses[variant]} ${

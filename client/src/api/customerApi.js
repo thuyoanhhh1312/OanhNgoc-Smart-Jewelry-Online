@@ -1,8 +1,7 @@
 import axios from "axios";
 import axiosInstance from "./axiosInstance";
 
-
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3001/api";
 
 export const getCustomerById = async (id) => {
   try {
@@ -38,6 +37,20 @@ export const getCustomers = async (keyword = "") => {
   }
 };
 
+// Lấy danh sách email khách hàng (id, name, email, segment_type)
+export const getCustomerEmails = async (keyword = "", accessToken) => {
+  try {
+    const response = await axiosInstance.get(`${API_URL}/customers/emails`, {
+      params: { keyword },
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching customer emails:", error);
+    throw error;
+  }
+};
+
 export const updateCustomerProfile = async (data, accessToken) => {
   try {
     const response = await axiosInstance.put(`${API_URL}/customers/profile`, data, {
@@ -59,4 +72,3 @@ export const getCustomerByUserId = async (userId) => {
     throw error;
   }
 };
-

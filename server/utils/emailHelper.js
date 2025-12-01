@@ -1,21 +1,40 @@
 import nodemailer from "nodemailer";
+import sgMail from "@sendgrid/mail";
 import dotenv from "dotenv";
 
 dotenv.config();
 
-// Cấu hình SMTP transporter
+const {
+  MAIL_USER,
+  MAIL_PASS,
+  SENDGRID_API_KEY,
+  SENDGRID_FROM,
+} = process.env;
+
+const hasGmailCredentials = MAIL_USER && MAIL_PASS;
+const hasSendGridCredentials = SENDGRID_API_KEY && SENDGRID_FROM;
+
+if (SENDGRID_API_KEY) {
+  sgMail.setApiKey(SENDGRID_API_KEY);
+}
+
+// Cấu hình SMTP transporter (Gmail)
 export const createMailTransporter = () => {
+  if (!hasGmailCredentials) {
+    throw new Error("MAIL_USER/MAIL_PASS are not configured");
+  }
+
   return nodemailer.createTransport({
     service: "gmail",
     auth: {
-      user: process.env.MAIL_USER,
-      pass: process.env.MAIL_PASS,
+      user: MAIL_USER,
+      pass: MAIL_PASS,
     },
   });
 };
 
 /**
- * Gửi email
+ * Gửi email (ưu tiên SendGrid nếu có cấu hình, fallback Gmail)
  * @param {string} to - Email người nhận
  * @param {string} subject - Tiêu đề email
  * @param {string} htmlContent - Nội dung HTML
@@ -23,18 +42,37 @@ export const createMailTransporter = () => {
  */
 export const sendEmail = async (to, subject, htmlContent) => {
   try {
-    const transporter = createMailTransporter();
+    // SendGrid first (có sẵn API key trong .env)
+    if (hasSendGridCredentials) {
+      await sgMail.send({
+        to,
+        from: `OanhNgoc Jewelry <${SENDGRID_FROM}>`,
+        subject,
+        html: htmlContent,
+      });
+      console.log(`✅ Email sent via SendGrid to ${to}`);
+      return true;
+    }
 
-    const mailOptions = {
-      from: `"OanhNgoc Jewelry" <${process.env.MAIL_USER}>`,
-      to,
-      subject,
-      html: htmlContent,
-    };
+    // Gmail fallback
+    if (hasGmailCredentials) {
+      const transporter = createMailTransporter();
+      const mailOptions = {
+        from: `"OanhNgoc Jewelry" <${MAIL_USER}>`,
+        to,
+        subject,
+        html: htmlContent,
+      };
 
-    await transporter.sendMail(mailOptions);
-    console.log(`✅ Email sent successfully to ${to}`);
-    return true;
+      await transporter.sendMail(mailOptions);
+      console.log(`✅ Email sent successfully to ${to}`);
+      return true;
+    }
+
+    console.error(
+      "❌ Failed to send email: No email credentials configured (SENDGRID_API_KEY/SENDGRID_FROM or MAIL_USER/MAIL_PASS)"
+    );
+    return false;
   } catch (error) {
     console.error(`❌ Failed to send email to ${to}:`, error.message);
     return false;

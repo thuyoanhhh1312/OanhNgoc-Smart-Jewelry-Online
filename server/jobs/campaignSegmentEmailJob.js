@@ -112,14 +112,18 @@ const campaignSegmentEmailJob = () => {
             }
 
             // Gửi email
-            const htmlContent = EMAIL_TEMPLATES.SEGMENT_CAMPAIGN.getBody(
-              customer.name,
-              campaign.name,
-              promotion.promotion_code,
-              promotion.discount,
-              formatDate(promotion.end_date),
-              customer.segment_type
-            );
+          const promotionEndDate = campaign?.end_date
+            ? formatDate(campaign.end_date)
+            : null;
+
+          const htmlContent = EMAIL_TEMPLATES.SEGMENT_CAMPAIGN.getBody(
+            customer.name,
+            campaign.name,
+            promotion.promotion_code,
+            promotion.discount,
+            promotionEndDate,
+            customer.segment_type
+          );
 
             const success = await sendEmail(
               customer.email,

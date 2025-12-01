@@ -6,7 +6,7 @@ import {
   hasPromotionLogSent,
   createPromotionLog,
 } from "../utils/promotionHelper.js";
-import { sendEmail, formatDate } from "../utils/emailHelper.js";
+import { sendEmail } from "../utils/emailHelper.js";
 import { EMAIL_TEMPLATES } from "../config/constants.js";
 
 const { PromotionLog, Customer, Promotion, PromotionCampaign } = db;
@@ -212,7 +212,7 @@ export const sendPromotionManually = async (req, res) => {
           promotion.promotion_code,
           promotion.promotion_code,
           promotion.discount,
-          formatDate(promotion.end_date),
+          null,
           customer.segment_type
         );
 
