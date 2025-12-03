@@ -202,14 +202,8 @@ const SendPromotion = () => {
 
   return (
     <div className="bg-white p-6 rounded-lg shadow-md max-w-3xl mx-auto">
-      <div className="flex items-center justify-between mb-4">
+      <div className="mb-4">
         <h2 className="text-2xl font-semibold">Gửi Email Khuyến mãi Thủ công</h2>
-        <button
-          onClick={() => navigate(-1)}
-          className="text-blue-600 hover:underline text-sm"
-        >
-          ← Quay lại
-        </button>
       </div>
 
       <p className="text-gray-600 mb-6">
