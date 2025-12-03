@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import MainLayout from '../layout/MainLayout';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import productApi from '../api/productApi';
@@ -14,6 +14,8 @@ import ReviewTabs from '../components/ReviewTabs';
 import AddToCartModal from '../components/AddToCartModal';
 import LightboxViewer from '../components/LightboxViewer';
 import { AiOutlineShoppingCart, AiOutlinePhone } from 'react-icons/ai';
+import ThreeDViewer from '../components/ThreeDViewer';
+import necklaceModel from '../assets/3d/day-chuyen-bac-0000k060027.glb';
 
 const ProductDetail = () => {
   const dispatch = useDispatch();
@@ -23,7 +25,7 @@ const ProductDetail = () => {
   const navigate = useNavigate();
 
   const [product, setProduct] = useState(null);
-  const [mainImage, setMainImage] = useState(null);
+  const [selectedMediaIndex, setSelectedMediaIndex] = useState(0);
   const [isDescriptionVisible, setIsDescriptionVisible] = useState(true);
   const [isPolicyVisible, setIsPolicyVisible] = useState(false);
   const [isFAQVisible, setIsFAQVisible] = useState(false);
@@ -147,10 +149,9 @@ const ProductDetail = () => {
   };
 
   useEffect(() => {
-    if (product && product.ProductImages && product.ProductImages.length > 0) {
-      setMainImage(product.ProductImages[0].image_url);
-    }
-  }, [product]);
+    setSelectedMediaIndex(0);
+    setLightboxImageIndex(0);
+  }, [product?.product_id, slug]);
 
   useEffect(() => {
     handleGetProduct();
@@ -175,6 +176,35 @@ const ProductDetail = () => {
     if (filtered.length > 10) filtered.pop();
     localStorage.setItem('viewedProducts', JSON.stringify(filtered));
   }, [product]);
+
+  const modelPath = useMemo(
+    () => (slug === 'day-chuyen-bac-0000k060027' ? necklaceModel : null),
+    [slug],
+  );
+
+  const mediaItems = useMemo(() => {
+    const items =
+      product?.ProductImages?.map((image, idx) => ({
+        id: image.image_id ?? `img-${idx}`,
+        type: 'image',
+        image,
+      })) || [];
+
+    if (modelPath) {
+      items.push({
+        id: 'model-day-chuyen-bac-0000k060027',
+        type: 'model',
+        label: 'Xem 3D',
+        modelPath,
+      });
+    }
+
+    return items;
+  }, [modelPath, product?.ProductImages]);
+
+  const imageItems = useMemo(() => mediaItems.filter((item) => item.type === 'image'), [mediaItems]);
+  const safeSelectedIndex = selectedMediaIndex < mediaItems.length ? selectedMediaIndex : 0;
+  const selectedMedia = mediaItems[safeSelectedIndex] || imageItems[0] || null;
 
   if (!product)
     return (
@@ -206,42 +236,50 @@ const ProductDetail = () => {
           <section className="flex flex-col gap-4">
             {/* Main Image with hover zoom */}
             <div
-              className="relative bg-white rounded-xl shadow-sm overflow-hidden group cursor-zoom-in"
+              className={`relative bg-white rounded-xl shadow-sm overflow-hidden group ${
+                selectedMedia?.type === 'image' ? 'cursor-zoom-in' : 'cursor-default'
+              }`}
               onClick={() => {
+                if (selectedMedia?.type !== 'image') return;
+                const targetIndex = imageItems.findIndex((item) => item.id === selectedMedia.id);
+                setLightboxImageIndex(targetIndex >= 0 ? targetIndex : 0);
                 setIsLightboxOpen(true);
-                setLightboxImageIndex(
-                  product.ProductImages?.findIndex((img) => img.image_url === mainImage) || 0,
-                );
               }}
             >
               <div className="w-full aspect-square bg-gray-100 flex items-center justify-center overflow-hidden">
-                <img
-                  src={
-                    mainImage ||
-                    product.ProductImages?.[0]?.image_url ||
-                    'http://cdn.pnj.io/images/thumbnails/485/485/detailed/47/sbxm00k000141-bong-tai-bac-pnjsilver.png'
-                  }
-                  alt={product.product_name}
-                  className="w-full h-full object-contain group-hover:scale-110 transition-transform duration-300"
-                />
-                {/* Zoom indicator */}
-                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-all flex items-center justify-center opacity-0 group-hover:opacity-100">
-                  <div className="bg-white rounded-full p-3 shadow-lg">
-                    <svg
-                      className="w-6 h-6 text-gray-800"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v6m3-3H7"
-                      />
-                    </svg>
-                  </div>
-                </div>
+                {selectedMedia?.type === 'model' ? (
+                  <ThreeDViewer modelPath={selectedMedia.modelPath} />
+                ) : (
+                  <>
+                    <img
+                      src={
+                        selectedMedia?.image?.image_url ||
+                        product.ProductImages?.[0]?.image_url ||
+                        'http://cdn.pnj.io/images/thumbnails/485/485/detailed/47/sbxm00k000141-bong-tai-bac-pnjsilver.png'
+                      }
+                      alt={product.product_name}
+                      className="w-full h-full object-contain group-hover:scale-110 transition-transform duration-300"
+                    />
+                    {/* Zoom indicator */}
+                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-all flex items-center justify-center opacity-0 group-hover:opacity-100">
+                      <div className="bg-white rounded-full p-3 shadow-lg">
+                        <svg
+                          className="w-6 h-6 text-gray-800"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v6m3-3H7"
+                          />
+                        </svg>
+                      </div>
+                    </div>
+                  </>
+                )}
               </div>
               {/* In stock badge */}
               <div
@@ -254,26 +292,35 @@ const ProductDetail = () => {
             </div>
 
             {/* Thumbnail Gallery */}
-            {product.ProductImages && product.ProductImages.length > 0 && (
+            {mediaItems.length > 0 && (
               <div className="flex gap-2 overflow-x-auto pb-2">
-                {product.ProductImages.map((image, idx) => (
+                {mediaItems.map((item, idx) => (
                   <button
-                    key={image.image_id}
+                    key={item.id}
                     onClick={() => {
-                      setMainImage(image.image_url);
-                      setLightboxImageIndex(idx);
+                      setSelectedMediaIndex(idx);
+                      if (item.type === 'image') {
+                        const targetIndex = imageItems.findIndex((imgItem) => imgItem.id === item.id);
+                        setLightboxImageIndex(targetIndex >= 0 ? targetIndex : 0);
+                      }
                     }}
                     className={`flex-shrink-0 w-20 h-20 rounded-lg overflow-hidden border-2 transition-all hover:shadow-lg ${
-                      mainImage === image.image_url
+                      safeSelectedIndex === idx
                         ? 'border-blue-600 shadow-md'
                         : 'border-gray-200 hover:border-gray-400'
                     }`}
                   >
-                    <img
-                      src={image.image_url}
-                      alt="thumbnail"
-                      className="w-full h-full object-cover hover:scale-110 transition-transform"
-                    />
+                    {item.type === 'image' ? (
+                      <img
+                        src={item.image.image_url}
+                        alt="thumbnail"
+                        className="w-full h-full object-cover hover:scale-110 transition-transform"
+                      />
+                    ) : (
+                      <div className="w-full h-full bg-gradient-to-br from-indigo-500 to-blue-600 text-white font-bold text-xs flex items-center justify-center">
+                        3D VIEW
+                      </div>
+                    )}
                   </button>
                 ))}
               </div>
@@ -641,7 +688,7 @@ const ProductDetail = () => {
         {/* Lightbox Viewer */}
         <LightboxViewer
           isOpen={isLightboxOpen}
-          images={product?.ProductImages || []}
+          images={imageItems.map((item) => item.image)}
           currentIndex={lightboxImageIndex}
           zoom={lightboxZoom}
           rotate={lightboxRotate}
@@ -652,12 +699,12 @@ const ProductDetail = () => {
           }}
           onPrevImage={() =>
             setLightboxImageIndex((p) =>
-              p === 0 ? (product?.ProductImages?.length || 1) - 1 : p - 1,
+              !imageItems.length ? 0 : p === 0 ? imageItems.length - 1 : p - 1,
             )
           }
           onNextImage={() =>
             setLightboxImageIndex((p) =>
-              p === (product?.ProductImages?.length || 1) - 1 ? 0 : p + 1,
+              !imageItems.length ? 0 : p === imageItems.length - 1 ? 0 : p + 1,
             )
           }
           onSelectImage={(idx) => {

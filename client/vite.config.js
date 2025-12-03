@@ -26,6 +26,7 @@ export default defineConfig({
       include: /\.(j|t)sx?$/,
     }),
   ],
+  assetsInclude: ['**/*.gltf', '**/*.glb'],
   esbuild: {
     loader: 'jsx',
     include: /src\/.*\.[jt]sx?$/,
