@@ -4,6 +4,7 @@ class Product {
   final String description;
   final double price;
   final double? originalPrice;
+  final String slug;
   final List<String> images;
   final String categoryId;
   final String? subCategoryId;
@@ -24,6 +25,7 @@ class Product {
     required this.description,
     required this.price,
     this.originalPrice,
+    this.slug = '',
     required this.images,
     required this.categoryId,
     this.subCategoryId,
@@ -44,35 +46,53 @@ class Product {
       id: (json['product_id'] ?? json['id'] ?? json['_id'] ?? '').toString(),
       name: json['product_name'] ?? json['name'] ?? '',
       description: json['description'] ?? '',
-      price: json['price'] != null ? double.parse(json['price'].toString()) : 0.0,
-      originalPrice: json['originalPrice'] != null 
-          ? double.parse(json['originalPrice'].toString()) 
+      price: json['price'] != null
+          ? double.parse(json['price'].toString())
+          : 0.0,
+      originalPrice: json['originalPrice'] != null
+          ? double.parse(json['originalPrice'].toString())
           : null,
+      slug: json['slug'] ?? json['product_slug'] ?? json['productSlug'] ?? '',
       images: _extractImages(json),
       categoryId: (json['category_id'] ?? json['categoryId'] ?? '').toString(),
-      subCategoryId: json['subcategory_id'] != null 
-          ? json['subcategory_id'].toString() 
+      subCategoryId: json['subcategory_id'] != null
+          ? json['subcategory_id'].toString()
           : json['subCategoryId']?.toString(),
       tags: json['tags'] != null ? List<String>.from(json['tags']) : [],
-      specifications: json['specifications'] != null 
-          ? Map<String, dynamic>.from(json['specifications']) 
+      specifications: json['specifications'] != null
+          ? Map<String, dynamic>.from(json['specifications'])
           : {},
-      stockQuantity: json['quantity'] ?? json['stockQuantity'] ?? json['stock_quantity'] ?? 0,
+      stockQuantity:
+          json['quantity'] ??
+          json['stockQuantity'] ??
+          json['stock_quantity'] ??
+          0,
       isAvailable: (json['quantity'] ?? 0) > 0,
       isFeatured: json['isFeatured'] ?? json['is_featured'] ?? false,
-      rating: json['avgRating'] != null 
-          ? double.parse(json['avgRating'].toString()) 
-          : (json['rating'] != null ? double.parse(json['rating'].toString()) : 0.0),
-      reviewsCount: json['totalReviews'] ?? json['reviewsCount'] ?? json['reviews_count'] ?? 0,
-      createdAt: json['created_at'] != null 
-          ? DateTime.parse(json['created_at']) 
-          : (json['createdAt'] != null ? DateTime.parse(json['createdAt']) : DateTime.now()),
-      updatedAt: json['updated_at'] != null 
-          ? DateTime.parse(json['updated_at']) 
-          : (json['updatedAt'] != null ? DateTime.parse(json['updatedAt']) : null),
-      categoryName: json['Category']?['category_name'] ?? 
-                   json['categoryName'] ?? 
-                   json['category_name'],
+      rating: json['avgRating'] != null
+          ? double.parse(json['avgRating'].toString())
+          : (json['rating'] != null
+                ? double.parse(json['rating'].toString())
+                : 0.0),
+      reviewsCount:
+          json['totalReviews'] ??
+          json['reviewsCount'] ??
+          json['reviews_count'] ??
+          0,
+      createdAt: json['created_at'] != null
+          ? DateTime.parse(json['created_at'])
+          : (json['createdAt'] != null
+                ? DateTime.parse(json['createdAt'])
+                : DateTime.now()),
+      updatedAt: json['updated_at'] != null
+          ? DateTime.parse(json['updated_at'])
+          : (json['updatedAt'] != null
+                ? DateTime.parse(json['updatedAt'])
+                : null),
+      categoryName:
+          json['Category']?['category_name'] ??
+          json['categoryName'] ??
+          json['category_name'],
     );
   }
 
@@ -82,7 +102,7 @@ class Product {
     if (json['images'] != null && json['images'] is List) {
       return List<String>.from(json['images']);
     }
-    
+
     // If ProductImages exists (from API response)
     if (json['ProductImages'] != null && json['ProductImages'] is List) {
       return (json['ProductImages'] as List)
@@ -91,7 +111,7 @@ class Product {
           .cast<String>()
           .toList();
     }
-    
+
     return [];
   }
 
@@ -102,6 +122,7 @@ class Product {
       'description': description,
       'price': price,
       'originalPrice': originalPrice,
+      'slug': slug,
       'images': images,
       'categoryId': categoryId,
       'subCategoryId': subCategoryId,
@@ -118,9 +139,9 @@ class Product {
   }
 
   String get mainImage => images.isNotEmpty ? images.first : '';
-  
+
   bool get hasDiscount => originalPrice != null && originalPrice! > price;
-  
+
   double get discountPercentage {
     if (!hasDiscount) return 0.0;
     return ((originalPrice! - price) / originalPrice!) * 100;
@@ -134,6 +155,7 @@ class Product {
     String? description,
     double? price,
     double? originalPrice,
+    String? slug,
     List<String>? images,
     String? categoryId,
     String? subCategoryId,
@@ -153,6 +175,7 @@ class Product {
       description: description ?? this.description,
       price: price ?? this.price,
       originalPrice: originalPrice ?? this.originalPrice,
+      slug: slug ?? this.slug,
       images: images ?? this.images,
       categoryId: categoryId ?? this.categoryId,
       subCategoryId: subCategoryId ?? this.subCategoryId,

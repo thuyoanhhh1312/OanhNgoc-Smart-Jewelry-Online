@@ -243,7 +243,7 @@ class _OrderSuccessScreenState extends State<OrderSuccessScreen>
                     // Payment Method
                     const SizedBox(height: 12),
                     Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         const Text(
                           'Phương thức thanh toán:',
@@ -252,9 +252,16 @@ class _OrderSuccessScreenState extends State<OrderSuccessScreen>
                             fontWeight: FontWeight.w500,
                           ),
                         ),
-                        Text(
-                          widget.order.paymentMethodText,
-                          style: const TextStyle(fontSize: 14),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            widget.order.paymentMethodText,
+                            textAlign: TextAlign.right,
+                            softWrap: true,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(fontSize: 14),
+                          ),
                         ),
                       ],
                     ),
@@ -262,7 +269,6 @@ class _OrderSuccessScreenState extends State<OrderSuccessScreen>
                     // Payment Status
                     const SizedBox(height: 8),
                     Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         const Text(
                           'Trạng thái thanh toán:',
@@ -271,14 +277,20 @@ class _OrderSuccessScreenState extends State<OrderSuccessScreen>
                             fontWeight: FontWeight.w500,
                           ),
                         ),
-                        Text(
-                          widget.order.paymentStatusText,
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.bold,
-                            color: widget.order.paymentStatus == PaymentStatus.paid
-                                ? Colors.green
-                                : Colors.orange,
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            widget.order.paymentStatusText,
+                            textAlign: TextAlign.right,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                              color: widget.order.paymentStatus == PaymentStatus.paid
+                                  ? Colors.green
+                                  : Colors.orange,
+                            ),
                           ),
                         ),
                       ],

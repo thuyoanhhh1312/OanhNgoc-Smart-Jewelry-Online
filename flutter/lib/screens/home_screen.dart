@@ -673,6 +673,14 @@ class _HomeScreenState extends State<HomeScreen> {
     required List<Product> products,
     VoidCallback? onViewAll,
   }) {
+    const horizontalPadding = 16.0;
+    const crossAxisSpacing = 12.0;
+    const infoHeight = 120.0; // Extra height for text, rating, price to avoid overflow
+    final screenWidth = MediaQuery.of(context).size.width;
+    final gridContentWidth = screenWidth - (horizontalPadding * 2);
+    final itemWidth = (gridContentWidth - crossAxisSpacing) / 2;
+    final childAspectRatio = itemWidth / (itemWidth + infoHeight);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -689,15 +697,15 @@ class _HomeScreenState extends State<HomeScreen> {
         
         // Hiển thị full sản phẩm với lazy loading
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
+          padding: const EdgeInsets.symmetric(horizontal: horizontalPadding),
           child: GridView.builder(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 2,
-              crossAxisSpacing: 12,
+              crossAxisSpacing: crossAxisSpacing,
               mainAxisSpacing: 12,
-              childAspectRatio: 0.75,
+              childAspectRatio: childAspectRatio,
             ),
             itemCount: products.length,
             itemBuilder: (context, index) {

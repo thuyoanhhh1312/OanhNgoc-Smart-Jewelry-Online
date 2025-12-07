@@ -399,11 +399,20 @@ class _SearchScreenState extends State<SearchScreen> {
           color: const Color(0xFFD4A574),
           child: GridView.builder(
             padding: const EdgeInsets.all(12),
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 2,
               crossAxisSpacing: 12,
               mainAxisSpacing: 12,
-              childAspectRatio: 0.7,
+              // Tính tỷ lệ động để tăng chiều cao item, tránh tràn ở đáy
+              childAspectRatio: () {
+                const horizontalPadding = 12.0;
+                const crossAxisSpacing = 12.0;
+                const infoHeight = 140.0; // Phần text/rating/giá
+                final screenWidth = MediaQuery.of(context).size.width;
+                final gridContentWidth = screenWidth - (horizontalPadding * 2);
+                final itemWidth = (gridContentWidth - crossAxisSpacing) / 2;
+                return itemWidth / (itemWidth + infoHeight);
+              }(),
             ),
             itemCount: searchResults.length +
                 (productProvider.searchHasMore ? 1 : 0),
