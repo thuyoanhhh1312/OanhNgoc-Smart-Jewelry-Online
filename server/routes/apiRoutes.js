@@ -125,10 +125,11 @@ router.put(
   isAdminOrStaff,
   userController.updateUser
 );
+// ❌ Chỉ Admin xóa user
 router.delete(
   "/users/:id",
   authenticateToken,
-  isAdminOrStaff,
+  isAdmin,
   userController.deleteUser
 );
 
@@ -156,22 +157,23 @@ router.get("/customers/by-user/:userId", customerController.getCustomer);
 // Category routes
 router.get("/categories", categoryController.getAllCategories);
 router.get("/categories/:id", categoryController.getCategoryById);
+// ❌ Chỉ Admin được CRUD category
 router.post(
   "/categories",
   authenticateToken,
-  isAdminOrStaff,
+  isAdmin,
   categoryController.createCategory
 );
 router.put(
   "/categories/:id",
   authenticateToken,
-  isAdminOrStaff,
+  isAdmin,
   categoryController.updateCategory
 );
 router.delete(
   "/categories/:id",
   authenticateToken,
-  isAdminOrStaff,
+  isAdmin,
   categoryController.deleteCategory
 );
 
@@ -189,6 +191,7 @@ router.get("/products/similar", getSimilarProducts);
 router.get("/products/filter", filterProducts);
 router.get("/products/:id", productController.getProductById);
 router.get("/get-product-by-slug/:slug", productController.getProductBySlug);
+// ✅ Staff & Admin tạo/sửa product
 router.post(
   "/products",
   authenticateToken,
@@ -203,10 +206,11 @@ router.put(
   upload.array("images", 5),
   productController.updateProduct
 );
+// ❌ Chỉ Admin xóa product
 router.delete(
   "/products/:id",
   authenticateToken,
-  isAdminOrStaff,
+  isAdmin,
   productController.deleteProduct
 );
 router.get(
@@ -221,22 +225,23 @@ router.get(
 // SubCategory routes
 router.get("/subcategories", subCategoryController.getAllSubCategories);
 router.get("/subcategories/:id", subCategoryController.getSubCategoryById);
+// ❌ Chỉ Admin được CRUD subcategory
 router.post(
   "/subcategories",
   authenticateToken,
-  isAdminOrStaff,
+  isAdmin,
   subCategoryController.createSubCategory
 );
 router.put(
   "/subcategories/:id",
   authenticateToken,
-  isAdminOrStaff,
+  isAdmin,
   subCategoryController.updateSubCategory
 );
 router.delete(
   "/subcategories/:id",
   authenticateToken,
-  isAdminOrStaff,
+  isAdmin,
   subCategoryController.deleteSubCategory
 );
 
@@ -263,10 +268,10 @@ router.delete(
 );
 
 // Campaign routes
-router.use("/campaigns", authenticateToken, isAdmin, campaignRoutes);
+router.use("/campaigns", campaignRoutes);
 
 // Promotion Log routes
-router.use("/promotion-logs", authenticateToken, isAdmin, promotionLogRoutes);
+router.use("/promotion-logs", authenticateToken, promotionLogRoutes);
 
 // Rank routes
 router.use("/rank", authenticateToken, isAdmin, rankRoutes);
