@@ -585,54 +585,61 @@ class ProductDetailScreenState extends State<ProductDetailScreen>
                   width: 1.5,
                 ),
               ),
-              child: Row(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Stars
                   Row(
-                    children: List.generate(5, (index) {
-                      final rating =
-                          reviewSummary!['avgRating']?.toDouble() ?? 0.0;
-                      return Icon(
-                        index < rating.floor()
-                            ? Icons.star
-                            : index < rating
-                            ? Icons.star_half
-                            : Icons.star_border,
-                        color: Colors.amber,
-                        size: 18,
-                      );
-                    }),
-                  ),
-                  const SizedBox(width: 12),
-
-                  // Rating text
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      Text(
-                        '${reviewSummary!['avgRating']?.toStringAsFixed(2) ?? '0.0'}/5.0',
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF1A1A1A),
-                        ),
+                      // Stars
+                      Row(
+                        children: List.generate(5, (index) {
+                          final rating =
+                              reviewSummary!['avgRating']?.toDouble() ?? 0.0;
+                          return Icon(
+                            index < rating.floor()
+                                ? Icons.star
+                                : index < rating
+                                ? Icons.star_half
+                                : Icons.star_border,
+                            color: Colors.amber,
+                            size: 18,
+                          );
+                        }),
                       ),
-                      Text(
-                        '${reviewSummary!['totalReviews'] ?? 0} đánh giá',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.grey.shade600,
-                          letterSpacing: 0.2,
-                        ),
+                      const SizedBox(width: 12),
+
+                      // Rating text
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            '${reviewSummary!['avgRating']?.toStringAsFixed(2) ?? '0.0'}/5.0',
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF1A1A1A),
+                            ),
+                          ),
+                          Text(
+                            '${reviewSummary!['totalReviews'] ?? 0} đánh giá',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey.shade600,
+                              letterSpacing: 0.2,
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),
-                  const Spacer(),
+                  const SizedBox(height: 10),
 
-                  // Sentiment badges
+                  // Sentiment badges (wraps to new line to avoid overflow)
                   Wrap(
                     spacing: 8,
+                    runSpacing: 6,
                     children: [
                       _buildSentimentBadge(
                         'Tích cực',
@@ -926,14 +933,14 @@ class ProductDetailScreenState extends State<ProductDetailScreen>
               borderRadius: BorderRadius.circular(10),
               child: TabBar(
                 controller: _tabController,
+                isScrollable: false, // Chia đều ô, tránh cảm giác gom nhóm
                 labelColor: Colors.white,
                 unselectedLabelColor: const Color(0xFF202E65),
-                indicator: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFF202E65), Color(0xFF1A1F4D)],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
+                labelPadding: EdgeInsets.zero,
+                indicatorPadding: EdgeInsets.zero,
+                indicatorSize: TabBarIndicatorSize.tab,
+                indicator: const BoxDecoration(
+                  color: Color(0xFF202E65), // Nền xanh phủ full ô
                 ),
                 labelStyle: const TextStyle(
                   fontSize: 14,
