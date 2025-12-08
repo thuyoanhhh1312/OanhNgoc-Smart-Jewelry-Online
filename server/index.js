@@ -5,6 +5,8 @@ import apiRoutes from "./routes/apiRoutes.js";
 import { errorHandler } from "./middlewares/errorHandler.js";
 import vnpayRouter from "./vnpay/payment.js";
 import goldPriceRoutes from "./routes/goldPriceRoutes.js";
+import chatbotRoutes from "./routes/chatbot.js";
+import chatRoutes from "./routes/chat.route.js";
 
 // Import Cron Jobs
 import birthdayEmailJob from "./jobs/birthdayEmailJob.js";
@@ -58,6 +60,10 @@ app.use((req, res, next) => {
 
 // Gold Prices routes
 app.use("/api/gold-prices", goldPriceRoutes);
+// Chatbot routes (order lookup)
+app.use("/api/chatbot", chatbotRoutes);
+// Chat to n8n webhook
+app.use("/api", chatRoutes);
 // VNPay routes
 app.use("/api/payment", vnpayRouter);
 app.use("/api", apiRoutes);

@@ -80,6 +80,7 @@ import ReviewManagement from './pages/admin/Review/ReviewManagement';
 import { useDispatch } from 'react-redux';
 import News from './pages/News';
 import NewsDetail from './pages/NewsDetail';
+import ChatWidget from './components/ChatWidget';
 function App() {
   const dispatch = useDispatch();
 
@@ -100,6 +101,7 @@ function App() {
 
   return (
     <Router>
+      <ChatWidget />
       <Routes>
         <Route path="/checkout" element={<Checkout />} />
         <Route element={<AdminLayout />}>
