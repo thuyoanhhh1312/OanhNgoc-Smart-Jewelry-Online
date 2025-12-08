@@ -1,7 +1,6 @@
 import axios from 'axios';
 
-const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001';
+const API_BASE_URL = import.meta.env.VITE_API_URL;
 
 /**
  * Gửi tin nhắn chat tới backend (forward tới n8n).
@@ -10,7 +9,7 @@ const API_BASE_URL =
  */
 export async function sendChatMessage({ sessionId, userId = null, message }) {
   try {
-    const { data } = await axios.post(`${API_BASE_URL}/api/chat`, {
+    const { data } = await axios.post(`${API_BASE_URL}/chat`, {
       sessionId,
       userId: userId ?? null,
       message,
