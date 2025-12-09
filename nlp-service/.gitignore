@@ -1,3 +1,6 @@
 venv/
 __pycache__/
 *.pyc
+# HuggingFace models
+toxic_bert_model/
+phobert-base-vi-sentiment-analysis/

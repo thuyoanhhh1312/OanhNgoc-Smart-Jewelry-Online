@@ -61,6 +61,49 @@ const ProductReview = sequelize.define(
       type: DataTypes.STRING,
       allowNull: true,
     },
+    // Toxic Filter fields
+    is_toxic: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: false,
+    },
+    toxic_score: {
+      type: DataTypes.FLOAT,
+      defaultValue: 0,
+    },
+    toxic_categories: {
+      type: DataTypes.JSON,
+      allowNull: true,
+    },
+    toxic_types: {
+      type: DataTypes.JSON,
+      allowNull: true,
+    },
+    toxic_reason: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    toxic_confidence: {
+      type: DataTypes.FLOAT,
+      defaultValue: 0,
+    },
+    // Admin review status
+    needs_admin_review: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: false,
+    },
+    admin_review_status: {
+      type: DataTypes.ENUM("pending", "approved", "rejected"),
+      defaultValue: "pending",
+      allowNull: true,
+    },
+    admin_review_note: {
+      type: DataTypes.TEXT,
+      allowNull: true,
+    },
+    reviewed_by: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+    },
     created_at: {
       type: DataTypes.DATE,
       defaultValue: DataTypes.NOW,

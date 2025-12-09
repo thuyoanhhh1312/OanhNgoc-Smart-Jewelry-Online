@@ -32,87 +32,263 @@ export const getReviewsByProductId = async (req, res, next) => {
     });
   }
 };
+// ADMIN: Gán nhãn sentiment thủ công (không thay đổi rating)
+export const adminLabelSentiment = async (req, res, next) => {
+  try {
+    const { reviewId } = req.params;
+    const { sentiment } = req.body; // "POS" | "NEG" | "NEU" | "UNC"
+
+    const allowedSentiments = ["POS", "NEG", "NEU", "UNC", null];
+
+    if (!allowedSentiments.includes(sentiment)) {
+      return next({
+        statusCode: 400,
+        message: "Sentiment không hợp lệ (POS, NEG, NEU, UNC hoặc null)",
+      });
+    }
+
+    const review = await db.ProductReview.findByPk(reviewId);
+    if (!review) {
+      return next({
+        statusCode: 404,
+        message: "Không tìm thấy review",
+      });
+    }
+
+    // 👉 KHÔNG đổi rating
+    review.sentiment = sentiment;
+    review.sentiment_confidence = 1.0; // do admin gán → tin cậy 100%
+    review.use_for_stats = true; // cho vào thống kê
+    review.updated_at = new Date();
+
+    // Nếu review này trước đó nằm trong hàng chờ duyệt
+    review.needs_admin_review = false;
+    if (review.admin_review_status === "pending") {
+      review.admin_review_status = "approved";
+    }
+
+    await review.save();
+
+    return res.status(200).json({
+      message: "Gán nhãn sentiment thành công",
+      review,
+    });
+  } catch (error) {
+    return next({
+      statusCode: 500,
+      message: "Lỗi gán nhãn sentiment",
+      error: error.message,
+    });
+  }
+};
 
 export const createReview = async (req, res, next) => {
   const productId = req.params.id;
   const { user_id, rating, content } = req.body;
 
-  const customer = await db.Customer.findOne({
-    where: { user_id },
-  });
-
-  const customer_id = customer.customer_id;
-
-  if (!customer_id || !rating || !content) {
-    return next({
-      statusCode: 400,
-      message:
-        "Thiếu dữ liệu bắt buộc: customer_id, rating hoặc nội dung đánh giá",
-    });
-  }
-
   try {
-    // Gọi API sentiment để phân tích nội dung
+    // ====== Tìm customer_id từ user_id ======
+    const customer = await db.Customer.findOne({
+      where: { user_id },
+    });
 
+    const customer_id = customer?.customer_id;
+
+    if (!customer_id || !rating || !content) {
+      return next({
+        statusCode: 400,
+        message:
+          "Thiếu dữ liệu bắt buộc: customer_id, rating hoặc nội dung đánh giá",
+      });
+    }
+
+    // ====== Biến mặc định ======
     let sentiment = null;
     let sentimentConfidence = 0;
-    let isMetaReview = false;
-    let metaConfidence = 0;
     let useForStats = true;
 
+    let isToxic = false;
+    let toxicScore = 0;
+    let toxicCategories = {};
+    let toxicTypes = [];
+    let toxicReason = "";
+    let toxicConfidence = 0;
+
+    let needsAdminReview = false;
+    let adminReviewStatus = null;
+    let isHidden = false; // ẩn cho tới khi admin duyệt nếu pipeline yêu cầu
+
+    // ================== GỌI PIPELINE /analyze ==================
     try {
-      const sentimentRes = await axios.post(
-        "http://localhost:5001/sentiment",
+      const toxicRes = await axios.post(
+        "http://localhost:5002/analyze",
         { text: content },
-        { timeout: 5000 }
+        { timeout: 8000 }
       );
 
       console.log(
-        `📨 Sentiment API Response:`,
-        JSON.stringify(sentimentRes.data, null, 2)
+        "📨 Full Pipeline Response:",
+        JSON.stringify(toxicRes.data, null, 2)
       );
 
-      sentiment =
-        sentimentRes.data.label_code || sentimentRes.data.label || null;
-      sentimentConfidence =
-        sentimentRes.data.confidence !== null &&
-        sentimentRes.data.confidence !== undefined
-          ? sentimentRes.data.confidence
-          : 0;
-      isMetaReview = sentimentRes.data.is_meta_review || false;
-      metaConfidence = sentimentRes.data.meta_confidence || 0;
-      useForStats = sentimentRes.data.use_for_stats !== false; // Mặc định true, chỉ false nếu meta-review
+      const pipeline = toxicRes.data || {};
+      const pipelineStatus = pipeline.status || "APPROVED";
+      const pipelineReason = pipeline.reason || "";
+      const finalDecision = pipeline.final_decision || {};
+      const layers = pipeline.layers || [];
 
-      console.log(`✅ Sentiment Analysis:`, {
+      // ===== Lấy kết quả L1 (Toxic Filter) =====
+      const l1 =
+        layers.find((l) => l.layer === 1) ||
+        layers[0] || // fallback
+        null;
+
+      if (l1) {
+        // l1.toxic_scores chứa { toxic, severe_toxic,... }
+        if (l1.toxic_scores) {
+          toxicCategories = l1.toxic_scores;
+          toxicScore = Number(l1.toxic_scores.toxic || 0);
+          toxicConfidence = toxicScore;
+        }
+
+        // l1.toxic_categories là mảng label vượt ngưỡng
+        if (Array.isArray(l1.toxic_categories)) {
+          toxicTypes = l1.toxic_categories;
+        }
+
+        toxicReason = l1.reason || pipelineReason || "";
+      }
+
+      // isToxic: nếu bị block hoặc soft_flag ở L1/pipeline
+      isToxic =
+        pipelineStatus === "BLOCKED" ||
+        pipelineStatus === "SOFT_FLAG" ||
+        (l1 && l1.status && l1.status !== "PASS");
+
+      // ===== Lấy sentiment từ L4 trong final_decision =====
+      // ===== LẤY SENTIMENT TỪ FINAL_DECISION (L4) =====
+      const sentimentInfo = finalDecision.sentiment_info;
+
+      if (sentimentInfo) {
+        // POS / NEG / NEU
+        sentiment = sentimentInfo.sentiment || null;
+        sentimentConfidence =
+          typeof sentimentInfo.confidence === "number"
+            ? sentimentInfo.confidence
+            : Number(sentimentInfo.confidence || 0);
+      } else if (typeof finalDecision.sentiment === "string") {
+        // fallback: nếu không có sentiment_info thì dùng field sentiment
+        sentiment = finalDecision.sentiment;
+        sentimentConfidence = 0;
+      }
+
+      console.log(">>> Sentiment from pipeline:", {
         sentiment,
-        confidence: sentimentConfidence,
-        is_meta: isMetaReview,
-        meta_confidence: metaConfidence,
-        use_for_stats: useForStats,
+        sentimentConfidence,
+        rawSentimentInfo: sentimentInfo,
       });
-    } catch (sentimentErr) {
-      console.error("Error analyzing sentiment:", sentimentErr.message);
-      sentiment = null;
-      sentimentConfidence = 0;
+
+      // Dùng cờ use_for_stats + display_on_ui từ pipeline
+      useForStats =
+        finalDecision.use_for_stats !== undefined
+          ? !!finalDecision.use_for_stats
+          : true;
+
+      const displayOnUi =
+        finalDecision.display_on_ui !== undefined
+          ? !!finalDecision.display_on_ui
+          : true;
+
+      // Nếu pipeline không cho hiển thị (BLOCKED / SOFT_FLAG / ADMIN_REVIEW có display_on_ui=false)
+      // thì ẩn review cho tới khi admin duyệt
+      isHidden = !displayOnUi;
+
+      // ===== Quy đổi trạng thái pipeline → needs_admin_review =====
+      if (pipelineStatus === "BLOCKED") {
+        needsAdminReview = true;
+        adminReviewStatus = "pending";
+        console.log("🚫 BLOCKED - AUTO CHẶN + VÀO HÀNG CHỜ ADMIN", {
+          reason: pipelineReason,
+          queue_reason: finalDecision.queue_reason,
+        });
+      } else if (
+        pipelineStatus === "SOFT_FLAG" ||
+        pipelineStatus === "ADMIN_REVIEW"
+      ) {
+        needsAdminReview = true;
+        adminReviewStatus = "pending";
+        console.log("⚠️ SOFT FLAG / ADMIN_REVIEW - CẦN ADMIN DUYỆT", {
+          reason: pipelineReason,
+          queue_reason: finalDecision.queue_reason,
+        });
+      } else {
+        // APPROVED
+        needsAdminReview = false;
+        adminReviewStatus = null;
+        console.log("✅ APPROVED - AUTO PUBLISH", { reason: pipelineReason });
+      }
+
+      console.log("✅ Pipeline Processing Complete:", {
+        pipelineStatus,
+        use_for_stats: useForStats,
+        display_on_ui: displayOnUi,
+        needs_admin_review: needsAdminReview,
+        is_hidden: isHidden,
+      });
+    } catch (pipelineErr) {
+      console.error("Error in pipeline /analyze:", pipelineErr.message);
+      // Fallback: cho qua nhưng flag cần admin check
+      needsAdminReview = true;
+      adminReviewStatus = "pending";
+      useForStats = true;
+      isHidden = false; // không có thông tin nên vẫn hiển thị
     }
 
+    // ================== TẠO REVIEW TRONG DB ==================
     const newReview = await db.ProductReview.create({
       product_id: productId,
       customer_id,
       rating,
       content,
+
+      // Sentiment (L4)
       sentiment,
       sentiment_confidence: sentimentConfidence,
-      is_meta_review: isMetaReview,
-      meta_confidence: metaConfidence,
+      is_meta_review: false, // meta-review đã được L3 chặn qua pipeline (ADMIN_REVIEW)
+      meta_confidence: 0,
       use_for_stats: useForStats,
+
+      // Toxic Filter fields (L1)
+      is_toxic: isToxic,
+      toxic_score: toxicScore,
+      toxic_categories: toxicCategories,
+      toxic_types: toxicTypes,
+      toxic_reason: toxicReason,
+      toxic_confidence: toxicConfidence,
+
+      // Admin review
+      needs_admin_review: needsAdminReview,
+      admin_review_status: adminReviewStatus,
+
+      // Ẩn/hiện auto theo pipeline
+      is_hidden: isHidden,
+      hidden_reason: isHidden ? "AUTO_PIPELINE_REVIEW" : null,
+
       created_at: new Date(),
       updated_at: new Date(),
     });
 
     return res.status(201).json({
-      message: "Tạo đánh giá thành công",
+      message: needsAdminReview
+        ? "Review được tạo nhưng cần duyệt admin trước khi hiển thị"
+        : "Tạo đánh giá thành công",
       review: newReview,
+      toxic_detection: {
+        is_toxic: isToxic,
+        toxic_score: toxicScore,
+        toxic_reason: toxicReason,
+        needs_admin_review: needsAdminReview,
+      },
     });
   } catch (err) {
     return next({

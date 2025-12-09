@@ -28,7 +28,7 @@ import axiosInstance from '../../../api/axiosInstance';
 import ReviewAnalytics from './ReviewAnalytics';
 
 const ReviewManagement = () => {
-  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+  const API_URL = import.meta.env.VITE_API_URL;
   const [reviews, setReviews] = useState([]);
   const [filteredReviews, setFilteredReviews] = useState([]);
   const [negativeReviews, setNegativeReviews] = useState([]);
@@ -41,6 +41,9 @@ const ReviewManagement = () => {
   const [filterSentiment, setFilterSentiment] = useState('all');
   const [filterRating, setFilterRating] = useState('all');
   const [searchText, setSearchText] = useState('');
+
+  const [editSentiment, setEditSentiment] = useState(''); // sentiment admin chỉnh
+  const [hideReason, setHideReason] = useState('');
 
   // Get token from localStorage
   const getAuthToken = () => {
@@ -96,7 +99,9 @@ const ReviewManagement = () => {
   const applyFilters = (reviewList) => {
     let filtered = reviewList;
 
-    if (filterSentiment !== 'all') {
+    if (filterSentiment === 'pending') {
+      filtered = filtered.filter((r) => r.needs_admin_review);
+    } else if (filterSentiment !== 'all') {
       filtered = filtered.filter((r) => r.sentiment === filterSentiment);
     }
 
@@ -115,33 +120,40 @@ const ReviewManagement = () => {
     setFilteredReviews(filtered);
   };
 
-  const getSentimentColor = (sentiment) => {
-    switch (sentiment) {
-      case 'POS':
-        return 'success';
-      case 'NEG':
-        return 'error';
-      case 'NEU':
-        return 'warning';
-      case 'UNC':
-        return 'info'; // Xanh dương cho "Không phân loại"
-      default:
-        return 'default';
+  const getSentimentMeta = (review) => {
+    // ƯU TIÊN trạng thái cần duyệt
+    if (review.needs_admin_review) {
+      if (!review.admin_review_status || review.admin_review_status === 'pending') {
+        return { label: 'Cần admin duyệt', color: 'warning' }; // vàng
+      }
+      if (review.admin_review_status === 'approved') {
+        return { label: 'Đã duyệt (hiển thị)', color: 'success' }; // xanh lá
+      }
+      if (review.admin_review_status === 'rejected') {
+        return { label: 'Đã từ chối', color: 'error' }; // đỏ
+      }
     }
-  };
 
-  const getSentimentLabel = (sentiment) => {
+    // Nếu không cần duyệt thì hiển thị theo sentiment
     const map = {
-      POS: 'Tích cực',
-      NEG: 'Tiêu cực',
-      NEU: 'Trung tính',
-      UNC: 'Không phân loại',
+      POS: { label: 'Tích cực', color: 'success' },
+      NEG: { label: 'Tiêu cực', color: 'error' },
+      NEU: { label: 'Trung tính', color: 'warning' },
+      UNC: { label: 'Không phân loại', color: 'info' },
     };
-    return map[sentiment] || 'Chưa phân tích';
-  };
 
+    return map[review.sentiment] || { label: 'Chưa phân tích', color: 'default' };
+  };
   const handleOpenDetail = (review) => {
     setSelectedReview(review);
+    // gợi ý sentiment theo rating nếu chưa có
+    const guessSentimentFromRating = (rating) => {
+      if (rating >= 4) return 'POS';
+      if (rating <= 2) return 'NEG';
+      return 'NEU';
+    };
+
+    setEditSentiment(review.sentiment || guessSentimentFromRating(review.rating));
     setDetailOpen(true);
   };
 
@@ -149,6 +161,38 @@ const ReviewManagement = () => {
     setDetailOpen(false);
     setSelectedReview(null);
     setHideReason('');
+    setEditSentiment('');
+  };
+
+  const handleSaveSentimentLabel = async () => {
+    if (!selectedReview) return;
+
+    try {
+      const token = getAuthToken();
+      const res = await axiosInstance.patch(
+        `/admin/reviews/${selectedReview.review_id}/label-sentiment`,
+        { sentiment: editSentiment },
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        },
+      );
+
+      const updated = res.data.review;
+
+      // cập nhật list reviews
+      setReviews((prev) => prev.map((r) => (r.review_id === updated.review_id ? updated : r)));
+
+      // cập nhật list tiêu cực
+      setNegativeReviews((prev) =>
+        prev
+          .map((r) => (r.review_id === updated.review_id ? updated : r))
+          .filter((r) => r.sentiment === 'NEG'),
+      );
+
+      handleCloseDetail();
+    } catch (error) {
+      console.error('Error labeling sentiment:', error);
+    }
   };
 
   const renderReviewsTable = (reviewsList) => (
@@ -168,13 +212,14 @@ const ReviewManagement = () => {
           <Select
             value={filterSentiment}
             onChange={(e) => setFilterSentiment(e.target.value)}
-            label="Cảm xúc"
+            label="Cảm xúc / Trạng thái"
           >
             <MenuItem value="all">Tất cả</MenuItem>
             <MenuItem value="POS">Tích cực</MenuItem>
             <MenuItem value="NEG">Tiêu cực</MenuItem>
             <MenuItem value="NEU">Trung tính</MenuItem>
             <MenuItem value="UNC">Không phân loại (Meta)</MenuItem>
+            <MenuItem value="pending">Cần admin duyệt</MenuItem>
           </Select>
         </FormControl>
 
@@ -193,10 +238,6 @@ const ReviewManagement = () => {
             <MenuItem value="1">1 sao</MenuItem>
           </Select>
         </FormControl>
-
-        <Button variant="contained" onClick={fetchAllReviews}>
-          🔄 Làm mới
-        </Button>
       </Box>
 
       <TableContainer component={Paper}>
@@ -245,13 +286,19 @@ const ReviewManagement = () => {
                     <Rating value={review.rating} readOnly size="small" />
                   </TableCell>
                   <TableCell align="center">
-                    <Chip
-                      label={getSentimentLabel(review.sentiment)}
-                      color={getSentimentColor(review.sentiment)}
-                      size="small"
-                      variant="outlined"
-                    />
+                    {(() => {
+                      const meta = getSentimentMeta(review);
+                      return (
+                        <Chip
+                          label={meta.label}
+                          color={meta.color}
+                          size="small"
+                          variant="outlined"
+                        />
+                      );
+                    })()}
                   </TableCell>
+
                   <TableCell sx={{ maxWidth: '200px' }}>
                     <Typography
                       variant="body2"
@@ -278,6 +325,34 @@ const ReviewManagement = () => {
       </TableContainer>
     </>
   );
+  // thêm vào component (ngoài return)
+  const approveReview = async () => {
+    if (!selectedReview) return;
+    const token = getAuthToken();
+    await axiosInstance.patch(
+      `/admin/toxic-reviews/${selectedReview.review_id}/approve`,
+      { note: 'Cho phép hiển thị' },
+      { headers: { Authorization: `Bearer ${token}` } },
+    );
+    await fetchAllReviews(); // reload list
+    handleCloseDetail();
+  };
+
+  const rejectReview = async () => {
+    if (!selectedReview) return;
+    const token = getAuthToken();
+    await axiosInstance.patch(
+      `/admin/toxic-reviews/${selectedReview.review_id}/reject`,
+      { note: 'Nội dung không phù hợp' },
+      { headers: { Authorization: `Bearer ${token}` } },
+    );
+    await fetchAllReviews();
+    handleCloseDetail();
+  };
+
+  const canEditSentiment =
+    selectedReview &&
+    (!selectedReview.needs_admin_review || selectedReview.admin_review_status === 'approved'); //
 
   return (
     <Box sx={{ p: 3 }}>
@@ -338,12 +413,24 @@ const ReviewManagement = () => {
                       <TableCell align="center">
                         <Button
                           size="small"
-                          variant="outlined"
+                          variant="contained"
                           color="info"
                           onClick={() => handleOpenDetail(review)}
+                          sx={{ mr: review.needs_admin_review ? 1 : 0 }}
                         >
                           Xem chi tiết
                         </Button>
+
+                        {review.needs_admin_review && (
+                          <Button
+                            size="small"
+                            variant="outlined"
+                            color="warning"
+                            onClick={() => handleOpenDetail(review)} // dùng chung dialog để duyệt luôn
+                          >
+                            Duyệt
+                          </Button>
+                        )}
                       </TableCell>
                     </TableRow>
                   ))}
@@ -388,13 +475,48 @@ const ReviewManagement = () => {
 
               <Box>
                 <Typography variant="subtitle2" color="textSecondary">
-                  Sentiment (PhoBERT)
+                  Sentiment (PhoBERT / Admin)
                 </Typography>
-                <Chip
-                  label={getSentimentLabel(selectedReview.sentiment)}
-                  color={getSentimentColor(selectedReview.sentiment)}
-                  variant="outlined"
-                />
+
+                <FormControl
+                  size="small"
+                  sx={{ mt: 1, minWidth: 180 }}
+                  disabled={!canEditSentiment} // 👈 khóa khi chưa được phép chỉnh
+                >
+                  <InputLabel>Sentiment</InputLabel>
+                  <Select
+                    value={editSentiment}
+                    label="Sentiment"
+                    onChange={(e) => setEditSentiment(e.target.value)}
+                  >
+                    <MenuItem value="POS">Tích cực</MenuItem>
+                    <MenuItem value="NEU">Trung tính</MenuItem>
+                    <MenuItem value="NEG">Tiêu cực</MenuItem>
+                    <MenuItem value="UNC">Không phân loại</MenuItem>
+                  </Select>
+                </FormControl>
+
+                {!canEditSentiment && (
+                  <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5 }}>
+                    Hãy bấm "Cho hiển thị" trước, sau đó mới gán nhãn cho review này.
+                  </Typography>
+                )}
+
+                {/* hiển thị nhãn hiện tại cho dễ hình dung */}
+                <Box sx={{ mt: 1 }}>
+                  {selectedReview &&
+                    (() => {
+                      const meta = getSentimentMeta(selectedReview);
+                      return (
+                        <Chip
+                          label={`Đang hiển thị: ${meta.label}`}
+                          color={meta.color}
+                          size="small"
+                          variant="outlined"
+                        />
+                      );
+                    })()}
+                </Box>
               </Box>
 
               <Box>
@@ -445,7 +567,25 @@ const ReviewManagement = () => {
           )}
         </DialogContent>
         <DialogActions>
+          {selectedReview?.needs_admin_review && (
+            <>
+              <Button color="error" onClick={rejectReview}>
+                Ẩn review
+              </Button>
+              <Button color="success" onClick={approveReview}>
+                Cho hiển thị
+              </Button>
+            </>
+          )}
           <Button onClick={handleCloseDetail}>Đóng</Button>
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={handleSaveSentimentLabel}
+            disabled={!canEditSentiment} // 👈 chỉ bật khi đã cho hiển thị hoặc không cần duyệt
+          >
+            Lưu sentiment
+          </Button>
         </DialogActions>
       </Dialog>
     </Box>

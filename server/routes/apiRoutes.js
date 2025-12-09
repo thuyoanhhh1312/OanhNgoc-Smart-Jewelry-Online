@@ -40,6 +40,7 @@ import * as orderController from "../controllers/orderController.js";
 import * as customerController from "../controllers/customerController.js";
 import * as orderStatusController from "../controllers/orderStatusController.js";
 import * as productReviewController from "../controllers/productReviewController.js";
+import * as toxicReviewController from "../controllers/toxicReviewController.js";
 import * as searchController from "../controllers/searchController.js";
 import * as dashboardController from "../controllers/dashboardController.js";
 import * as vietnamLocationController from "../controllers/vietnamLocationController.js";
@@ -107,7 +108,6 @@ router.get(
   authController.currentStaffOrAdmin
 );
 router.get("/auth/current-user", authenticateToken, authController.currentUser);
-router.post("/auth/refresh-token", authController.refreshToken);
 router.post("/auth/send-otp", authController.sendOtp);
 router.post("/auth/verify-otp", authController.verifyOtp);
 router.post("/auth/reset-password", authController.resetPassword);
@@ -394,6 +394,70 @@ router.post(
   "/products/:id/reviews",
   authenticateToken,
   productReviewController.createReview
+);
+
+// ========== TOXIC REVIEW MANAGEMENT (Admin Dashboard) ==========
+// Lấy danh sách toxic reviews cần duyệt
+router.get(
+  "/admin/toxic-reviews",
+  authenticateToken,
+  isAdmin,
+  toxicReviewController.getToxicReviewsPending
+);
+
+// Lấy chi tiết một toxic review
+router.get(
+  "/admin/toxic-reviews/:reviewId",
+  authenticateToken,
+  isAdmin,
+  toxicReviewController.getToxicReviewDetail
+);
+
+// Chấp nhận toxic review (công khai)
+router.patch(
+  "/admin/toxic-reviews/:reviewId/approve",
+  authenticateToken,
+  isAdmin,
+  toxicReviewController.approveToxicReview
+);
+
+// Từ chối toxic review (ẩn)
+router.patch(
+  "/admin/toxic-reviews/:reviewId/reject",
+  authenticateToken,
+  isAdmin,
+  toxicReviewController.rejectToxicReview
+);
+// ADMIN: Gán nhãn sentiment cho review
+router.patch(
+  "/admin/reviews/:reviewId/label-sentiment",
+  authenticateToken,
+  isAdminOrStaff,
+  productReviewController.adminLabelSentiment
+);
+
+// Lấy thống kê toxic reviews
+router.get(
+  "/admin/toxic-reviews/stats",
+  authenticateToken,
+  isAdmin,
+  toxicReviewController.getToxicReviewStats
+);
+
+// Lấy reviews theo highest toxic score
+router.get(
+  "/admin/toxic-reviews/highest-score",
+  authenticateToken,
+  isAdmin,
+  toxicReviewController.getToxicReviewsByHighestScore
+);
+
+// Bulk update toxic reviews
+router.patch(
+  "/admin/toxic-reviews/bulk-update",
+  authenticateToken,
+  isAdmin,
+  toxicReviewController.bulkUpdateToxicReviews
 );
 
 // Search routes
