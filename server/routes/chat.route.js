@@ -6,6 +6,11 @@ const router = express.Router();
 
 router.post("/chat", async (req, res) => {
   try {
+    console.log("[chatbot] Incoming /api/chat", {
+      body: req.body,
+      hasEnv: !!process.env.CHATBOT_N8N_WEBHOOK_URL,
+    });
+
     const { sessionId: incomingSessionId, userId = null, message } = req.body || {};
 
     if (!message || typeof message !== "string" || message.trim().length === 0) {
@@ -29,11 +34,15 @@ router.post("/chat", async (req, res) => {
     }
 
     try {
-      const { data } = await axios.post(process.env.CHATBOT_N8N_WEBHOOK_URL, {
-        sessionId,
-        userId: userId || null,
-        message,
-      });
+      const { data } = await axios.post(
+        process.env.CHATBOT_N8N_WEBHOOK_URL,
+        {
+          sessionId,
+          userId: userId || null,
+          message,
+        },
+        { timeout: 15000 }
+      );
 
       return res.status(200).json({
         sessionId,
@@ -44,7 +53,14 @@ router.post("/chat", async (req, res) => {
     } catch (error) {
       const status = error?.response?.status;
       const msg = error?.message || "Unknown error calling n8n webhook";
-      console.error("Error calling n8n webhook:", { status, message: msg });
+      const responseBody = error?.response?.data;
+      console.error("Error calling n8n webhook:", {
+        status,
+        message: msg,
+        responseBody,
+        url: process.env.CHATBOT_N8N_WEBHOOK_URL,
+        sessionId,
+      });
       return res.status(500).json({
         sessionId,
         reply:
@@ -54,7 +70,11 @@ router.post("/chat", async (req, res) => {
       });
     }
   } catch (err) {
-    console.error("Unexpected chatbot error:", err);
+    console.error("Unexpected chatbot error:", {
+      message: err?.message,
+      stack: err?.stack,
+      body: req.body,
+    });
     return res.status(500).json({
       sessionId: null,
       reply:
