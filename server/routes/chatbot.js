@@ -1,5 +1,6 @@
 import express from "express";
 import db from "../models/index.js";
+import { Op } from "sequelize";
 
 const router = express.Router();
 
@@ -123,6 +124,110 @@ router.post("/check-order", async (req, res) => {
       reply:
         "Hệ thống bên em đang bận, anh/chị cho em xin ít phút rồi thử lại giúp em nhé 😢",
       orderStatus: "error",
+    });
+  }
+});
+
+// Detect category from Vietnamese message
+function detectCategoryFromMessage(message) {
+  const lower = message.toLowerCase();
+  if (lower.includes("nhẫn")) return "ring";
+  if (lower.includes("vòng tay") || lower.includes("lắc tay")) return "bracelet";
+  if (lower.includes("dây chuyền") || lower.includes("vòng cổ")) return "necklace";
+  if (lower.includes("bông tai") || lower.includes("hoa tai")) return "earring";
+  return null;
+}
+
+const CATEGORY_MAP = {
+  ring: 1,
+  bracelet: 2,
+  necklace: 3,
+  earring: 4,
+};
+
+const CATEGORY_REPLY_PREFIX = {
+  ring: "Em gợi ý cho anh/chị một vài mẫu nhẫn đang được khách chọn nhiều:\n",
+  bracelet: "Em gợi ý cho anh/chị một vài mẫu vòng tay đang hot:\n",
+  necklace: "Em gợi ý vài mẫu dây chuyền xinh cho anh/chị nè:\n",
+  earring: "Em gợi ý vài mẫu bông tai dễ phối cho anh/chị:\n",
+};
+
+router.post("/product-advice", async (req, res) => {
+  try {
+    const { sessionId, userId, message } = req.body || {};
+
+    if (!message || typeof message !== "string") {
+      return res.status(200).json({
+        reply:
+          "Anh/chị mô tả giúp em loại trang sức muốn tìm (nhẫn, vòng tay, dây chuyền...) để em tư vấn chính xác hơn ạ ✨",
+        products: [],
+      });
+    }
+
+    const category = detectCategoryFromMessage(message);
+    if (!category) {
+      return res.status(200).json({
+        reply:
+          "Anh/chị muốn tìm nhẫn, dây chuyền, vòng tay hay bông tai ạ? Em sẽ gợi ý mẫu phù hợp cho mình 🤍",
+        products: [],
+      });
+    }
+
+    const categoryId = CATEGORY_MAP[category];
+    if (!categoryId) {
+      return res.status(200).json({
+        reply:
+          "Hiện tại em chưa có sản phẩm phù hợp trong danh mục này. Anh/chị có thể thử loại trang sức khác giúp em được không ạ? 🥺",
+        products: [],
+      });
+    }
+
+    const products = await db.Product.findAll({
+      where: { category_id: categoryId },
+      order: [["sold_quantity", "DESC"]],
+      limit: 3,
+      attributes: [
+        ["product_id", "id"],
+        ["product_name", "name"],
+        "price",
+        "slug",
+      ],
+    });
+
+    if (!products || products.length === 0) {
+      return res.status(200).json({
+        reply:
+          "Hiện tại em chưa có sản phẩm phù hợp trong danh mục này. Anh/chị có thể thử loại trang sức khác giúp em được không ạ? 🥺",
+        products: [],
+      });
+    }
+
+    const prefix = CATEGORY_REPLY_PREFIX[category] || "Em gợi ý một vài mẫu cho anh/chị:\n";
+    const lines = products.map((p, idx) => {
+      const priceFormatted = Number(p.price).toLocaleString("vi-VN");
+      return `${idx + 1}. ${p.name} – khoảng ${priceFormatted}₫`;
+    });
+
+    const reply =
+      prefix +
+      lines.join("\n") +
+      "\nAnh/chị thích mẫu nào em gửi link chi tiết cho mình nha 💎";
+
+    return res.status(200).json({
+      reply,
+      products: products.map((p) => ({
+        id: p.id,
+        name: p.name,
+        price: Number(p.price),
+        slug: p.slug,
+      })),
+    });
+  } catch (error) {
+    console.error("Chatbot product-advice error:", error);
+    return res.status(200).json({
+      reply:
+        "Hiện tại hệ thống đang bận, anh/chị thử lại giúp em sau ít phút nha 🥺",
+      products: [],
     });
   }
 });
