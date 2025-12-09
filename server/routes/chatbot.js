@@ -3,6 +3,7 @@ import db from "../models/index.js";
 import { Op } from "sequelize";
 
 const router = express.Router();
+export const lastProductAdviceBySession = new Map();
 
 const ORDER_STATUS_NORMALIZED = {
   cho_xu_ly: "pending",
@@ -214,6 +215,9 @@ router.post("/product-advice", async (req, res) => {
       lines.join("\n") +
       "\nAnh/chị thích mẫu nào em gửi link chi tiết cho mình nha 💎";
 
+    // Lưu cache cho bước lấy link
+    lastProductAdviceBySession.set(sessionId || "default-session", products);
+
     return res.status(200).json({
       reply,
       products: products.map((p) => ({
@@ -229,6 +233,85 @@ router.post("/product-advice", async (req, res) => {
       reply:
         "Hiện tại hệ thống đang bận, anh/chị thử lại giúp em sau ít phút nha 🥺",
       products: [],
+    });
+  }
+});
+
+router.post("/product-link", async (req, res) => {
+  try {
+    const { sessionId, message } = req.body || {};
+
+    if (!message || typeof message !== "string") {
+      return res.status(200).json({
+        sessionId: sessionId || null,
+        reply:
+          "Em chưa rõ anh/chị muốn xem mẫu số mấy. Anh/chị nhắn giúp em số thứ tự, ví dụ: 1, 2 hoặc 3 nhé 🥰",
+        intent: "PRODUCT_LINK",
+        productUrl: null,
+        productId: null,
+      });
+    }
+
+    const matched = message.match(/\d+/);
+    const chosenIndex = matched ? parseInt(matched[0], 10) : NaN;
+
+    if (isNaN(chosenIndex)) {
+      return res.status(200).json({
+        sessionId: sessionId || null,
+        reply:
+          "Em chưa rõ anh/chị muốn xem mẫu số mấy. Anh/chị nhắn giúp em số thứ tự, ví dụ: 1, 2 hoặc 3 nhé 🥰",
+        intent: "PRODUCT_LINK",
+        productUrl: null,
+        productId: null,
+      });
+    }
+
+    const sessionKey = sessionId || "default-session";
+    const products = lastProductAdviceBySession.get(sessionKey);
+
+    if (!products || products.length === 0) {
+      return res.status(200).json({
+        sessionId: sessionId || null,
+        reply:
+          'Hiện em chưa tìm thấy danh sách mẫu vừa gợi ý cho anh/chị. Mình nhắn lại: "gợi ý vài mẫu" để em gửi lại từ đầu nhé 💎',
+        intent: "PRODUCT_LINK",
+        productUrl: null,
+        productId: null,
+      });
+    }
+
+    const idx = chosenIndex - 1;
+    if (idx < 0 || idx >= products.length) {
+      return res.status(200).json({
+        sessionId: sessionId || null,
+        reply: `Danh sách em gợi ý chỉ có ${products.length} mẫu thôi ạ. Anh/chị giúp em chọn số từ 1 đến ${products.length} nha 💎`,
+        intent: "PRODUCT_LINK",
+        productUrl: null,
+        productId: null,
+      });
+    }
+
+    const product = products[idx];
+    const frontendBase =
+      process.env.FRONTEND_BASE_URL || "http://localhost:3000";
+    const productUrl = `${frontendBase}/product/${product.slug || product.id}`;
+
+    return res.status(200).json({
+      sessionId: sessionId || null,
+      reply: `Đây là link chi tiết mẫu số ${chosenIndex}: ${product.name}\n${productUrl}`,
+      intent: "PRODUCT_LINK",
+      productUrl,
+      productId: product.id || null,
+    });
+  } catch (error) {
+    console.error("Chatbot product-link error:", error);
+    return res.status(200).json({
+      sessionId: null,
+      reply:
+        "Hiện tại hệ thống đang bận, anh/chị thử lại giúp em sau ít phút nha 🥺",
+      intent: "PRODUCT_LINK",
+      productUrl: null,
+      productId: null,
     });
   }
 });
