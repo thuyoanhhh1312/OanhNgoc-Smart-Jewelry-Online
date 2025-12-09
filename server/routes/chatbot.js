@@ -187,8 +187,8 @@ router.post("/product-advice", async (req, res) => {
       order: [["sold_quantity", "DESC"]],
       limit: 3,
       attributes: [
-        ["product_id", "id"],
-        ["product_name", "name"],
+        ["product_id", "product_id"],
+        ["product_name", "product_name"],
         "price",
         "slug",
       ],
@@ -205,7 +205,8 @@ router.post("/product-advice", async (req, res) => {
     const prefix = CATEGORY_REPLY_PREFIX[category] || "Em gợi ý một vài mẫu cho anh/chị:\n";
     const lines = products.map((p, idx) => {
       const priceFormatted = Number(p.price).toLocaleString("vi-VN");
-      return `${idx + 1}. ${p.name} – khoảng ${priceFormatted}₫`;
+      const displayName = p.product_name || p.name;
+      return `${idx + 1}. ${displayName} – khoảng ${priceFormatted}₫`;
     });
 
     const reply =
@@ -216,8 +217,8 @@ router.post("/product-advice", async (req, res) => {
     return res.status(200).json({
       reply,
       products: products.map((p) => ({
-        id: p.id,
-        name: p.name,
+        id: p.product_id || p.id,
+        name: p.product_name || p.name,
         price: Number(p.price),
         slug: p.slug,
       })),
