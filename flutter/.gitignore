@@ -82,6 +82,12 @@ GoogleService-Info.plist
 **/ios/Flutter/flutter_export_environment.sh
 **/ios/ServiceDefinitions.json
 **/ios/Runner/GeneratedPluginRegistrant.*
+# Local iOS project/workspace config (avoid committing machine-specific state)
+ios/Runner.xcodeproj/**
+ios/Runner.xcworkspace/**
+ios/Flutter/*.xcconfig
+ios/Podfile
+ios/Podfile.lock
 
 # Node modules (if any)
 node_modules/
@@ -124,6 +130,9 @@ app.*.map.json
 
 # macOS related
 **/macos/Flutter/GeneratedPluginRegistrant.swift
+# Local macOS config/Pods
+macos/Flutter/*.xcconfig
+macos/Podfile
 
 # Windows related
 **/windows/flutter/generated_plugin_registrant.cc

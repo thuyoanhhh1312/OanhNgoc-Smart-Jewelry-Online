@@ -56,6 +56,7 @@ import * as articleCategoryController from "../controllers/articleCategoryContro
 import campaignRoutes from "./campaignRoutes.js";
 import promotionLogRoutes from "./promotionLogRoutes.js";
 import rankRoutes from "./rankRoutes.js";
+import chatbotRoutes from "./chatbot.js";
 
 // News Categories (Public)
 router.get("/news-categories", articleCategoryController.getAll);
@@ -275,6 +276,9 @@ router.use("/promotion-logs", authenticateToken, promotionLogRoutes);
 
 // Rank routes
 router.use("/rank", authenticateToken, isAdmin, rankRoutes);
+
+// Chatbot routes
+router.use("/chatbot", chatbotRoutes);
 
 // Order routes
 router.get("/orders", authenticateToken, isAdmin, orderController.getAllOrders);

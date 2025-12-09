@@ -15,14 +15,12 @@ import '../constants/app_colors.dart';
 import '../widgets/luxury/luxury_buttons.dart';
 import '../widgets/luxury/luxury_product_widgets.dart';
 import '../widgets/luxury/luxury_layout_widgets.dart';
+import '../widgets/three_d_viewer.dart';
 
 class ProductDetailScreen extends StatefulWidget {
   final String productId;
 
-  const ProductDetailScreen({
-    super.key,
-    required this.productId,
-  });
+  const ProductDetailScreen({super.key, required this.productId});
 
   @override
   ProductDetailScreenState createState() => ProductDetailScreenState();
@@ -36,11 +34,11 @@ class ProductDetailScreenState extends State<ProductDetailScreen>
   Map<String, dynamic>? reviewSummary;
   bool isLoading = true;
   bool isLoadingReviews = false;
-  
+
   // Tab controllers
   late TabController _tabController;
-  int _selectedImageIndex = 0;
-  
+  int _selectedMediaIndex = 0;
+
   // Modal states
   bool _showAddToCartModal = false;
   bool _showBuyNowModal = false;
@@ -69,6 +67,7 @@ class ProductDetailScreenState extends State<ProductDetailScreen>
       final productData = await ProductService.getProductById(widget.productId);
       setState(() {
         product = productData;
+        _selectedMediaIndex = 0;
       });
 
       // Load similar products
@@ -105,14 +104,14 @@ class ProductDetailScreenState extends State<ProductDetailScreen>
 
   Future<void> _loadReviews() async {
     if (product == null) return;
-    
+
     try {
       setState(() {
         isLoadingReviews = true;
       });
 
       final reviewData = await ProductService.getProductReviews(product!.id);
-      
+
       // Handle response - backend returns { message: '...', reviews: [...] }
       if (reviewData['reviews'] != null) {
         setState(() {
@@ -134,8 +133,10 @@ class ProductDetailScreenState extends State<ProductDetailScreen>
     }
 
     try {
-      final summaryData = await ProductService.getProductReviewSummary(product!.id);
-      
+      final summaryData = await ProductService.getProductReviewSummary(
+        product!.id,
+      );
+
       // Handle response - backend returns { message: '...', data: {...} }
       if (summaryData['data'] != null) {
         setState(() {
@@ -151,21 +152,21 @@ class ProductDetailScreenState extends State<ProductDetailScreen>
 
   void _saveToViewedProducts() {
     if (product == null) return;
-    
+
     // Implementation for saving to viewed products
     // This would typically use SharedPreferences or local storage
   }
 
   void _handleAddToCart(int quantity) {
     if (product == null) return;
-    
+
     final cartProvider = Provider.of<CartProvider>(context, listen: false);
     cartProvider.addToCart(product!, quantity: quantity);
-    
+
     setState(() {
       _showAddToCartModal = false;
     });
-    
+
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Đã thêm vào giỏ hàng thành công!')),
     );
@@ -173,17 +174,19 @@ class ProductDetailScreenState extends State<ProductDetailScreen>
 
   void _handleBuyNow(int quantity) {
     if (product == null) return;
-    
+
     // Navigate to checkout with selected product
     Navigator.pushNamed(
       context,
       '/checkout',
       arguments: {
-        'selectedItems': [{'product': product, 'quantity': quantity}],
+        'selectedItems': [
+          {'product': product, 'quantity': quantity},
+        ],
         'totalAmount': product!.price * quantity,
       },
     );
-    
+
     setState(() {
       _showBuyNowModal = false;
     });
@@ -191,7 +194,7 @@ class ProductDetailScreenState extends State<ProductDetailScreen>
 
   Future<void> _handleSubmitReview(Map<String, dynamic> review) async {
     if (product == null) return;
-    
+
     try {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
       if (authProvider.user == null) {
@@ -214,20 +217,20 @@ class ProductDetailScreenState extends State<ProductDetailScreen>
         setState(() {
           _showReviewModal = false;
         });
-        
+
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Đánh giá đã gửi thành công!')),
         );
-        
+
         // Reload reviews
         await _loadReviews();
         await _loadRatingSummary();
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Gửi đánh giá thất bại: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Gửi đánh giá thất bại: $e')));
       }
     }
   }
@@ -236,21 +239,15 @@ class ProductDetailScreenState extends State<ProductDetailScreen>
   Widget build(BuildContext context) {
     if (isLoading) {
       return Scaffold(
-        appBar: AppBar(
-          title: const Text('Chi tiết sản phẩm'),
-        ),
+        appBar: AppBar(title: const Text('Chi tiết sản phẩm')),
         body: const LoadingWidget(),
       );
     }
 
     if (product == null) {
       return Scaffold(
-        appBar: AppBar(
-          title: const Text('Chi tiết sản phẩm'),
-        ),
-        body: const Center(
-          child: Text('Không tìm thấy sản phẩm'),
-        ),
+        appBar: AppBar(title: const Text('Chi tiết sản phẩm')),
+        body: const Center(child: Text('Không tìm thấy sản phẩm')),
       );
     }
 
@@ -282,55 +279,40 @@ class ProductDetailScreenState extends State<ProductDetailScreen>
           children: [
             // Product images
             _buildProductImages(),
-            
+
             // Divider
-            Container(
-              height: 8,
-              color: Colors.grey.withValues(alpha: 0.08),
-            ),
-            
+            Container(height: 8, color: Colors.grey.withValues(alpha: 0.08)),
+
             // Product info
             _buildProductInfo(),
-            
+
             // Action buttons
             _buildActionButtons(),
-            
+
             // Divider
-            Container(
-              height: 8,
-              color: Colors.grey.withValues(alpha: 0.08),
-            ),
-            
+            Container(height: 8, color: Colors.grey.withValues(alpha: 0.08)),
+
             // Benefits section
             _buildBenefitsSection(),
-            
+
             // Divider
-            Container(
-              height: 8,
-              color: Colors.grey.withValues(alpha: 0.08),
-            ),
-            
+            Container(height: 8, color: Colors.grey.withValues(alpha: 0.08)),
+
             // Product details tabs
             _buildProductDetailsTabs(),
-            
+
             // Divider
-            Container(
-              height: 8,
-              color: Colors.grey.withValues(alpha: 0.08),
-            ),
-            
+            Container(height: 8, color: Colors.grey.withValues(alpha: 0.08)),
+
             // Similar products
             _buildSimilarProducts(),
-            
+
             // Divider
-            Container(
-              height: 8,
-              color: Colors.grey.withValues(alpha: 0.08),
-            ),
-            
+            Container(height: 8, color: Colors.grey.withValues(alpha: 0.08)),
+
             // Reviews section
             _buildReviewsSection(),
-            
+
             // Bottom padding
             const SizedBox(height: 20),
           ],
@@ -341,7 +323,38 @@ class ProductDetailScreenState extends State<ProductDetailScreen>
     );
   }
 
+  bool _shouldShow3DModel() {
+    return product?.slug == 'day-chuyen-bac-0000k060027';
+  }
+
+  List<_MediaItem> _buildMediaItems() {
+    if (product == null) return [];
+
+    final items = <_MediaItem>[];
+    if (product!.images.isNotEmpty) {
+      items.addAll(product!.images.map((url) => _MediaItem.image(url)));
+    } else {
+      items.add(const _MediaItem.image('https://via.placeholder.com/400'));
+    }
+
+    if (_shouldShow3DModel()) {
+      items.add(
+        const _MediaItem.model('assets/3d/day-chuyen-bac-0000k060027.glb'),
+      );
+    }
+
+    return items;
+  }
+
   Widget _buildProductImages() {
+    final mediaItems = _buildMediaItems();
+    if (mediaItems.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    final safeIndex = _selectedMediaIndex.clamp(0, mediaItems.length - 1);
+    final selectedMedia = mediaItems[safeIndex];
+
     return SizedBox(
       height: 420,
       child: Column(
@@ -354,35 +367,36 @@ class ProductDetailScreenState extends State<ProductDetailScreen>
                 borderRadius: BorderRadius.circular(20),
                 color: Colors.white,
                 boxShadow: AppColors.lightShadow,
-                border: Border.all(
-                  color: AppColors.champagne,
-                  width: 1.5,
-                ),
+                border: Border.all(color: AppColors.champagne, width: 1.5),
               ),
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(16),
                 child: Stack(
                   children: [
-                    Image.network(
-                      product!.images.isNotEmpty
-                          ? product!.images[_selectedImageIndex]
-                          : 'https://via.placeholder.com/400',
-                      fit: BoxFit.contain,
-                      width: double.infinity,
-                    ),
+                    if (selectedMedia.type == _MediaType.image)
+                      Image.network(
+                        selectedMedia.source,
+                        fit: BoxFit.contain,
+                        width: double.infinity,
+                      )
+                    else
+                      ThreeDViewer(modelAssetPath: selectedMedia.source),
                     // Image counter badge
-                    if (product!.images.length > 1)
+                    if (mediaItems.length > 1)
                       Positioned(
                         top: 12,
                         right: 12,
                         child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 6,
+                          ),
                           decoration: BoxDecoration(
                             color: Colors.black.withValues(alpha: 0.7),
                             borderRadius: BorderRadius.circular(20),
                           ),
                           child: Text(
-                            '${_selectedImageIndex + 1}/${product!.images.length}',
+                            '${safeIndex + 1}/${mediaItems.length}',
                             style: const TextStyle(
                               color: Colors.white,
                               fontSize: 12,
@@ -397,21 +411,22 @@ class ProductDetailScreenState extends State<ProductDetailScreen>
               ),
             ),
           ),
-          
+
           // Image thumbnails
-          if (product!.images.length > 1)
+          if (mediaItems.length > 1)
             Container(
               height: 90,
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               child: ListView.builder(
                 scrollDirection: Axis.horizontal,
-                itemCount: product!.images.length,
+                itemCount: mediaItems.length,
                 itemBuilder: (context, index) {
-                  final isSelected = _selectedImageIndex == index;
+                  final item = mediaItems[index];
+                  final isSelected = safeIndex == index;
                   return GestureDetector(
                     onTap: () {
                       setState(() {
-                        _selectedImageIndex = index;
+                        _selectedMediaIndex = index;
                       });
                     },
                     child: Container(
@@ -423,7 +438,9 @@ class ProductDetailScreenState extends State<ProductDetailScreen>
                         boxShadow: [
                           if (isSelected)
                             BoxShadow(
-                              color: const Color(0xFFD4AF37).withValues(alpha: 0.4),
+                              color: const Color(
+                                0xFFD4AF37,
+                              ).withValues(alpha: 0.4),
                               blurRadius: 12,
                               offset: const Offset(0, 4),
                             ),
@@ -444,12 +461,27 @@ class ProductDetailScreenState extends State<ProductDetailScreen>
                         borderRadius: BorderRadius.circular(10),
                         child: Stack(
                           children: [
-                            Image.network(
-                              product!.images[index],
-                              fit: BoxFit.cover,
-                              width: double.infinity,
-                              height: double.infinity,
-                            ),
+                            if (item.type == _MediaType.image)
+                              Image.network(
+                                item.source,
+                                fit: BoxFit.cover,
+                                width: double.infinity,
+                                height: double.infinity,
+                              )
+                            else
+                              Container(
+                                color: Colors.black.withValues(alpha: 0.7),
+                                child: const Center(
+                                  child: Text(
+                                    '3D',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.bold,
+                                      letterSpacing: 0.5,
+                                    ),
+                                  ),
+                                ),
+                              ),
                             // Overlay for selected thumbnail
                             if (isSelected)
                               Container(
@@ -457,7 +489,9 @@ class ProductDetailScreenState extends State<ProductDetailScreen>
                                   gradient: LinearGradient(
                                     colors: [
                                       Colors.transparent,
-                                      AppColors.roseGold.withValues(alpha: 0.15),
+                                      AppColors.roseGold.withValues(
+                                        alpha: 0.15,
+                                      ),
                                     ],
                                     begin: Alignment.topCenter,
                                     end: Alignment.bottomCenter,
@@ -494,7 +528,7 @@ class ProductDetailScreenState extends State<ProductDetailScreen>
             ),
           ),
           const SizedBox(height: 12),
-          
+
           // Price with ProductPriceText
           ProductPriceText(
             price: product!.price,
@@ -503,16 +537,14 @@ class ProductDetailScreenState extends State<ProductDetailScreen>
             fontWeight: FontWeight.bold,
           ),
           const SizedBox(height: 16),
-          
+
           // Stock info with icon
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
             decoration: BoxDecoration(
               color: Colors.green.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(10),
-              border: Border.all(
-                color: Colors.green.withValues(alpha: 0.3),
-              ),
+              border: Border.all(color: Colors.green.withValues(alpha: 0.3)),
             ),
             child: Row(
               children: [
@@ -535,7 +567,7 @@ class ProductDetailScreenState extends State<ProductDetailScreen>
             ),
           ),
           const SizedBox(height: 16),
-          
+
           // Rating section
           if (reviewSummary != null) ...[
             Container(
@@ -553,56 +585,72 @@ class ProductDetailScreenState extends State<ProductDetailScreen>
                   width: 1.5,
                 ),
               ),
-              child: Row(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Stars
                   Row(
-                    children: List.generate(5, (index) {
-                      final rating = reviewSummary!['avgRating']?.toDouble() ?? 0.0;
-                      return Icon(
-                        index < rating.floor()
-                            ? Icons.star
-                            : index < rating
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      // Stars
+                      Row(
+                        children: List.generate(5, (index) {
+                          final rating =
+                              reviewSummary!['avgRating']?.toDouble() ?? 0.0;
+                          return Icon(
+                            index < rating.floor()
+                                ? Icons.star
+                                : index < rating
                                 ? Icons.star_half
                                 : Icons.star_border,
-                        color: Colors.amber,
-                        size: 18,
-                      );
-                    }),
-                  ),
-                  const SizedBox(width: 12),
-                  
-                  // Rating text
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        '${reviewSummary!['avgRating']?.toStringAsFixed(2) ?? '0.0'}/5.0',
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF1A1A1A),
-                        ),
+                            color: Colors.amber,
+                            size: 18,
+                          );
+                        }),
                       ),
-                      Text(
-                        '${reviewSummary!['totalReviews'] ?? 0} đánh giá',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.grey.shade600,
-                          letterSpacing: 0.2,
-                        ),
+                      const SizedBox(width: 12),
+
+                      // Rating text
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            '${reviewSummary!['avgRating']?.toStringAsFixed(2) ?? '0.0'}/5.0',
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF1A1A1A),
+                            ),
+                          ),
+                          Text(
+                            '${reviewSummary!['totalReviews'] ?? 0} đánh giá',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey.shade600,
+                              letterSpacing: 0.2,
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),
-                  const Spacer(),
-                  
-                  // Sentiment badges
+                  const SizedBox(height: 10),
+
+                  // Sentiment badges (wraps to new line to avoid overflow)
                   Wrap(
                     spacing: 8,
+                    runSpacing: 6,
                     children: [
-                      _buildSentimentBadge('Tích cực', reviewSummary!['sentimentCount']['POS'] ?? 0, Colors.green),
-                      _buildSentimentBadge('Tiêu cực', reviewSummary!['sentimentCount']['NEG'] ?? 0, Colors.red),
+                      _buildSentimentBadge(
+                        'Tích cực',
+                        reviewSummary!['sentimentCount']['POS'] ?? 0,
+                        Colors.green,
+                      ),
+                      _buildSentimentBadge(
+                        'Tiêu cực',
+                        reviewSummary!['sentimentCount']['NEG'] ?? 0,
+                        Colors.red,
+                      ),
                     ],
                   ),
                 ],
@@ -613,7 +661,7 @@ class ProductDetailScreenState extends State<ProductDetailScreen>
       ),
     );
   }
-  
+
   Widget _buildSentimentBadge(String label, int count, Color color) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -671,8 +719,7 @@ class ProductDetailScreenState extends State<ProductDetailScreen>
                 },
                 borderRadius: BorderRadius.circular(14),
                 child: Container(
-                  height: 56,
-                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  padding: const EdgeInsets.symmetric(vertical: 10),
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
@@ -707,7 +754,7 @@ class ProductDetailScreenState extends State<ProductDetailScreen>
             ),
           ),
           const SizedBox(height: 16),
-          
+
           // Add to cart and Buy now buttons
           Row(
             children: [
@@ -725,7 +772,7 @@ class ProductDetailScreenState extends State<ProductDetailScreen>
                 ),
               ),
               const SizedBox(width: 12),
-              
+
               // Buy now button
               Expanded(
                 flex: 2,
@@ -754,7 +801,8 @@ class ProductDetailScreenState extends State<ProductDetailScreen>
         'subtitle': 'VẬN CHUYỂN',
         'icon': Icons.local_shipping,
         'color': const Color(0xFF2196F3),
-        'tooltip': 'Miễn phí giao hàng trong 3 giờ. Nếu giao trễ, tặng ngay voucher 100k cho lần mua hàng tiếp theo.',
+        'tooltip':
+            'Miễn phí giao hàng trong 3 giờ. Nếu giao trễ, tặng ngay voucher 100k cho lần mua hàng tiếp theo.',
       },
       {
         'title': 'PHỤC VỤ',
@@ -768,7 +816,8 @@ class ProductDetailScreenState extends State<ProductDetailScreen>
         'subtitle': '48H',
         'icon': Icons.autorenew,
         'color': const Color(0xFFFF9800),
-        'tooltip': 'Áp dụng đổi 48 giờ đối với trang sức vàng và 72 giờ đối với trang sức bạc (chỉ đổi size).',
+        'tooltip':
+            'Áp dụng đổi 48 giờ đối với trang sức vàng và 72 giờ đối với trang sức bạc (chỉ đổi size).',
       },
     ];
 
@@ -831,7 +880,7 @@ class ProductDetailScreenState extends State<ProductDetailScreen>
                     ),
                   ),
                   const SizedBox(height: 12),
-                  
+
                   // Title
                   Text(
                     benefit['title'] as String,
@@ -843,7 +892,7 @@ class ProductDetailScreenState extends State<ProductDetailScreen>
                     ),
                     textAlign: TextAlign.center,
                   ),
-                  
+
                   // Subtitle
                   if ((benefit['subtitle'] as String).isNotEmpty) ...[
                     const SizedBox(height: 2),
@@ -884,14 +933,14 @@ class ProductDetailScreenState extends State<ProductDetailScreen>
               borderRadius: BorderRadius.circular(10),
               child: TabBar(
                 controller: _tabController,
+                isScrollable: false, // Chia đều ô, tránh cảm giác gom nhóm
                 labelColor: Colors.white,
                 unselectedLabelColor: const Color(0xFF202E65),
-                indicator: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFF202E65), Color(0xFF1A1F4D)],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
+                labelPadding: EdgeInsets.zero,
+                indicatorPadding: EdgeInsets.zero,
+                indicatorSize: TabBarIndicatorSize.tab,
+                indicator: const BoxDecoration(
+                  color: Color(0xFF202E65), // Nền xanh phủ full ô
                 ),
                 labelStyle: const TextStyle(
                   fontSize: 14,
@@ -932,7 +981,9 @@ class ProductDetailScreenState extends State<ProductDetailScreen>
                   SingleChildScrollView(
                     padding: const EdgeInsets.all(16),
                     child: Html(
-                      data: product!.description.isNotEmpty ? product!.description : '<p>Không có mô tả</p>',
+                      data: product!.description.isNotEmpty
+                          ? product!.description
+                          : '<p>Không có mô tả</p>',
                       style: {
                         'body': Style(
                           fontSize: FontSize(14),
@@ -943,9 +994,7 @@ class ProductDetailScreenState extends State<ProductDetailScreen>
                           margin: Margins.all(8),
                           fontWeight: FontWeight.w500,
                         ),
-                        'ul': Style(
-                          margin: Margins.symmetric(vertical: 8),
-                        ),
+                        'ul': Style(margin: Margins.symmetric(vertical: 8)),
                         'li': Style(
                           margin: Margins.symmetric(vertical: 6),
                           fontWeight: FontWeight.w500,
@@ -953,7 +1002,7 @@ class ProductDetailScreenState extends State<ProductDetailScreen>
                       },
                     ),
                   ),
-                  
+
                   // Policy tab
                   SingleChildScrollView(
                     padding: const EdgeInsets.all(16),
@@ -967,7 +1016,7 @@ class ProductDetailScreenState extends State<ProductDetailScreen>
                       ),
                     ),
                   ),
-                  
+
                   // FAQ tab
                   SingleChildScrollView(
                     padding: const EdgeInsets.all(16),
@@ -1018,15 +1067,11 @@ class ProductDetailScreenState extends State<ProductDetailScreen>
                 ),
               ),
               const Spacer(),
-              Icon(
-                Icons.trending_up,
-                color: const Color(0xFFD4AF37),
-                size: 20,
-              ),
+              Icon(Icons.trending_up, color: const Color(0xFFD4AF37), size: 20),
             ],
           ),
           const SizedBox(height: 16),
-          
+
           // Product carousel
           SizedBox(
             height: 300,
@@ -1104,7 +1149,9 @@ class ProductDetailScreenState extends State<ProductDetailScreen>
                         borderRadius: BorderRadius.circular(10),
                         boxShadow: [
                           BoxShadow(
-                            color: const Color(0xFF4CAF50).withValues(alpha: 0.3),
+                            color: const Color(
+                              0xFF4CAF50,
+                            ).withValues(alpha: 0.3),
                             blurRadius: 8,
                             offset: const Offset(0, 2),
                           ),
@@ -1120,7 +1167,10 @@ class ProductDetailScreenState extends State<ProductDetailScreen>
                           },
                           borderRadius: BorderRadius.circular(10),
                           child: const Padding(
-                            padding: EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                            padding: EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 10,
+                            ),
                             child: Row(
                               children: [
                                 Icon(Icons.edit, color: Colors.white, size: 18),
@@ -1147,7 +1197,7 @@ class ProductDetailScreenState extends State<ProductDetailScreen>
             ],
           ),
           const SizedBox(height: 20),
-          
+
           // Rating summary - always show if we have data
           if (reviewSummary != null)
             Column(
@@ -1177,13 +1227,14 @@ class ProductDetailScreenState extends State<ProductDetailScreen>
                   child: RatingSummary(
                     avgRating: reviewSummary!['avgRating']?.toDouble() ?? 0.0,
                     totalReviews: reviewSummary!['totalReviews'] ?? 0,
-                    ratingDistribution: reviewSummary!['ratingDistribution'] ?? {},
+                    ratingDistribution:
+                        reviewSummary!['ratingDistribution'] ?? {},
                   ),
                 ),
                 const SizedBox(height: 20),
               ],
             ),
-          
+
           // Reviews list heading
           if (reviews.isNotEmpty)
             Padding(
@@ -1208,7 +1259,7 @@ class ProductDetailScreenState extends State<ProductDetailScreen>
                 ],
               ),
             ),
-          
+
           // Reviews list
           if (isLoadingReviews)
             const LoadingWidget()
@@ -1287,7 +1338,7 @@ class ProductDetailScreenState extends State<ProductDetailScreen>
         onConfirm: _handleAddToCart,
       );
     }
-    
+
     if (_showBuyNowModal) {
       return AddToCartModal(
         product: product!,
@@ -1299,7 +1350,7 @@ class ProductDetailScreenState extends State<ProductDetailScreen>
         onConfirm: _handleBuyNow,
       );
     }
-    
+
     if (_showReviewModal) {
       return ReviewModal(
         onClose: () {
@@ -1310,7 +1361,18 @@ class ProductDetailScreenState extends State<ProductDetailScreen>
         onSubmit: _handleSubmitReview,
       );
     }
-    
+
     return null;
   }
+}
+
+enum _MediaType { image, model }
+
+class _MediaItem {
+  final _MediaType type;
+  final String source;
+
+  const _MediaItem.image(this.source) : type = _MediaType.image;
+
+  const _MediaItem.model(this.source) : type = _MediaType.model;
 }
