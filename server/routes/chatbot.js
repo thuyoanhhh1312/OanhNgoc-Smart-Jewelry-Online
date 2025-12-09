@@ -183,7 +183,7 @@ router.post("/product-advice", async (req, res) => {
       });
     }
 
-    const products = await db.Product.findAll({
+    const productRows = await db.Product.findAll({
       where: { category_id: categoryId },
       order: [["sold_quantity", "DESC"]],
       limit: 3,
@@ -195,7 +195,7 @@ router.post("/product-advice", async (req, res) => {
       ],
     });
 
-    if (!products || products.length === 0) {
+    if (!productRows || productRows.length === 0) {
       return res.status(200).json({
         reply:
           "Hiện tại em chưa có sản phẩm phù hợp trong danh mục này. Anh/chị có thể thử loại trang sức khác giúp em được không ạ? 🥺",
@@ -203,10 +203,18 @@ router.post("/product-advice", async (req, res) => {
       });
     }
 
+    const productSummaries = productRows.map((p) => ({
+      id: p.product_id || p.id,
+      name: p.product_name || p.name,
+      slug: p.slug,
+      minPrice: Number(p.price),
+      maxPrice: Number(p.price),
+    }));
+
     const prefix = CATEGORY_REPLY_PREFIX[category] || "Em gợi ý một vài mẫu cho anh/chị:\n";
-    const lines = products.map((p, idx) => {
-      const priceFormatted = Number(p.price).toLocaleString("vi-VN");
-      const displayName = p.product_name || p.name;
+    const lines = productSummaries.map((p, idx) => {
+      const priceFormatted = Number(p.minPrice).toLocaleString("vi-VN");
+      const displayName = p.name || `Mẫu số ${idx + 1}`;
       return `${idx + 1}. ${displayName} – khoảng ${priceFormatted}₫`;
     });
 
@@ -215,17 +223,15 @@ router.post("/product-advice", async (req, res) => {
       lines.join("\n") +
       "\nAnh/chị thích mẫu nào em gửi link chi tiết cho mình nha 💎";
 
-    // Lưu cache cho bước lấy link
-    lastProductAdviceBySession.set(sessionId || "default-session", products);
+    // Lưu cache cho bước lấy link (chỉ giữ field cần thiết)
+    lastProductAdviceBySession.set(
+      sessionId || "default-session",
+      productSummaries
+    );
 
     return res.status(200).json({
       reply,
-      products: products.map((p) => ({
-        id: p.product_id || p.id,
-        name: p.product_name || p.name,
-        price: Number(p.price),
-        slug: p.slug,
-      })),
+      products: productSummaries,
     });
   } catch (error) {
     console.error("Chatbot product-advice error:", error);
@@ -241,39 +247,38 @@ router.post("/product-link", async (req, res) => {
   try {
     const { sessionId, message } = req.body || {};
 
-    if (!message || typeof message !== "string") {
-      return res.status(200).json({
+    if (!sessionId || !message || typeof message !== "string") {
+      return res.status(400).json({
         sessionId: sessionId || null,
         reply:
-          "Em chưa rõ anh/chị muốn xem mẫu số mấy. Anh/chị nhắn giúp em số thứ tự, ví dụ: 1, 2 hoặc 3 nhé 🥰",
+          "Thiếu sessionId hoặc message, anh/chị chat lại giúp em 1 câu đầy đủ nha 💎",
         intent: "PRODUCT_LINK",
         productUrl: null,
         productId: null,
       });
     }
 
-    const matched = message.match(/\d+/);
+    const matched = message.toLowerCase().match(/\d+/);
     const chosenIndex = matched ? parseInt(matched[0], 10) : NaN;
 
     if (isNaN(chosenIndex)) {
       return res.status(200).json({
-        sessionId: sessionId || null,
+        sessionId,
         reply:
-          "Em chưa rõ anh/chị muốn xem mẫu số mấy. Anh/chị nhắn giúp em số thứ tự, ví dụ: 1, 2 hoặc 3 nhé 🥰",
+          'Em chưa rõ anh/chị muốn xem mẫu số mấy. Anh/chị nhắn giúp em số thứ tự, ví dụ: "1", "2" hoặc "3" nha 🥰',
         intent: "PRODUCT_LINK",
         productUrl: null,
         productId: null,
       });
     }
 
-    const sessionKey = sessionId || "default-session";
-    const products = lastProductAdviceBySession.get(sessionKey);
+    const products = lastProductAdviceBySession.get(sessionId);
 
-    if (!products || products.length === 0) {
+    if (!Array.isArray(products) || products.length === 0) {
       return res.status(200).json({
-        sessionId: sessionId || null,
+        sessionId,
         reply:
-          'Hiện em chưa tìm thấy danh sách mẫu vừa gợi ý cho anh/chị. Mình nhắn lại: "gợi ý vài mẫu" để em gửi lại từ đầu nhé 💎',
+          'Hiện em chưa tìm thấy danh sách mẫu vừa gợi ý cho anh/chị. Anh/chị thử nhắn lại: "gợi ý vài mẫu nhẫn" để em gửi lại từ đầu nhé 💎',
         intent: "PRODUCT_LINK",
         productUrl: null,
         productId: null,
@@ -283,7 +288,7 @@ router.post("/product-link", async (req, res) => {
     const idx = chosenIndex - 1;
     if (idx < 0 || idx >= products.length) {
       return res.status(200).json({
-        sessionId: sessionId || null,
+        sessionId,
         reply: `Danh sách em gợi ý chỉ có ${products.length} mẫu thôi ạ. Anh/chị giúp em chọn số từ 1 đến ${products.length} nha 💎`,
         intent: "PRODUCT_LINK",
         productUrl: null,
@@ -292,23 +297,26 @@ router.post("/product-link", async (req, res) => {
     }
 
     const product = products[idx];
-    const frontendBase =
-      process.env.FRONTEND_BASE_URL || "http://localhost:3000";
-    const productUrl = `${frontendBase}/product/${product.slug || product.id}`;
+    const frontendBase = (
+      process.env.FRONTEND_BASE_URL || "http://oanhngocjewelry.online"
+    ).replace(/\/$/, "");
+    const slugOrId = product.slug || product.id;
+    const productUrl = `${frontendBase}/product/${slugOrId}`;
+    const productName = product.name || `mẫu số ${chosenIndex}`;
 
     return res.status(200).json({
-      sessionId: sessionId || null,
-      reply: `Đây là link chi tiết mẫu số ${chosenIndex}: ${product.name}\n${productUrl}`,
+      sessionId,
+      reply: `Đây là link chi tiết mẫu số ${chosenIndex}: ${productName}\n${productUrl}`,
       intent: "PRODUCT_LINK",
       productUrl,
-      productId: product.id || null,
+      productId: product.id ?? null,
     });
   } catch (error) {
     console.error("Chatbot product-link error:", error);
     return res.status(200).json({
       sessionId: null,
       reply:
-        "Hiện tại hệ thống đang bận, anh/chị thử lại giúp em sau ít phút nha 🥺",
+        "Hiện hệ thống đang bận, anh/chị thử lại giúp em sau ít phút nha 🥺",
       intent: "PRODUCT_LINK",
       productUrl: null,
       productId: null,
