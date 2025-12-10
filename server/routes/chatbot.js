@@ -2,6 +2,7 @@ import express from "express";
 import db from "../models/index.js";
 import { Op } from "sequelize";
 import mysql from "mysql2/promise";
+import cheerio from "cheerio";
 
 const router = express.Router();
 export const lastProductAdviceBySession = new Map();
@@ -15,6 +16,30 @@ const productDetailPool = mysql.createPool({
   waitForConnections: true,
   connectionLimit: 10,
 });
+
+function formatProductDescription(html) {
+  if (!html) return "";
+  const $ = cheerio.load(html);
+  const lines = [];
+  $("li").each((_, li) => {
+    const $li = $(li);
+    const strongText = $li.find("strong").first().text().trim().replace(/:$/, "");
+    const cloned = $li.clone();
+    cloned.find("strong").remove();
+    const valueText = cloned.text().trim();
+    if (strongText) {
+      lines.push(`• ${strongText}: ${valueText}`);
+    } else if (valueText) {
+      lines.push(`• ${valueText}`);
+    }
+  });
+  return lines.join("\n");
+}
+
+function formatCurrencyVND(amount) {
+  if (typeof amount !== "number" || Number.isNaN(amount)) return "";
+  return amount.toLocaleString("vi-VN") + "₫";
+}
 
 const ORDER_STATUS_NORMALIZED = {
   cho_xu_ly: "pending",
@@ -441,21 +466,27 @@ router.post("/product-detail", async (req, res) => {
     const totalReviews = Number(reviewStats.totalReviews || 0);
     const positiveReviews = Number(reviewStats.positiveReviews || 0);
 
-    const priceFormatted = Number(product.price).toLocaleString("vi-VN");
+    const priceFormatted = formatCurrencyVND(Number(product.price));
     const productName = product.product_name || searchTerm;
+    const descriptionText = formatProductDescription(product.description);
 
-    const replyLines = [
-      `Mẫu ${productName} có giá khoảng ${priceFormatted}₫.`,
-    ];
+    const replyLines = [`Mẫu ${productName} có giá khoảng ${priceFormatted}.`];
 
-    if (product.description) {
-      replyLines.push(`Mô tả: ${product.description}`);
+    if (descriptionText) {
+      replyLines.push(`Các thông tin chính:\n${descriptionText}`);
     }
 
-    replyLines.push(
-      `Đánh giá: ${averageRating}/5 từ ${totalReviews} lượt, trong đó ${positiveReviews} đánh giá tích cực.`,
-      "Anh/chị cần em gửi link chi tiết sản phẩm không ạ? 💎"
-    );
+    if (totalReviews > 0) {
+      let ratingLine = `Đánh giá: ${averageRating}/5 từ ${totalReviews} lượt`;
+      if (positiveReviews > 0) {
+        ratingLine += `, trong đó khoảng ${positiveReviews} đánh giá tích cực.`;
+      } else {
+        ratingLine += ".";
+      }
+      replyLines.push(ratingLine);
+    }
+
+    replyLines.push("Anh/chị cần em gửi link chi tiết sản phẩm không ạ? 💎");
 
     const reply = replyLines.join("\n");
 
