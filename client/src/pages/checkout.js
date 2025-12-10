@@ -223,6 +223,12 @@ const CheckoutPage = () => {
       };
       const res = await orderApi.checkout(orderData, user?.token);
       toast.success('Đặt hàng thành công! Mã đơn hàng: ' + res.order.order_id);
+
+      // Lưu danh sách sản phẩm vừa mua vào localStorage để xóa khỏi giỏ sau
+      localStorage.setItem(
+        'purchasedItems',
+        JSON.stringify(selectedItems.map((item) => item.product_id)),
+      );
       dispatch({ type: 'CLEAR_CART' });
 
       // ✅ VNPay full payment: Redirect sang VNPay thanh toán toàn bộ
