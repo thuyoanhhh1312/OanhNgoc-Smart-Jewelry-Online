@@ -137,6 +137,13 @@ export const updateUser = async (req, res) => {
     if (!user)
       return res.status(404).json({ message: "Nhân viên không tìm thấy" });
 
+    // Kiểm tra nếu đang cố gắng thay đổi role của chính mình
+    if (role_id && req.user.id === parseInt(id)) {
+      return res.status(403).json({
+        message: "Bạn không thể thay đổi role của chính mình",
+      });
+    }
+
     if (name) user.name = name;
     if (email) user.email = email;
     if (role_id) user.role_id = role_id;
