@@ -2,7 +2,7 @@ import express from "express";
 import db from "../models/index.js";
 import { Op } from "sequelize";
 import mysql from "mysql2/promise";
-import cheerio from "cheerio";
+import { load as cheerioLoad } from "cheerio";
 
 const router = express.Router();
 export const lastProductAdviceBySession = new Map();
@@ -19,7 +19,7 @@ const productDetailPool = mysql.createPool({
 
 function formatProductDescription(html) {
   if (!html) return "";
-  const $ = cheerio.load(html);
+  const $ = cheerioLoad(html);
   const lines = [];
   $("li").each((_, li) => {
     const $li = $(li);
