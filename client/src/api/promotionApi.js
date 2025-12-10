@@ -70,6 +70,24 @@ const deletePromotion = async (id, accessToken) => {
   }
 };
 
+/**
+ * Lấy danh sách mã khuyến mãi được gửi riêng cho khách hàng
+ * @param {string} accessToken - JWT token
+ */
+const getCustomerPromotions = async (accessToken) => {
+  try {
+    const response = await axiosInstance.get(`${API_URL}/promotions/customer/my-promotions`, {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching customer promotions:', error);
+    throw error;
+  }
+};
+
 // eslint-disable-next-line import/no-anonymous-default-export
 export default {
   getPromotions,
@@ -77,4 +95,5 @@ export default {
   getPromotionById,
   updatePromotion,
   deletePromotion,
+  getCustomerPromotions,
 };

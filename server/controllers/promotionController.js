@@ -33,6 +33,116 @@ export const getAllPromotions = async (req, res) => {
   }
 };
 
+// Lấy danh sách khuyến mãi cho khách hàng (bao gồm khuyến mãi cho tất cả + khuyến mãi riêng)
+export const getCustomerPromotions = async (req, res) => {
+  try {
+    const userId = req.user?.userId;
+    
+    if (!userId) {
+      return res.status(401).json({ message: "Vui lòng đăng nhập để xem khuyến mãi" });
+    }
+
+    // Tìm customer_id từ userId
+    const customer = await db.Customer.findOne({ 
+      where: { user_id: userId },
+      attributes: ["customer_id"]
+    });
+
+    if (!customer) {
+      return res.status(404).json({ message: "Không tìm thấy thông tin khách hàng" });
+    }
+
+    const customerId = customer.customer_id;
+
+    // 1. Lấy khuyến mãi cho tất cả (segment_target = null hoặc không có trong promotion_logs)
+    const publicPromotions = await db.Promotion.findAll({
+      where: { 
+        segment_target: null 
+      },
+      attributes: [
+        "promotion_id",
+        "promotion_code",
+        "campaign_id",
+        "segment_target",
+        "discount",
+        "description",
+        "usage_limit",
+        "usage_count",
+      ],
+      include: [
+        {
+          model: db.PromotionCampaign,
+          as: "campaign",
+          attributes: ["campaign_id", "name", "start_date", "end_date"],
+          required: false,
+        },
+      ],
+    });
+
+    // 2. Lấy khuyến mãi được gửi riêng cho khách hàng từ promotion_logs
+    const promotionLogs = await db.PromotionLog.findAll({
+      where: { customer_id: customerId },
+      attributes: ["promotion_id"],
+    });
+
+    const privatePromotionIds = promotionLogs.map(log => log.promotion_id);
+
+    let privatePromotions = [];
+    if (privatePromotionIds.length > 0) {
+      privatePromotions = await db.Promotion.findAll({
+        where: { promotion_id: privatePromotionIds },
+        attributes: [
+          "promotion_id",
+          "promotion_code",
+          "campaign_id",
+          "segment_target",
+          "discount",
+          "description",
+          "usage_limit",
+          "usage_count",
+        ],
+        include: [
+          {
+            model: db.PromotionCampaign,
+            as: "campaign",
+            attributes: ["campaign_id", "name", "start_date", "end_date"],
+            required: false,
+          },
+        ],
+      });
+    }
+
+    // 3. Gộp 2 danh sách và loại bỏ trùng lặp
+    const allPromotionIds = new Set();
+    const combinedPromotions = [];
+
+    // Thêm khuyến mãi riêng trước
+    privatePromotions.forEach(promo => {
+      allPromotionIds.add(promo.promotion_id);
+      combinedPromotions.push(promo);
+    });
+
+    // Thêm khuyến mãi công khai (nếu chưa có)
+    publicPromotions.forEach(promo => {
+      if (!allPromotionIds.has(promo.promotion_id)) {
+        combinedPromotions.push(promo);
+      }
+    });
+
+    // Sắp xếp theo created_at
+    combinedPromotions.sort((a, b) => {
+      return new Date(b.created_at) - new Date(a.created_at);
+    });
+
+    res.status(200).json(combinedPromotions);
+  } catch (error) {
+    res.status(500).json({
+      message: "Lỗi khi lấy danh sách khuyến mãi",
+      error: error.message,
+    });
+  }
+};
+
 // Lấy chi tiết khuyến mãi theo id
 export const getPromotionById = async (req, res) => {
   const { id } = req.params;
