@@ -386,14 +386,6 @@ router.get(
   productReviewController.getSuspiciousReviews
 );
 
-// ADMIN: Ẩn/Hiển thị review
-router.patch(
-  "/admin/reviews/:reviewId/visibility",
-  authenticateToken,
-  isAdminOrStaff,
-  productReviewController.toggleReviewVisibility
-);
-
 router.post(
   "/products/:id/reviews",
   authenticateToken,
