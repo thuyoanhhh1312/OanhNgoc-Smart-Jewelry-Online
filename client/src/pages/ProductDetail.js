@@ -15,7 +15,19 @@ import AddToCartModal from '../components/AddToCartModal';
 import LightboxViewer from '../components/LightboxViewer';
 import { AiOutlineShoppingCart, AiOutlinePhone } from 'react-icons/ai';
 import ThreeDViewer from '../components/ThreeDViewer';
-import necklaceModel from '../assets/3d/day-chuyen-bac-0000k060027.glb';
+
+// Map all GLB assets by slug (filename without extension)
+const modelImports = import.meta.glob('../assets/3d/*.glb', {
+  eager: true,
+  import: 'default',
+});
+const MODEL_MAP = Object.entries(modelImports).reduce((acc, [path, url]) => {
+  const match = path.match(/\/([^/]+)\.glb$/);
+  if (match) {
+    acc[match[1]] = url;
+  }
+  return acc;
+}, {});
 
 const ProductDetail = () => {
   const dispatch = useDispatch();
@@ -177,10 +189,7 @@ const ProductDetail = () => {
     localStorage.setItem('viewedProducts', JSON.stringify(filtered));
   }, [product]);
 
-  const modelPath = useMemo(
-    () => (slug === 'day-chuyen-bac-0000k060027' ? necklaceModel : null),
-    [slug],
-  );
+  const modelPath = useMemo(() => MODEL_MAP[slug] || null, [slug]);
 
   const mediaItems = useMemo(() => {
     const items =

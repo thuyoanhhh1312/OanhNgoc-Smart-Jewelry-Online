@@ -28,6 +28,17 @@ class ProductDetailScreen extends StatefulWidget {
 
 class ProductDetailScreenState extends State<ProductDetailScreen>
     with TickerProviderStateMixin {
+  // Map slug -> local GLB asset path
+  static const Map<String, String> _modelAssets = {
+    'day-chuyen-bac-0000k060027': 'assets/3d/day-chuyen-bac-0000k060027.glb',
+    'lac-tay-charm-bac-diy-0000k060012':
+        'assets/3d/lac-tay-charm-bac-diy-0000k060012.glb',
+    'nhan-nam-bac-dinh-da-xmxmk000129':
+        'assets/3d/nhan-nam-bac-dinh-da-xmxmk000129.glb',
+    'vong-tay-bac-dinh-da-xmxmk000014':
+        'assets/3d/vong-tay-bac-dinh-da-xmxmk000014.glb',
+  };
+
   Product? product;
   List<Product> similarProducts = [];
   List<dynamic> reviews = [];
@@ -324,7 +335,8 @@ class ProductDetailScreenState extends State<ProductDetailScreen>
   }
 
   bool _shouldShow3DModel() {
-    return product?.slug == 'day-chuyen-bac-0000k060027';
+    if (product?.slug == null) return false;
+    return _modelAssets.containsKey(product!.slug);
   }
 
   List<_MediaItem> _buildMediaItems() {
@@ -338,9 +350,11 @@ class ProductDetailScreenState extends State<ProductDetailScreen>
     }
 
     if (_shouldShow3DModel()) {
-      items.add(
-        const _MediaItem.model('assets/3d/day-chuyen-bac-0000k060027.glb'),
-      );
+      final slug = product?.slug ?? '';
+      final modelPath = _modelAssets[slug];
+      if (modelPath != null) {
+        items.add(_MediaItem.model(modelPath));
+      }
     }
 
     return items;
