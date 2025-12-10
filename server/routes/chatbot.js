@@ -139,11 +139,13 @@ function detectCategoryFromMessage(message) {
   return null;
 }
 
+// Map keyword category -> category_id list (theo bảng category thực tế)
+// 1: Bông tai, 2: Mặt dây chuyền, 3: Lắc/Vòng tay, 4: Dây chuyền, 5: Nhẫn, 6: Charm, 7: Dây cổ
 const CATEGORY_MAP = {
-  ring: 1,
-  bracelet: 2,
-  necklace: 3,
-  earring: 4,
+  ring: [5],
+  bracelet: [3],
+  necklace: [4, 2], // dây chuyền, mặt dây chuyền
+  earring: [1],
 };
 
 const CATEGORY_REPLY_PREFIX = {
@@ -152,6 +154,56 @@ const CATEGORY_REPLY_PREFIX = {
   necklace: "Em gợi ý vài mẫu dây chuyền xinh cho anh/chị nè:\n",
   earring: "Em gợi ý vài mẫu bông tai dễ phối cho anh/chị:\n",
 };
+
+const CATEGORY_KEYWORDS = {
+  ring: ["nhẫn", "nhan", "ring"],
+  bracelet: ["vòng tay", "lắc tay", "bracelet"],
+  necklace: ["dây chuyền", "vòng cổ", "mặt dây chuyền", "necklace"],
+  earring: ["bông tai", "hoa tai", "earring"],
+};
+
+async function findProductsByCategoryOrName(categoryIds, categoryKey) {
+  // Ưu tiên tìm theo category_id; nếu rỗng, fallback tìm theo từ khóa trong tên
+  const baseQuery = {
+    order: [["sold_quantity", "DESC"]],
+    limit: 3,
+    attributes: [
+      ["product_id", "product_id"],
+      ["product_name", "product_name"],
+      "price",
+      "slug",
+      "category_id",
+    ],
+  };
+
+  const ids = Array.isArray(categoryIds)
+    ? categoryIds.filter(Boolean)
+    : categoryIds
+    ? [categoryIds]
+    : [];
+
+  for (const cid of ids) {
+    const rows = await db.Product.findAll({
+      ...baseQuery,
+      where: { category_id: cid },
+    });
+    if (rows && rows.length) return rows;
+  }
+
+  const keywords = CATEGORY_KEYWORDS[categoryKey] || [];
+  if (keywords.length === 0) return [];
+
+  const orConditions = keywords.map((kw) => ({
+    product_name: { [Op.like]: `%${kw}%` },
+  }));
+
+  const fallbackRows = await db.Product.findAll({
+    ...baseQuery,
+    where: { [Op.or]: orConditions },
+  });
+
+  return fallbackRows || [];
+}
 
 router.post("/product-advice", async (req, res) => {
   try {
@@ -183,17 +235,10 @@ router.post("/product-advice", async (req, res) => {
       });
     }
 
-    const productRows = await db.Product.findAll({
-      where: { category_id: categoryId },
-      order: [["sold_quantity", "DESC"]],
-      limit: 3,
-      attributes: [
-        ["product_id", "product_id"],
-        ["product_name", "product_name"],
-        "price",
-        "slug",
-      ],
-    });
+    const productRows = await findProductsByCategoryOrName(
+      categoryId,
+      category
+    );
 
     if (!productRows || productRows.length === 0) {
       return res.status(200).json({
@@ -301,7 +346,7 @@ router.post("/product-link", async (req, res) => {
       process.env.FRONTEND_BASE_URL || "http://oanhngocjewelry.online"
     ).replace(/\/$/, "");
     const slugOrId = product.slug || product.id;
-    const productUrl = `${frontendBase}/product/${slugOrId}`;
+    const productUrl = `${frontendBase}/${slugOrId}`;
     const productName = product.name || `mẫu số ${chosenIndex}`;
 
     return res.status(200).json({
