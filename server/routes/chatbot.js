@@ -1,9 +1,20 @@
 import express from "express";
 import db from "../models/index.js";
 import { Op } from "sequelize";
+import mysql from "mysql2/promise";
 
 const router = express.Router();
 export const lastProductAdviceBySession = new Map();
+
+// Reuse a lightweight MySQL pool for quick product lookup (SKU/text search)
+const productDetailPool = mysql.createPool({
+  host: process.env.DB_HOST || "localhost",
+  user: process.env.DB_USER || "root",
+  password: process.env.DB_PASSWORD || "",
+  database: process.env.DB_NAME || "oanhngoc",
+  waitForConnections: true,
+  connectionLimit: 10,
+});
 
 const ORDER_STATUS_NORMALIZED = {
   cho_xu_ly: "pending",
@@ -365,6 +376,112 @@ router.post("/product-link", async (req, res) => {
       intent: "PRODUCT_LINK",
       productUrl: null,
       productId: null,
+    });
+  }
+});
+
+// POST /api/chatbot/product-detail
+router.post("/product-detail", async (req, res) => {
+  try {
+    const { sessionId, message } = req.body || {};
+
+    if (!sessionId || !message || typeof message !== "string") {
+      return res.status(400).json({
+        sessionId: sessionId || null,
+        reply:
+          "Thiếu sessionId hoặc message, anh/chị nhắn lại giúp em mã hoặc tên sản phẩm nha 💎",
+        intent: "PRODUCT_DETAIL_ERROR",
+        product: null,
+      });
+    }
+
+    // Thử tìm chuỗi ký tự/sku trong message (VD: XMXMK000167)
+    const skuMatch = message.match(/[A-Za-z0-9_-]{4,}/);
+    const searchTerm = skuMatch ? skuMatch[0] : message.trim();
+
+    // Tìm sản phẩm theo SKU/tên/slug
+    const [productRows] = await productDetailPool.query(
+      `
+        SELECT product_id, product_name, price, description, slug
+        FROM product
+        WHERE product_name LIKE ? OR slug LIKE ? OR product_id = ?
+        ORDER BY product_id DESC
+        LIMIT 1
+      `,
+      [`%${searchTerm}%`, `%${searchTerm}%`, Number.isNaN(Number(searchTerm)) ? 0 : Number(searchTerm)]
+    );
+
+    const product = productRows?.[0];
+
+    if (!product) {
+      return res.status(200).json({
+        sessionId,
+        reply:
+          "Em chưa xác định được sản phẩm anh/chị hỏi. Anh/chị giúp em gửi lại tên hoặc mã sản phẩm đầy đủ nha 💎",
+        intent: "PRODUCT_DETAIL",
+        product: null,
+      });
+    }
+
+    // Lấy thống kê review
+    const [reviewRows] = await productDetailPool.query(
+      `
+        SELECT 
+          AVG(rating) AS averageRating,
+          COUNT(*) AS totalReviews,
+          SUM(CASE WHEN sentiment = 'POS' THEN 1 ELSE 0 END) AS positiveReviews
+        FROM product_review
+        WHERE product_id = ?
+      `,
+      [product.product_id]
+    );
+
+    const reviewStats = reviewRows?.[0] || {};
+    const averageRating = Number(reviewStats.averageRating || 0).toFixed(1);
+    const totalReviews = Number(reviewStats.totalReviews || 0);
+    const positiveReviews = Number(reviewStats.positiveReviews || 0);
+
+    const priceFormatted = Number(product.price).toLocaleString("vi-VN");
+    const productName = product.product_name || searchTerm;
+
+    const replyLines = [
+      `Mẫu ${productName} có giá khoảng ${priceFormatted}₫.`,
+    ];
+
+    if (product.description) {
+      replyLines.push(`Mô tả: ${product.description}`);
+    }
+
+    replyLines.push(
+      `Đánh giá: ${averageRating}/5 từ ${totalReviews} lượt, trong đó ${positiveReviews} đánh giá tích cực.`,
+      "Anh/chị cần em gửi link chi tiết sản phẩm không ạ? 💎"
+    );
+
+    const reply = replyLines.join("\n");
+
+    return res.status(200).json({
+      sessionId,
+      reply,
+      intent: "PRODUCT_DETAIL",
+      product: {
+        id: product.product_id,
+        name: productName,
+        price: Number(product.price),
+        description: product.description,
+        slug: product.slug,
+        averageRating: Number(averageRating),
+        totalReviews,
+        positiveReviews,
+      },
+    });
+  } catch (error) {
+    console.error("Chatbot product-detail error:", error);
+    return res.status(500).json({
+      sessionId: req?.body?.sessionId || null,
+      reply:
+        "Hiện tại hệ thống đang bận, anh/chị thử lại giúp em sau ít phút nha 🥺",
+      intent: "ERROR",
+      product: null,
     });
   }
 });
