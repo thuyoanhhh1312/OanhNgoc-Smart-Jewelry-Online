@@ -29,17 +29,34 @@ app = FastAPI(
 
 # ======================== TOXIC-BERT MODEL ========================
 
-# Dùng model local thay vì kéo từ HuggingFace
-TOXIC_MODEL_PATH = "./toxic_bert_model"
+TOXIC_MODEL_PATH = "./toxic_bert_model"  # Local folder (git-lfs)
+TOXIC_MODEL_HUB_ID = "unitary/toxic-bert"  # Fallback: Hugging Face Hub
 
-try:
-    logger.info(f"Loading toxic model from local path: {TOXIC_MODEL_PATH}")
-    toxic_tokenizer = AutoTokenizer.from_pretrained(TOXIC_MODEL_PATH)
-    toxic_model = AutoModelForSequenceClassification.from_pretrained(TOXIC_MODEL_PATH)
-    logger.info("✅ Toxic model loaded successfully from local folder")
-except Exception as e:
-    logger.error(f"❌ Error loading toxic model: {e}")
-    raise
+
+def load_toxic_model() -> Tuple[AutoTokenizer, AutoModelForSequenceClassification, str]:
+    """
+    Try local weights first (may be Git LFS pointers); fall back to Hugging Face Hub.
+    Returns tokenizer, model, and the source string that was used.
+    """
+    for source in (TOXIC_MODEL_PATH, TOXIC_MODEL_HUB_ID):
+        try:
+            logger.info(f"Loading toxic model from: {source}")
+            tokenizer = AutoTokenizer.from_pretrained(source)
+            model = AutoModelForSequenceClassification.from_pretrained(source)
+            logger.info(f"✅ Toxic model loaded successfully from {source}")
+            return tokenizer, model, source
+        except Exception as e:
+            logger.warning(
+                f"⚠️  Failed to load toxic model from {source}: {e}. "
+                "If you expected local weights, ensure Git LFS files are pulled."
+            )
+
+    raise RuntimeError(
+        "Unable to load toxic model from local folder or Hugging Face Hub."
+    )
+
+
+toxic_tokenizer, toxic_model, TOXIC_MODEL_SOURCE = load_toxic_model()
 
 
 # Device
@@ -76,14 +93,31 @@ HIGH_PRIORITY_CATEGORIES = {"severe_toxic", "threat"}
 # ======================== PHOBERT SENTIMENT MODEL ========================
 
 SENTIMENT_MODEL_PATH = "./phobert-base-vi-sentiment-analysis"
+SENTIMENT_MODEL_HUB_ID = "mr4/phobert-base-vi-sentiment-analysis"
 
-try:
-    logger.info(f"Loading sentiment model (PhoBERT): {SENTIMENT_MODEL_PATH}")
-    sentiment_classifier = hf_pipeline("sentiment-analysis", model=SENTIMENT_MODEL_PATH)
-    logger.info("✅ Sentiment model loaded successfully")
-except Exception as e:
-    logger.error(f"❌ Error loading sentiment model: {e}")
-    sentiment_classifier = None
+
+def load_sentiment_model():
+    """
+    Try local PhoBERT weights; fall back to Hugging Face Hub if local files are only LFS pointers.
+    Returns (pipeline, source_used | None).
+    """
+    for source in (SENTIMENT_MODEL_PATH, SENTIMENT_MODEL_HUB_ID):
+        try:
+            logger.info(f"Loading sentiment model (PhoBERT) from: {source}")
+            classifier = hf_pipeline("sentiment-analysis", model=source)
+            logger.info(f"✅ Sentiment model loaded successfully from {source}")
+            return classifier, source
+        except Exception as e:
+            logger.warning(
+                f"⚠️  Failed to load sentiment model from {source}: {e}. "
+                "If you expected local weights, ensure Git LFS files are pulled."
+            )
+
+    logger.error("❌ Unable to load sentiment model from local folder or Hugging Face Hub.")
+    return None, None
+
+
+sentiment_classifier, SENTIMENT_MODEL_SOURCE = load_sentiment_model()
 
 # ======================== BUSINESS RULES ========================
 
@@ -497,8 +531,8 @@ async def analyze_full_pipeline(req: ToxicRequest):
 async def health_check():
     return {
         "status": "healthy",
-        "toxic_model": TOXIC_MODEL_PATH,
-        "sentiment_model": SENTIMENT_MODEL_PATH,
+        "toxic_model": TOXIC_MODEL_SOURCE,
+        "sentiment_model": SENTIMENT_MODEL_SOURCE or SENTIMENT_MODEL_PATH,
         "device": str(DEVICE),
     }
 
@@ -506,7 +540,7 @@ async def health_check():
 @app.get("/info")
 async def model_info():
     return {
-        "toxic_model_name": TOXIC_MODEL_PATH,
+        "toxic_model_name": TOXIC_MODEL_SOURCE,
         "labels": TOXIC_LABELS,
         "labels_vi": TOXIC_LABELS_VI,
         "threshold": TOXIC_THRESHOLD,
