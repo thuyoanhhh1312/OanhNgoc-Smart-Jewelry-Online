@@ -248,6 +248,11 @@ router.delete(
 
 // Promotion routes
 router.get("/promotions", promotionController.getAllPromotions);
+router.get(
+  "/promotions/customer/my-promotions",
+  authenticateToken,
+  promotionController.getCustomerPromotions
+);
 router.get("/promotions/:id", promotionController.getPromotionById);
 router.post(
   "/promotions",
