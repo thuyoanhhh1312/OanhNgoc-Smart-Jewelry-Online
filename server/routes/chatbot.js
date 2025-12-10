@@ -1,9 +1,20 @@
 import express from "express";
 import db from "../models/index.js";
 import { Op } from "sequelize";
+import mysql from "mysql2/promise";
 
 const router = express.Router();
 export const lastProductAdviceBySession = new Map();
+
+// Reuse a lightweight MySQL pool for quick product lookup (SKU/text search)
+const productDetailPool = mysql.createPool({
+  host: process.env.DB_HOST || "localhost",
+  user: process.env.DB_USER || "root",
+  password: process.env.DB_PASSWORD || "",
+  database: process.env.DB_NAME || "oanhngoc",
+  waitForConnections: true,
+  connectionLimit: 10,
+});
 
 const ORDER_STATUS_NORMALIZED = {
   cho_xu_ly: "pending",
@@ -139,11 +150,13 @@ function detectCategoryFromMessage(message) {
   return null;
 }
 
+// Map keyword category -> category_id list (theo bảng category thực tế)
+// 1: Bông tai, 2: Mặt dây chuyền, 3: Lắc/Vòng tay, 4: Dây chuyền, 5: Nhẫn, 6: Charm, 7: Dây cổ
 const CATEGORY_MAP = {
-  ring: 1,
-  bracelet: 2,
-  necklace: 3,
-  earring: 4,
+  ring: [5],
+  bracelet: [3],
+  necklace: [4, 2], // dây chuyền, mặt dây chuyền
+  earring: [1],
 };
 
 const CATEGORY_REPLY_PREFIX = {
@@ -152,6 +165,56 @@ const CATEGORY_REPLY_PREFIX = {
   necklace: "Em gợi ý vài mẫu dây chuyền xinh cho anh/chị nè:\n",
   earring: "Em gợi ý vài mẫu bông tai dễ phối cho anh/chị:\n",
 };
+
+const CATEGORY_KEYWORDS = {
+  ring: ["nhẫn", "nhan", "ring"],
+  bracelet: ["vòng tay", "lắc tay", "bracelet"],
+  necklace: ["dây chuyền", "vòng cổ", "mặt dây chuyền", "necklace"],
+  earring: ["bông tai", "hoa tai", "earring"],
+};
+
+async function findProductsByCategoryOrName(categoryIds, categoryKey) {
+  // Ưu tiên tìm theo category_id; nếu rỗng, fallback tìm theo từ khóa trong tên
+  const baseQuery = {
+    order: [["sold_quantity", "DESC"]],
+    limit: 3,
+    attributes: [
+      ["product_id", "product_id"],
+      ["product_name", "product_name"],
+      "price",
+      "slug",
+      "category_id",
+    ],
+  };
+
+  const ids = Array.isArray(categoryIds)
+    ? categoryIds.filter(Boolean)
+    : categoryIds
+    ? [categoryIds]
+    : [];
+
+  for (const cid of ids) {
+    const rows = await db.Product.findAll({
+      ...baseQuery,
+      where: { category_id: cid },
+    });
+    if (rows && rows.length) return rows;
+  }
+
+  const keywords = CATEGORY_KEYWORDS[categoryKey] || [];
+  if (keywords.length === 0) return [];
+
+  const orConditions = keywords.map((kw) => ({
+    product_name: { [Op.like]: `%${kw}%` },
+  }));
+
+  const fallbackRows = await db.Product.findAll({
+    ...baseQuery,
+    where: { [Op.or]: orConditions },
+  });
+
+  return fallbackRows || [];
+}
 
 router.post("/product-advice", async (req, res) => {
   try {
@@ -183,17 +246,10 @@ router.post("/product-advice", async (req, res) => {
       });
     }
 
-    const productRows = await db.Product.findAll({
-      where: { category_id: categoryId },
-      order: [["sold_quantity", "DESC"]],
-      limit: 3,
-      attributes: [
-        ["product_id", "product_id"],
-        ["product_name", "product_name"],
-        "price",
-        "slug",
-      ],
-    });
+    const productRows = await findProductsByCategoryOrName(
+      categoryId,
+      category
+    );
 
     if (!productRows || productRows.length === 0) {
       return res.status(200).json({
@@ -301,7 +357,7 @@ router.post("/product-link", async (req, res) => {
       process.env.FRONTEND_BASE_URL || "http://oanhngocjewelry.online"
     ).replace(/\/$/, "");
     const slugOrId = product.slug || product.id;
-    const productUrl = `${frontendBase}/product/${slugOrId}`;
+    const productUrl = `${frontendBase}/${slugOrId}`;
     const productName = product.name || `mẫu số ${chosenIndex}`;
 
     return res.status(200).json({
@@ -320,6 +376,112 @@ router.post("/product-link", async (req, res) => {
       intent: "PRODUCT_LINK",
       productUrl: null,
       productId: null,
+    });
+  }
+});
+
+// POST /api/chatbot/product-detail
+router.post("/product-detail", async (req, res) => {
+  try {
+    const { sessionId, message } = req.body || {};
+
+    if (!sessionId || !message || typeof message !== "string") {
+      return res.status(400).json({
+        sessionId: sessionId || null,
+        reply:
+          "Thiếu sessionId hoặc message, anh/chị nhắn lại giúp em mã hoặc tên sản phẩm nha 💎",
+        intent: "PRODUCT_DETAIL_ERROR",
+        product: null,
+      });
+    }
+
+    // Thử tìm chuỗi ký tự/sku trong message (VD: XMXMK000167)
+    const skuMatch = message.match(/[A-Za-z0-9_-]{4,}/);
+    const searchTerm = skuMatch ? skuMatch[0] : message.trim();
+
+    // Tìm sản phẩm theo SKU/tên/slug
+    const [productRows] = await productDetailPool.query(
+      `
+        SELECT product_id, product_name, price, description, slug
+        FROM product
+        WHERE product_name LIKE ? OR slug LIKE ? OR product_id = ?
+        ORDER BY product_id DESC
+        LIMIT 1
+      `,
+      [`%${searchTerm}%`, `%${searchTerm}%`, Number.isNaN(Number(searchTerm)) ? 0 : Number(searchTerm)]
+    );
+
+    const product = productRows?.[0];
+
+    if (!product) {
+      return res.status(200).json({
+        sessionId,
+        reply:
+          "Em chưa xác định được sản phẩm anh/chị hỏi. Anh/chị giúp em gửi lại tên hoặc mã sản phẩm đầy đủ nha 💎",
+        intent: "PRODUCT_DETAIL",
+        product: null,
+      });
+    }
+
+    // Lấy thống kê review
+    const [reviewRows] = await productDetailPool.query(
+      `
+        SELECT 
+          AVG(rating) AS averageRating,
+          COUNT(*) AS totalReviews,
+          SUM(CASE WHEN sentiment = 'POS' THEN 1 ELSE 0 END) AS positiveReviews
+        FROM product_review
+        WHERE product_id = ?
+      `,
+      [product.product_id]
+    );
+
+    const reviewStats = reviewRows?.[0] || {};
+    const averageRating = Number(reviewStats.averageRating || 0).toFixed(1);
+    const totalReviews = Number(reviewStats.totalReviews || 0);
+    const positiveReviews = Number(reviewStats.positiveReviews || 0);
+
+    const priceFormatted = Number(product.price).toLocaleString("vi-VN");
+    const productName = product.product_name || searchTerm;
+
+    const replyLines = [
+      `Mẫu ${productName} có giá khoảng ${priceFormatted}₫.`,
+    ];
+
+    if (product.description) {
+      replyLines.push(`Mô tả: ${product.description}`);
+    }
+
+    replyLines.push(
+      `Đánh giá: ${averageRating}/5 từ ${totalReviews} lượt, trong đó ${positiveReviews} đánh giá tích cực.`,
+      "Anh/chị cần em gửi link chi tiết sản phẩm không ạ? 💎"
+    );
+
+    const reply = replyLines.join("\n");
+
+    return res.status(200).json({
+      sessionId,
+      reply,
+      intent: "PRODUCT_DETAIL",
+      product: {
+        id: product.product_id,
+        name: productName,
+        price: Number(product.price),
+        description: product.description,
+        slug: product.slug,
+        averageRating: Number(averageRating),
+        totalReviews,
+        positiveReviews,
+      },
+    });
+  } catch (error) {
+    console.error("Chatbot product-detail error:", error);
+    return res.status(500).json({
+      sessionId: req?.body?.sessionId || null,
+      reply:
+        "Hiện tại hệ thống đang bận, anh/chị thử lại giúp em sau ít phút nha 🥺",
+      intent: "ERROR",
+      product: null,
     });
   }
 });

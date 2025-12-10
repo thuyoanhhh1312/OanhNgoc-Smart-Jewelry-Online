@@ -248,6 +248,11 @@ router.delete(
 
 // Promotion routes
 router.get("/promotions", promotionController.getAllPromotions);
+router.get(
+  "/promotions/customer/my-promotions",
+  authenticateToken,
+  promotionController.getCustomerPromotions
+);
 router.get("/promotions/:id", promotionController.getPromotionById);
 router.post(
   "/promotions",
@@ -384,14 +389,6 @@ router.get(
   authenticateToken,
   isAdminOrStaff,
   productReviewController.getSuspiciousReviews
-);
-
-// ADMIN: Ẩn/Hiển thị review
-router.patch(
-  "/admin/reviews/:reviewId/visibility",
-  authenticateToken,
-  isAdminOrStaff,
-  productReviewController.toggleReviewVisibility
 );
 
 router.post(
