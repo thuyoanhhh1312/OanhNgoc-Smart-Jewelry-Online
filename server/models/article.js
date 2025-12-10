@@ -12,8 +12,16 @@ const Article = sequelize.define(
     article_category_id: { type: DataTypes.INTEGER, allowNull: false },
     title: { type: DataTypes.STRING(255), allowNull: false },
     slug: { type: DataTypes.STRING(300), allowNull: false, unique: true },
-    excerpt: { type: DataTypes.TEXT, allowNull: true },
-    content: { type: DataTypes.TEXT("long"), allowNull: false },
+    content: {
+      type: DataTypes.TEXT("long"), // đủ cho HTML dài
+      allowNull: false,
+    },
+
+    excerpt: {
+      type: DataTypes.TEXT("medium"), // tóm tắt 1–2 đoạn
+      allowNull: true,
+    },
+
     thumbnail_url: { type: DataTypes.STRING(2000), allowNull: true },
     status: {
       type: DataTypes.ENUM("draft", "published", "archived"),

@@ -147,12 +147,14 @@ const NewsDetail = () => {
 
                 {/* Thumbnail - Full width in white card */}
                 {article.thumbnail_url && (
-                  <div className="-mx-8 mb-6">
-                    <img
-                      src={article.thumbnail_url}
-                      alt={article.title}
-                      className="w-full h-96 object-cover"
-                    />
+                  <div className="w-full flex justify-center my-8">
+                    <figure className="w-full max-w-[640px] bg-white rounded-3xl shadow-md overflow-hidden">
+                      <img
+                        src={article.thumbnail_url}
+                        alt={article.title}
+                        className="w-full h-auto object-contain md:max-h-[420px]"
+                      />
+                    </figure>
                   </div>
                 )}
               </div>
