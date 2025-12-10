@@ -9,11 +9,13 @@ import newsApi from '../../../api/newsApi';
 import newsCategoryApi from '../../../api/newsCategoryApi';
 import tagApi from '../../../api/tagApi';
 import FullScreenLoader from '../../../components/ui/loading/FullScreenLoader';
+import RichTextEditor from '../../../components/RichTextEditor';
 
 const EditNews = () => {
-  const user = useSelector((state) => state?.user);
+  const { user } = useSelector((state) => ({ ...state }));
   const { id } = useParams();
   const navigate = useNavigate();
+
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
 
@@ -27,7 +29,7 @@ const EditNews = () => {
     published_at: '',
   });
 
-  const [thumbnail, setThumbnail] = useState(null);
+  const [thumbnailFile, setThumbnailFile] = useState(null); // giống AddNews
   const [thumbnailPreview, setThumbnailPreview] = useState('');
   const [selectedTags, setSelectedTags] = useState([]);
 
@@ -39,13 +41,13 @@ const EditNews = () => {
     const loadData = async () => {
       try {
         setLoading(true);
+
         const [newsData, catsData, tagsData] = await Promise.all([
           newsApi.getNewsAdminById(id, user?.token),
           newsCategoryApi.getNewsCategories(),
           tagApi.getTags(),
         ]);
 
-        // Load bài viết
         setFormData({
           title: newsData.title || '',
           slug: newsData.slug || '',
@@ -58,12 +60,12 @@ const EditNews = () => {
             : '',
         });
 
-        // Set thumbnail preview
+        // Preview ảnh cũ
         if (newsData.thumbnail_url) {
           setThumbnailPreview(newsData.thumbnail_url);
         }
 
-        // Set selected tags
+        // Tags đang chọn
         if (Array.isArray(newsData.tags)) {
           setSelectedTags(newsData.tags.map((t) => t.tag_id));
         }
@@ -78,10 +80,11 @@ const EditNews = () => {
         setLoading(false);
       }
     };
-    loadData();
-  }, [id, navigate]);
 
-  // Xử lý form change
+    loadData();
+  }, [id, navigate, user?.token]);
+
+  // Change chung
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({
@@ -90,28 +93,23 @@ const EditNews = () => {
     }));
   };
 
-  // Xử lý thumbnail URL
+  // Thumbnail change – giống AddNews
   const handleThumbnailChange = (e) => {
     const file = e.target.files?.[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onload = () => {
-        setThumbnailPreview(reader.result);
-        setThumbnail(file); // Lưu file object thay vì base64
-      };
-      reader.readAsDataURL(file);
+      setThumbnailFile(file); // lưu File mới
+      setThumbnailPreview(URL.createObjectURL(file)); // preview ảnh mới
     }
   };
 
-  // Auto generate slug từ title
-  const generateSlug = (title) => {
-    return title
+  // Generate slug từ title
+  const generateSlug = (title) =>
+    title
       .toLowerCase()
       .trim()
       .replace(/[^\w\s-]/g, '')
       .replace(/\s+/g, '-')
       .replace(/-+/g, '-');
-  };
 
   const handleTitleChange = (e) => {
     const title = e.target.value;
@@ -129,7 +127,7 @@ const EditNews = () => {
     );
   };
 
-  // Submit form
+  // Submit
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -149,27 +147,24 @@ const EditNews = () => {
     setSubmitting(true);
 
     try {
-      // Sử dụng FormData giống như sản phẩm
-      const payload = new FormData();
-      payload.append('title', formData.title.trim());
-      payload.append('slug', formData.slug.trim());
-      payload.append('excerpt', formData.excerpt.trim());
-      payload.append('content', formData.content.trim());
-      payload.append('article_category_id', Number(formData.article_category_id));
-      payload.append('status', formData.status);
-      payload.append('tags', JSON.stringify(selectedTags));
+      const payload = {
+        title: formData.title.trim(),
+        slug: formData.slug.trim(),
+        excerpt: formData.excerpt.trim(),
+        content: formData.content.trim(),
+        article_category_id: Number(formData.article_category_id),
+        status: formData.status,
+        tags: selectedTags,
+      };
 
-      // Thêm file thumbnail nếu có
-      if (thumbnail instanceof File) {
-        payload.append('thumbnail', thumbnail);
-      }
-
-      // Chỉ gửi published_at nếu có giá trị
       if (formData.published_at) {
-        payload.append('published_at', new Date(formData.published_at).toISOString());
+        payload.published_at = new Date(formData.published_at).toISOString();
       }
 
-      await newsApi.updateNews(id, payload, user?.token);
+      // thumbnailFile:
+      //  - Nếu user chọn ảnh mới => File
+      //  - Nếu không chọn => null -> backend giữ ảnh cũ
+      await newsApi.updateNews(id, payload, thumbnailFile, user?.token);
 
       Swal.fire({
         icon: 'success',
@@ -192,9 +187,7 @@ const EditNews = () => {
     }
   };
 
-  if (loading) {
-    return <FullScreenLoader />;
-  }
+  if (loading) return <FullScreenLoader />;
 
   return (
     <div className="flex flex-col flex-1 bg-white p-4 rounded-lg shadow-md">
@@ -292,20 +285,24 @@ const EditNews = () => {
           </div>
 
           {/* Content */}
+          {/* Content */}
           <div>
             <Label>
               Nội Dung <span className="text-red-500">*</span>
             </Label>
-            <textarea
-              name="content"
-              placeholder="Nhập nội dung bài viết..."
+
+            <RichTextEditor
               value={formData.content}
-              onChange={handleInputChange}
-              rows="10"
-              className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring font-mono text-sm"
+              onChange={(data) =>
+                setFormData((prev) => ({
+                  ...prev,
+                  content: data,
+                }))
+              }
             />
+
             <p className="text-xs text-gray-500 mt-1">
-              Hỗ trợ HTML: &lt;b&gt;, &lt;i&gt;, &lt;p&gt;, &lt;br&gt;, &lt;a href&gt;, v.v
+              Có thể dùng heading, in đậm, in nghiêng, danh sách, trích dẫn, v.v.
             </p>
           </div>
 

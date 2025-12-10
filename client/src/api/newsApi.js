@@ -2,8 +2,40 @@
 import axios from 'axios';
 import axiosInstance from './axiosInstance';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+const API_URL = import.meta.env.VITE_API_URL;
 
+// Hàm build FormData dùng chung cho create + update
+const buildNewsFormData = (newsData, imageFile) => {
+  const formData = new FormData();
+
+  // Các field cơ bản
+  if (newsData.title) formData.append('title', newsData.title);
+  if (newsData.slug) formData.append('slug', newsData.slug);
+  if (newsData.excerpt !== undefined) formData.append('excerpt', newsData.excerpt || '');
+  if (newsData.content) formData.append('content', newsData.content);
+  if (newsData.article_category_id)
+    formData.append('article_category_id', newsData.article_category_id);
+  if (newsData.status) formData.append('status', newsData.status);
+
+  if (newsData.published_at) {
+    formData.append('published_at', newsData.published_at);
+  }
+
+  // Tags: gửi dạng tags[]
+  if (Array.isArray(newsData.tags)) {
+    newsData.tags.forEach((tagId) => {
+      formData.append('tags[]', tagId);
+    });
+  }
+
+  // Ảnh đại diện: file
+  if (imageFile) {
+    // field name 'image' hoặc 'thumbnail' tùy backend bạn định nghĩa
+    formData.append('thumbnail', imageFile);
+  }
+
+  return formData;
+};
 // Lấy danh sách bài viết (có hỗ trợ query: page, limit, q, category_id, status)
 const getNews = async (params = {}) => {
   try {
@@ -57,13 +89,14 @@ const getNewsBySlug = async (slug) => {
   }
 };
 
-// Tạo bài viết mới (admin/staff)
-const createNews = async (newsData, accessToken) => {
+const createNews = async (newsData, imageFile, accessToken) => {
   try {
-    const response = await axiosInstance.post(`${API_URL}/admin/news`, newsData, {
+    const formData = buildNewsFormData(newsData, imageFile);
+
+    const response = await axiosInstance.post(`${API_URL}/admin/news`, formData, {
       headers: {
         Authorization: `Bearer ${accessToken}`,
-        // Không set Content-Type, để axios tự động set khi là FormData
+        // Không set Content-Type, để axios tự set multipart/form-data
       },
     });
     return response.data;
@@ -72,14 +105,14 @@ const createNews = async (newsData, accessToken) => {
     throw error;
   }
 };
-
-// Cập nhật bài viết
-const updateNews = async (id, newsData, accessToken) => {
+const updateNews = async (id, newsData, imageFile, accessToken) => {
   try {
-    const response = await axiosInstance.put(`${API_URL}/admin/news/${id}`, newsData, {
+    const formData = buildNewsFormData(newsData, imageFile);
+
+    const response = await axiosInstance.put(`${API_URL}/admin/news/${id}`, formData, {
       headers: {
         Authorization: `Bearer ${accessToken}`,
-        // Không set Content-Type, để axios tự động set khi là FormData
+        // KHÔNG set Content-Type thủ công
       },
     });
     return response.data;

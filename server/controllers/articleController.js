@@ -221,26 +221,52 @@ export const getNewsById = async (req, res, next) => {
     next(err);
   }
 };
+const normalizeTagsFromBody = (body) => {
+  let raw = body.tags ?? body["tags[]"];
 
+  if (!raw) return [];
+
+  let arr = [];
+
+  if (Array.isArray(raw)) {
+    arr = raw;
+  } else if (typeof raw === "string") {
+    // Nếu là JSON array
+    const trimmed = raw.trim();
+    if (trimmed.startsWith("[")) {
+      try {
+        arr = JSON.parse(trimmed);
+      } catch {
+        arr = [raw];
+      }
+    } else {
+      // "1,2,3" hoặc "gold,silver"
+      arr = raw
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean);
+    }
+  } else {
+    arr = [raw];
+  }
+
+  return arr;
+};
+
+// POST /admin/news
 // POST /admin/news
 export const createNews = async (req, res, next) => {
   const t = await db.sequelize.transaction();
   try {
-    let { tags, ...data } = req.body || {};
-
-    // parse tags nếu gửi form-data
-    if (typeof tags === "string") {
-      try {
-        tags = JSON.parse(tags);
-      } catch {
-        tags = [tags];
-      }
-    }
-    if (!Array.isArray(tags)) tags = [];
+    // Lấy tags (ids hoặc names) từ body
+    const tags = normalizeTagsFromBody(req.body);
+    // Lấy các field còn lại
+    const { tags: _ignored, "tags[]": _ignored2, ...data } = req.body || {};
 
     // file upload -> thumbnail_url
-    if (req.file?.path && !data.thumbnail_url)
-      data.thumbnail_url = req.file.path;
+    if (req.file?.path && !data.thumbnail_url) {
+      data.thumbnail_url = req.file.path; // Cloudinary URL hoặc local path
+    }
 
     // validate article_category_id
     const cat = await ArticleCategory.findByPk(data.article_category_id, {
@@ -253,29 +279,44 @@ export const createNews = async (req, res, next) => {
         .json({ message: "article_category_id không hợp lệ" });
     }
 
-    // nếu FE không gửi slug, bạn có thể tự tạo (tuỳ chọn)
+    // nếu FE không gửi slug, tự tạo (tuỳ chọn)
     if (!data.slug && data.title) {
       data.slug = data.title.toLowerCase().trim().replace(/\s+/g, "-");
     }
 
     const article = await Article.create(data, { transaction: t });
 
-    if (tags.length) {
+    // Xử lý tags: có thể là ID hoặc name
+    if (Array.isArray(tags) && tags.length > 0) {
       const tagRows = [];
-      for (const name of tags) {
-        // Ensure name is a string
-        const tagName = String(name || "").trim();
-        if (!tagName) continue;
 
-        const slug = tagName.toLowerCase().replace(/\s+/g, "-");
-        const [tag] = await Tag.findOrCreate({
-          where: { slug },
-          defaults: { name: tagName, slug },
-          transaction: t,
-        });
-        tagRows.push(tag);
+      for (const rawTag of tags) {
+        const value = String(rawTag || "").trim();
+        if (!value) continue;
+
+        // Nếu là số → coi là tag_id
+        if (/^\d+$/.test(value)) {
+          const tag = await Tag.findByPk(Number(value), { transaction: t });
+          if (tag) {
+            tagRows.push(tag);
+          }
+        } else {
+          // Nếu là chữ → dùng làm name
+          const tagName = value;
+          const slug = tagName.toLowerCase().replace(/\s+/g, "-");
+
+          const [tag] = await Tag.findOrCreate({
+            where: { slug },
+            defaults: { name: tagName, slug },
+            transaction: t,
+          });
+          tagRows.push(tag);
+        }
       }
-      await article.setTags(tagRows, { transaction: t });
+
+      if (tagRows.length) {
+        await article.setTags(tagRows, { transaction: t });
+      }
     }
 
     await t.commit();
@@ -290,20 +331,14 @@ export const createNews = async (req, res, next) => {
 };
 
 // PUT /admin/news/:id
+// PUT /admin/news/:id
 export const updateNews = async (req, res, next) => {
   const t = await db.sequelize.transaction();
   try {
     const { id } = req.params;
-    let { tags, ...data } = req.body || {};
 
-    if (typeof tags === "string") {
-      try {
-        tags = JSON.parse(tags);
-      } catch {
-        tags = [tags];
-      }
-    }
-    if (!Array.isArray(tags)) tags = [];
+    const tags = normalizeTagsFromBody(req.body);
+    const { tags: _ignored, "tags[]": _ignored2, ...data } = req.body || {};
 
     const article = await Article.findByPk(id, { transaction: t });
     if (!article) {
@@ -311,20 +346,17 @@ export const updateNews = async (req, res, next) => {
       return res.status(404).json({ message: "Không tìm thấy bài viết" });
     }
 
-    // Nếu có file upload mới, xóa ảnh cũ trên Cloudinary
+    // Nếu có file upload mới, xóa ảnh cũ trên Cloudinary (nếu dùng)
     if (req.file?.path) {
       if (article.thumbnail_url) {
         try {
-          // Extract public_id từ Cloudinary URL
           const urlParts = article.thumbnail_url.split("/");
           const fileName = urlParts[urlParts.length - 1].split(".")[0];
-          const publicId = `products/${fileName}`;
+          const publicId = `products/${fileName}`; // nếu thư mục khác thì sửa ở đây
 
-          // Xóa ảnh cũ
           await cloudinary.uploader.destroy(publicId);
         } catch (err) {
           console.error("Lỗi xóa ảnh cũ:", err);
-          // Tiếp tục dù xóa ảnh cũ thất bại
         }
       }
       data.thumbnail_url = req.file.path;
@@ -342,7 +374,6 @@ export const updateNews = async (req, res, next) => {
       }
     }
 
-    // tự tạo slug nếu cần (tuỳ chọn)
     if (!data.slug && data.title) {
       data.slug = data.title.toLowerCase().trim().replace(/\s+/g, "-");
     }
@@ -351,17 +382,18 @@ export const updateNews = async (req, res, next) => {
 
     if (Array.isArray(tags) && tags.length > 0) {
       const tagRows = [];
-      for (const tagId of tags) {
-        // Nếu gửi tag_id (numeric), tìm tag đó
-        if (!isNaN(tagId)) {
-          const tag = await Tag.findByPk(tagId, { transaction: t });
+
+      for (const rawTag of tags) {
+        const value = String(rawTag || "").trim();
+        if (!value) continue;
+
+        if (/^\d+$/.test(value)) {
+          const tag = await Tag.findByPk(Number(value), { transaction: t });
           if (tag) tagRows.push(tag);
         } else {
-          // Nếu gửi name (string), tạo hoặc tìm
-          const tagName = String(tagId || "").trim();
-          if (!tagName) continue;
-
+          const tagName = value;
           const slug = tagName.toLowerCase().replace(/\s+/g, "-");
+
           const [tag] = await Tag.findOrCreate({
             where: { slug },
             defaults: { name: tagName, slug },
@@ -370,7 +402,10 @@ export const updateNews = async (req, res, next) => {
           tagRows.push(tag);
         }
       }
-      await article.setTags(tagRows, { transaction: t });
+
+      if (tagRows.length) {
+        await article.setTags(tagRows, { transaction: t });
+      }
     }
 
     await t.commit();

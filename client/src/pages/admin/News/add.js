@@ -9,6 +9,7 @@ import newsApi from '../../../api/newsApi';
 import newsCategoryApi from '../../../api/newsCategoryApi';
 import tagApi from '../../../api/tagApi';
 import FullScreenLoader from '../../../components/ui/loading/FullScreenLoader';
+import RichTextEditor from '../../../components/RichTextEditor';
 
 const AddNews = () => {
   const { user } = useSelector((state) => ({ ...state }));
@@ -25,8 +26,9 @@ const AddNews = () => {
     published_at: '',
   });
 
-  const [thumbnail, setThumbnail] = useState(null);
+  const [thumbnailFile, setThumbnailFile] = useState(null);
   const [thumbnailPreview, setThumbnailPreview] = useState('');
+
   const [selectedTags, setSelectedTags] = useState([]);
 
   const [categories, setCategories] = useState([]);
@@ -60,16 +62,12 @@ const AddNews = () => {
   };
 
   // Xử lý thumbnail URL
+
   const handleThumbnailChange = (e) => {
     const file = e.target.files?.[0];
     if (file) {
-      // Đọc file thành base64 hoặc URL object
-      const reader = new FileReader();
-      reader.onload = () => {
-        setThumbnailPreview(reader.result);
-        setThumbnail(reader.result); // lưu base64
-      };
-      reader.readAsDataURL(file);
+      setThumbnailFile(file); // ⬅️ lưu File
+      setThumbnailPreview(URL.createObjectURL(file)); // preview
     }
   };
 
@@ -129,18 +127,12 @@ const AddNews = () => {
         tags: selectedTags,
       };
 
-      // Gửi thumbnail_url nếu có (base64 hoặc URL)
-      if (thumbnail) {
-        payload.thumbnail_url = thumbnail;
-      }
-
-      // Chỉ gửi published_at nếu có giá trị
       if (formData.published_at) {
         payload.published_at = new Date(formData.published_at).toISOString();
       }
 
-      console.log('📤 Sending payload:', payload);
-      await newsApi.createNews(payload, user?.token);
+      console.log('📤 Sending payload (no base64):', payload);
+      await newsApi.createNews(payload, thumbnailFile, user?.token);
 
       Swal.fire({
         icon: 'success',
@@ -259,20 +251,24 @@ const AddNews = () => {
           </div>
 
           {/* Content */}
+
           <div>
             <Label>
               Nội Dung <span className="text-red-500">*</span>
             </Label>
-            <textarea
-              name="content"
-              placeholder="Nhập nội dung bài viết..."
+
+            <RichTextEditor
               value={formData.content}
-              onChange={handleInputChange}
-              rows="10"
-              className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring font-mono text-sm"
+              onChange={(html) =>
+                setFormData((prev) => ({
+                  ...prev,
+                  content: html,
+                }))
+              }
             />
+
             <p className="text-xs text-gray-500 mt-1">
-              Hỗ trợ HTML: &lt;b&gt;, &lt;i&gt;, &lt;p&gt;, &lt;br&gt;, &lt;a href&gt;, v.v
+              Có thể dùng heading, in đậm, in nghiêng, danh sách, trích dẫn, v.v.
             </p>
           </div>
 

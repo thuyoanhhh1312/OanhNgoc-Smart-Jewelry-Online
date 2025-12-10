@@ -1,4 +1,5 @@
-@import url("https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&display=swap") layer(base);
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&display=swap')
+layer(base);
 
 @tailwind base;
 @tailwind components;
@@ -138,24 +139,22 @@
 
   --color-theme-purple-500: #7a5af8;
 
-  --shadow-theme-md: 0px 4px 8px -2px rgba(16, 24, 40, 0.1),
-    0px 2px 4px -2px rgba(16, 24, 40, 0.06);
-  --shadow-theme-lg: 0px 12px 16px -4px rgba(16, 24, 40, 0.08),
-    0px 4px 6px -2px rgba(16, 24, 40, 0.03);
-  --shadow-theme-sm: 0px 1px 3px 0px rgba(16, 24, 40, 0.1),
-    0px 1px 2px 0px rgba(16, 24, 40, 0.06);
+  --shadow-theme-md:
+    0px 4px 8px -2px rgba(16, 24, 40, 0.1), 0px 2px 4px -2px rgba(16, 24, 40, 0.06);
+  --shadow-theme-lg:
+    0px 12px 16px -4px rgba(16, 24, 40, 0.08), 0px 4px 6px -2px rgba(16, 24, 40, 0.03);
+  --shadow-theme-sm: 0px 1px 3px 0px rgba(16, 24, 40, 0.1), 0px 1px 2px 0px rgba(16, 24, 40, 0.06);
   --shadow-theme-xs: 0px 1px 2px 0px rgba(16, 24, 40, 0.05);
-  --shadow-theme-xl: 0px 20px 24px -4px rgba(16, 24, 40, 0.08),
-    0px 8px 8px -4px rgba(16, 24, 40, 0.03);
+  --shadow-theme-xl:
+    0px 20px 24px -4px rgba(16, 24, 40, 0.08), 0px 8px 8px -4px rgba(16, 24, 40, 0.03);
   --shadow-datepicker: -5px 0 0 #262d3c, 5px 0 0 #262d3c;
   --shadow-focus-ring: 0px 0px 0px 4px rgba(70, 95, 255, 0.12);
-  --shadow-slider-navigation: 0px 1px 2px 0px rgba(16, 24, 40, 0.1),
-    0px 1px 3px 0px rgba(16, 24, 40, 0.1);
-  --shadow-tooltip: 0px 4px 6px -2px rgba(16, 24, 40, 0.05),
-    -8px 0px 20px 8px rgba(16, 24, 40, 0.05);
+  --shadow-slider-navigation:
+    0px 1px 2px 0px rgba(16, 24, 40, 0.1), 0px 1px 3px 0px rgba(16, 24, 40, 0.1);
+  --shadow-tooltip:
+    0px 4px 6px -2px rgba(16, 24, 40, 0.05), -8px 0px 20px 8px rgba(16, 24, 40, 0.05);
 
-  --drop-shadow-4xl: 0 35px 35px rgba(0, 0, 0, 0.25),
-    0 45px 65px rgba(0, 0, 0, 0.15);
+  --drop-shadow-4xl: 0 35px 35px rgba(0, 0, 0, 0.25), 0 45px 65px rgba(0, 0, 0, 0.15);
 
   --z-index-1: 1;
   --z-index-9: 9;
@@ -175,7 +174,7 @@
     border-color: var(--color-gray-200, currentColor);
   }
   button:not(:disabled),
-  [role="button"]:not(:disabled) {
+  [role='button']:not(:disabled) {
     cursor: pointer;
   }
   body {
@@ -185,16 +184,15 @@
 
 body {
   margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    sans-serif;
+  font-family:
+    -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell',
+    'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
 code {
-  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
-    monospace;
+  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New', monospace;
 }
 
 @layer utilities {
@@ -274,24 +272,27 @@ table {
 }
 
 /* Tạo kiểu cho các ô bảng */
-th, td {
+th,
+td {
   padding: 12px;
   text-align: left; /* Căn trái nội dung */
 }
 
 /* Chỉ tạo đường kẻ ngang */
-td, th {
+td,
+th {
   border-bottom: 1px solid #ddd; /* Đường kẻ ngang */
 }
 
 /* Không hiển thị đường kẻ dọc */
-td:first-child, th:first-child {
+td:first-child,
+th:first-child {
   border-left: none; /* Xóa đường kẻ dọc bên trái */
 }
 
 /* Kiểu cho hàng đầu tiên (header) */
 th {
-  background-color: #4CAF50;
+  background-color: #4caf50;
   color: black;
 }
 
@@ -301,8 +302,9 @@ td {
 }
 
 /* Sử dụng màu sắc nhẹ để làm đường kẻ mảnh hơn */
-table, tr {
-  border: none;  /* Không tạo viền cho bảng và hàng */
+table,
+tr {
+  border: none; /* Không tạo viền cho bảng và hàng */
 }
 
 /* Tùy chỉnh paginator */
@@ -326,16 +328,16 @@ table, tr {
   border-radius: 4px;
   cursor: pointer;
   margin: 0 5px;
-  color: black
+  color: black;
 }
 
 .p-paginator .p-paginator-prev:hover {
-  background-color: #3B82F6; /* Màu nền khi hover */
+  background-color: #3b82f6; /* Màu nền khi hover */
   color: white; /* Màu chữ khi hover */
 }
 
 .p-paginator .p-paginator-next:hover {
-  background-color: #3B82F6; /* Màu nền khi hover */
+  background-color: #3b82f6; /* Màu nền khi hover */
   color: white; /* Màu chữ khi hover */
 }
 
@@ -351,8 +353,6 @@ table, tr {
   cursor: not-allowed;
 }
 
-
-
 /* Tùy chỉnh nút "các số trang" */
 .p-paginator .p-paginator-pages .p-paginator-page {
   background-color: #ffffff; /* Màu nền của các nút trang */
@@ -367,13 +367,13 @@ table, tr {
 
 /* Đổi màu khi hover vào nút trang */
 .p-paginator .p-paginator-pages .p-paginator-page:hover {
-  background-color: #3B82F6; /* Màu nền khi hover */
+  background-color: #3b82f6; /* Màu nền khi hover */
   color: white; /* Màu chữ khi hover */
 }
 
 /* Tùy chỉnh nút trang hiện tại */
 .p-paginator .p-paginator-pages .p-paginator-page.p-highlight {
-  background-color: #3B82F6; /* Màu nền cho trang hiện tại */
+  background-color: #3b82f6; /* Màu nền cho trang hiện tại */
   color: white; /* Màu chữ cho trang hiện tại */
   font-weight: bold;
 }
@@ -470,7 +470,30 @@ table, tr {
 .ant-select-dropdown .ant-select-item-option-active {
   background-color: #f2f7ff !important;
 }
+/* Style nội dung bài viết render từ CKEditor */
+.article-content img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 16px;
+  display: block;
+  margin: 16px auto;
+}
 
+/* Nếu dùng <figure> trong nội dung */
+.article-content figure {
+  margin: 24px auto;
+  text-align: center;
+}
 
+.article-content figcaption {
+  font-size: 14px;
+  color: #6b7280; /* gray-500 */
+  margin-top: 8px;
+}
 
-
+/* Cho CKEditor trong admin dễ nhìn hơn một chút */
+.ck-editor-wrapper .ck-editor__editable_inline {
+  min-height: 240px;
+  max-height: 600px;
+  padding: 12px 16px;
+}
