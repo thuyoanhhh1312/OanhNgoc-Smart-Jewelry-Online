@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { useDispatch } from 'react-redux';
 import { Box, Typography, Button, Paper, Divider, Stack, CircularProgress } from '@mui/material';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import MainLayout from '../layout/MainLayout';
@@ -7,6 +8,7 @@ import MainLayout from '../layout/MainLayout';
 const OrderSuccess = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const dispatch = useDispatch();
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -17,6 +19,34 @@ const OrderSuccess = () => {
   const orderDataStr = params.get('orderData');
 
   useEffect(() => {
+    // Lấy danh sách sản phẩm vừa mua từ localStorage hoặc state
+    let purchasedProductIds = [];
+
+    // Cách 1: Từ localStorage (từ VNPay redirect)
+    const purchasedItemsStr = localStorage.getItem('purchasedItems');
+    if (purchasedItemsStr) {
+      try {
+        purchasedProductIds = JSON.parse(purchasedItemsStr);
+        localStorage.removeItem('purchasedItems');
+      } catch (e) {
+        console.error('Lỗi parse purchasedItems:', e);
+      }
+    }
+
+    // Cách 2: Từ location.state (từ COD trực tiếp)
+    const purchasedItems = location.state?.selectedItems || [];
+    if (purchasedItems.length > 0 && purchasedProductIds.length === 0) {
+      purchasedProductIds = purchasedItems.map((item) => item.product_id);
+    }
+
+    // Xóa những item đã mua khỏi giỏ hàng
+    if (purchasedProductIds.length > 0) {
+      dispatch({
+        type: 'REMOVE_CART_ITEMS',
+        payload: purchasedProductIds,
+      });
+    }
+
     if (stateOrder) {
       // Có dữ liệu từ state (COD)
       setOrder(stateOrder);
@@ -25,9 +55,8 @@ const OrderSuccess = () => {
       // Luôn fetch từ API khi có orderId (VNPay hoặc fallback)
       const fetchOrder = async () => {
         try {
-          const response = await fetch(
-            `http://localhost:3001/api/payment/order-details/${orderId}`,
-          );
+          const apiUrl = import.meta.env.VITE_API_URL;
+          const response = await fetch(`${apiUrl}/payment/order-details/${orderId}`);
           if (!response.ok) throw new Error('Failed to fetch');
           const data = await response.json();
           // Normalize dữ liệu từ API: API trả về { order, items }
@@ -77,7 +106,7 @@ const OrderSuccess = () => {
     } else {
       setLoading(false);
     }
-  }, [stateOrder, orderId, orderDataStr]);
+  }, [stateOrder, orderId, orderDataStr, dispatch]);
 
   // Format tiền Việt
   const formatCurrency = (amount) =>
@@ -219,13 +248,28 @@ const OrderSuccess = () => {
           variant="contained"
           color="primary"
           size="large"
+          onClick={() => navigate(`/order-history`)}
+          sx={{
+            marginRight: 2,
+            backgroundColor: '#003468',
+            color: '#fff',
+            '&:hover': { backgroundColor: '#002954' },
+          }}
+        >
+          Xem chi tiết đơn hàng
+        </Button>
+
+        <Button
+          variant="outlined"
+          color="primary"
+          size="large"
           onClick={() => navigate('/')}
           sx={{
-            justifyContent: 'flex-center',
-            ...{
-              backgroundColor: '#003468',
-              color: '#fff',
-              '&:hover': { backgroundColor: '#002954' },
+            borderColor: '#003468',
+            color: '#003468',
+            '&:hover': {
+              backgroundColor: '#f0f0f0',
+              borderColor: '#002954',
             },
           }}
         >
