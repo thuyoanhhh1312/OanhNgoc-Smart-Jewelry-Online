@@ -120,8 +120,9 @@ export const createReview = async (req, res, next) => {
 
     // ================== GỌI PIPELINE /analyze ==================
     try {
+      const pipelineUrl = `${process.env.NLP_PIPELINE_URL}/analyze`;
       const toxicRes = await axios.post(
-        "http://localhost:5002/analyze",
+        pipelineUrl,
         { text: content },
         { timeout: 8000 }
       );
@@ -668,19 +669,17 @@ export const toggleReviewVisibility = async (req, res, next) => {
 
       // ✨ NEW: Gọi NLP service để phân loại feedback (Smart classification với rating)
       try {
-        const classificationResponse = await fetch(
-          "http://localhost:5001/classify-with-rating",
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              text: review.content,
-              rating: review.rating,
-            }),
-          }
-        );
+        const classifyUrl = `${process.env.NLP_CLASSIFY_URL}/classify-with-rating`;
+        const classificationResponse = await fetch(classifyUrl, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            text: review.content,
+            rating: review.rating,
+          }),
+        });
 
         const classification = await classificationResponse.json();
 
