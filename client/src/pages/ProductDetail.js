@@ -201,7 +201,7 @@ const ProductDetail = () => {
 
     if (modelPath) {
       items.push({
-        id: 'model-day-chuyen-bac-0000k060027',
+        id: `model-${slug}`,
         type: 'model',
         label: 'Xem 3D',
         modelPath,

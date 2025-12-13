@@ -1,6 +1,8 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_html/flutter_html.dart';
+import 'package:flutter/services.dart';
 import '../models/product.dart';
 import '../providers/cart_provider.dart';
 import '../providers/auth_provider.dart';
@@ -28,16 +30,8 @@ class ProductDetailScreen extends StatefulWidget {
 
 class ProductDetailScreenState extends State<ProductDetailScreen>
     with TickerProviderStateMixin {
-  // Map slug -> local GLB asset path
-  static const Map<String, String> _modelAssets = {
-    'day-chuyen-bac-0000k060027': 'assets/3d/day-chuyen-bac-0000k060027.glb',
-    'lac-tay-charm-bac-diy-0000k060012':
-        'assets/3d/lac-tay-charm-bac-diy-0000k060012.glb',
-    'nhan-nam-bac-dinh-da-xmxmk000129':
-        'assets/3d/nhan-nam-bac-dinh-da-xmxmk000129.glb',
-    'vong-tay-bac-dinh-da-xmxmk000014':
-        'assets/3d/vong-tay-bac-dinh-da-xmxmk000014.glb',
-  };
+  // slug -> local GLB asset path, loaded dynamically from AssetManifest
+  final Map<String, String> _modelAssets = {};
 
   Product? product;
   List<Product> similarProducts = [];
@@ -59,6 +53,7 @@ class ProductDetailScreenState extends State<ProductDetailScreen>
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
+    _loadModelAssets();
     _loadProductDetail();
   }
 
@@ -110,6 +105,30 @@ class ProductDetailScreenState extends State<ProductDetailScreen>
           isLoading = false;
         });
       }
+    }
+  }
+
+  Future<void> _loadModelAssets() async {
+    try {
+      final manifestContent = await rootBundle.loadString('AssetManifest.json');
+      final Map<String, dynamic> manifestMap = json.decode(manifestContent);
+      final entries = manifestMap.keys.where((path) {
+        return path.startsWith('assets/3d/') && path.endsWith('.glb');
+      }).map((path) {
+        final filename = path.split('/').last;
+        final slug = filename.replaceFirst('.glb', '');
+        return MapEntry(slug, path);
+      });
+
+      if (mounted) {
+        setState(() {
+          _modelAssets
+            ..clear()
+            ..addEntries(entries);
+        });
+      }
+    } catch (_) {
+      // silently ignore if manifest is not available
     }
   }
 
