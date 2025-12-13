@@ -182,7 +182,7 @@ class _CartScreenState extends State<CartScreen> {
               ),
             ),
             ProductPriceText(
-              price: cartProvider.total,
+              price: cartProvider.subtotal,
               fontSize: 20,
               fontWeight: FontWeight.bold,
             ),

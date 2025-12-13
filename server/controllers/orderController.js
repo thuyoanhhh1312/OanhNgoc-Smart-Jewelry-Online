@@ -241,6 +241,7 @@ export const updateIsDeposit = async (req, res) => {
 
 export const calculatePrice = async (req, res) => {
   try {
+    console.log("[calculatePrice] payload:", JSON.stringify(req.body));
     const { items, promotion_code, user_id } = req.body;
 
     if (!Array.isArray(items) || items.length === 0) {
@@ -384,6 +385,7 @@ export const checkout = async (req, res) => {
       is_deposit = false,
       items = [],
     } = req.body;
+    console.log("[checkout] payload:", JSON.stringify(req.body));
 
     // Tìm customer_id từ user_id
     let customer = await db.Customer.findOne({

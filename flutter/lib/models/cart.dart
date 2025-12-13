@@ -79,9 +79,9 @@ class Cart {
 
   double get shippingFee => 0.0; // Miễn phí vận chuyển
 
-  double get tax => subtotal * 0.1; // 10% tax
+  double get tax => 0.0; // Không tính thuế
 
-  double get total => subtotal + shippingFee + tax;
+  double get total => subtotal; // Tổng chỉ bằng tạm tính
 
   bool get isEmpty => items.isEmpty;
 

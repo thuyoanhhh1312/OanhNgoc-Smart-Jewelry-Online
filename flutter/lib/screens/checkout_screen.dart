@@ -5,6 +5,8 @@ import '../providers/location_provider.dart';
 import '../providers/auth_provider.dart';
 import '../providers/cart_provider.dart';
 import '../models/order_success_arguments.dart';
+import '../models/cart.dart';
+import '../models/product.dart';
 import '../services/payment_service.dart';
 import '../theme/app_colors.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -28,6 +30,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 
   final TextEditingController _promoController = TextEditingController();
   bool _requestedPromos = false;
+  bool _isBuyNowFlow = false;
+  List<CartItem> _checkoutItems = [];
 
   @override
   void initState() {
@@ -42,12 +46,10 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       if (locationProvider.provinces.isEmpty) {
         locationProvider.loadProvinces();
       }
-      // Initialize order with cart totals
-      orderProvider.initializeWithCartTotals(
-        subtotal: cartProvider.subtotal,
-        shippingFee: cartProvider.shippingFee,
-        discount: 0,
-      );
+      // Load items from buy-now arguments or cart
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _loadCheckoutItems();
+      });
 
       // Preload khuyến mãi cá nhân nếu đã đăng nhập
       if (authProvider.isLoggedIn && !_requestedPromos) {
@@ -98,6 +100,47 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     _promoController.text = code;
     orderProvider.setPromoCode(code);
     await _handleApplyPromo();
+  }
+
+  void _loadCheckoutItems() {
+    final args = ModalRoute.of(context)?.settings.arguments;
+    List<CartItem> items = [];
+    bool isBuyNow = false;
+
+    if (args is Map && args['selectedItems'] is List) {
+      final List raw = args['selectedItems'] as List;
+      items = raw.map<CartItem?>((item) {
+        if (item is CartItem) return item;
+        final product = item['product'];
+        final qtyRaw = item['quantity'] ?? 1;
+        final qty = qtyRaw is int ? qtyRaw : int.tryParse(qtyRaw.toString()) ?? 1;
+        if (product is Product) {
+          return CartItem(
+            id: DateTime.now().millisecondsSinceEpoch.toString(),
+            product: product,
+            quantity: qty,
+            addedAt: DateTime.now(),
+          );
+        }
+        return null;
+      }).whereType<CartItem>().toList();
+      if (items.isNotEmpty) {
+        isBuyNow = true;
+      }
+    }
+
+    if (items.isEmpty) {
+      items = List<CartItem>.from(cartProvider.items);
+    }
+
+    _isBuyNowFlow = isBuyNow;
+    _checkoutItems = items;
+    orderProvider.initializeWithCartTotals(
+      subtotal: _checkoutItems.fold(0.0, (sum, item) => sum + item.totalPrice),
+      shippingFee: 0,
+      discount: orderProvider.discount,
+    );
+    setState(() {});
   }
 
   String _formatCampaignDuration(String? start, String? end) {
@@ -154,10 +197,12 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       return;
     }
 
-    final items = cartProvider.items
+    final items = _checkoutItems
         .map((item) => {
-          'product_id': item.product.id,
+          'product_id': int.tryParse(item.product.id) ?? item.product.id,
           'quantity': item.quantity,
+          // Gửi kèm giá hiện tại cho API /checkout (validator yêu cầu)
+          'price': item.product.price,
         })
         .toList();
 
@@ -215,31 +260,39 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       return;
     }
 
-    // Prepare order items
-    final items = cartProvider.items
+    // Prepare order items (buy-now or cart)
+    final items = _checkoutItems
         .map((item) => {
-          'product_id': item.product.id,
+          'product_id': int.tryParse(item.product.id) ?? item.product.id,
           'quantity': item.quantity,
-          'price': item.product.price,
         })
         .toList();
 
-    // Preserve cart items for success screen before clearing
-    final purchasedItems = cartProvider.items
-        .map((item) => item.copyWith())
-        .toList();
+    // Preserve items for success screen
+    final purchasedItems = _checkoutItems.map((item) => item.copyWith()).toList();
 
     // Submit order
+    final userIdInt = int.tryParse(user.id);
+    if (userIdInt == null) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Tài khoản không hợp lệ: thiếu user_id dạng số')),
+      );
+      return;
+    }
+
     final order = await orderProvider.submitOrder(
-      userId: user.id,
+      userId: userIdInt,
       items: items,
     );
 
     if (!mounted) return;
 
     if (order != null) {
-      // Clear cart
-      await cartProvider.clearCart();
+      // Clear cart nếu không phải buy-now flow
+      if (!_isBuyNowFlow) {
+        await cartProvider.clearCart();
+      }
 
       if (!mounted) return;
 
@@ -339,7 +392,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // Order Summary
-                  _buildOrderSummary(cartProvider),
+                  _buildOrderSummary(),
                   const SizedBox(height: 24),
 
                   // Address Section
@@ -379,7 +432,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     );
   }
 
-  Widget _buildOrderSummary(CartProvider cartProvider) {
+  Widget _buildOrderSummary() {
     return Container(
       decoration: BoxDecoration(
         border: Border.all(color: Colors.grey[300]!),
@@ -397,7 +450,12 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
             ),
           ),
           const SizedBox(height: 12),
-          ...cartProvider.items.map((item) => Padding(
+          if (_checkoutItems.isEmpty)
+            const Text(
+              'Chưa có sản phẩm.',
+              style: TextStyle(color: Colors.grey),
+            ),
+          ..._checkoutItems.map((item) => Padding(
             padding: const EdgeInsets.only(bottom: 8),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,

@@ -241,7 +241,7 @@ class OrderProvider extends ChangeNotifier {
 
   // Submit order
   Future<Order?> submitOrder({
-    required String userId,
+    required int userId,
     required List<Map<String, dynamic>> items,
   }) async {
     // Validate form first
