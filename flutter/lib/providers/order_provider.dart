@@ -267,6 +267,7 @@ class OrderProvider extends ChangeNotifier {
         'items': items.map((item) => {
           'product_id': item['product_id'],
           'quantity': item['quantity'],
+          'price': item['price'],
         }).toList(),
       };
 

@@ -197,17 +197,25 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       return;
     }
 
-    final items = _checkoutItems
-        .map((item) => {
-          'product_id': int.tryParse(item.product.id) ?? item.product.id,
-          'quantity': item.quantity,
-          // Gửi kèm giá hiện tại cho API /checkout (validator yêu cầu)
-          'price': item.product.price,
-        })
-        .toList();
+    // Chuẩn hóa items cho API tính giá (product_id dạng số)
+    final promoItems = <Map<String, dynamic>>[];
+    for (final item in _checkoutItems) {
+      final parsedId = int.tryParse(item.product.id);
+      if (parsedId == null) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Không thể áp dụng mã: mã sản phẩm không hợp lệ')),
+        );
+        return;
+      }
+      promoItems.add({
+        'product_id': parsedId,
+        'quantity': item.quantity,
+      });
+    }
 
     await orderProvider.applyPromoCode(
-      items: items,
+      items: promoItems,
       userId: userIdInt,
     );
 
@@ -261,12 +269,22 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     }
 
     // Prepare order items (buy-now or cart)
-    final items = _checkoutItems
-        .map((item) => {
-          'product_id': int.tryParse(item.product.id) ?? item.product.id,
-          'quantity': item.quantity,
-        })
-        .toList();
+    final parsedItems = <Map<String, dynamic>>[];
+    for (final item in _checkoutItems) {
+      final parsedId = int.tryParse(item.product.id);
+      if (parsedId == null) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Không thể đặt hàng: mã sản phẩm không hợp lệ')),
+        );
+        return;
+      }
+      parsedItems.add({
+        'product_id': parsedId,
+        'quantity': item.quantity,
+        'price': item.product.price,
+      });
+    }
 
     // Preserve items for success screen
     final purchasedItems = _checkoutItems.map((item) => item.copyWith()).toList();
@@ -283,7 +301,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 
     final order = await orderProvider.submitOrder(
       userId: userIdInt,
-      items: items,
+      items: parsedItems,
     );
 
     if (!mounted) return;
