@@ -300,16 +300,29 @@ export const calculatePrice = async (req, res) => {
     let promoInfo = null;
 
     if (promotion_code) {
-      // Kiểm tra mã khuyến mãi, ngày bắt đầu/kết thúc, usage_limit
+      // Kiểm tra mã khuyến mãi, ngày bắt đầu/kết thúc từ campaign, usage_limit
       const promo = await db.Promotion.findOne({
         where: {
           promotion_code,
-          start_date: { [Op.lte]: new Date() },
-          end_date: { [Op.gte]: new Date() },
         },
+        include: [
+          {
+            model: db.PromotionCampaign,
+            as: "campaign",
+            attributes: ["start_date", "end_date", "is_active"],
+            required: false,
+          },
+        ],
       });
 
-      if (!promo) {
+      const now = new Date();
+      const inCampaignWindow = promo?.campaign
+        ? promo.campaign.is_active !== false &&
+          promo.campaign.start_date <= now &&
+          promo.campaign.end_date >= now
+        : true;
+
+      if (!promo || !inCampaignWindow) {
         message = "Mã khuyến mãi không hợp lệ hoặc đã hết hạn.";
       } else if (
         promo.usage_limit !== null &&
@@ -465,13 +478,8 @@ export const checkout = async (req, res) => {
           message: `Sản phẩm "${product.product_name}" không đủ số lượng trong kho (còn ${product.quantity}).`,
         });
       }
-      if (Number(product.price) !== Number(item.price)) {
-        await t.rollback();
-        return res.status(400).json({
-          message: `Giá sản phẩm "${product.product_name}" không khớp với giá hiện tại.`,
-        });
-      }
-      sub_total += Number(item.price) * item.quantity;
+      // Luôn dùng giá hiện tại từ DB để tránh lệch giá
+      sub_total += Number(product.price) * item.quantity;
     }
 
     let discount = 0;
@@ -481,14 +489,27 @@ export const checkout = async (req, res) => {
       const promo = await db.Promotion.findOne({
         where: {
           promotion_code,
-          start_date: { [Op.lte]: new Date() },
-          end_date: { [Op.gte]: new Date() },
         },
+        include: [
+          {
+            model: db.PromotionCampaign,
+            as: "campaign",
+            attributes: ["start_date", "end_date", "is_active"],
+            required: false,
+          },
+        ],
         transaction: t,
         lock: t.LOCK.UPDATE,
       });
 
-      if (!promo) {
+      const now = new Date();
+      const inCampaignWindow = promo?.campaign
+        ? promo.campaign.is_active !== false &&
+          promo.campaign.start_date <= now &&
+          promo.campaign.end_date >= now
+        : true;
+
+      if (!promo || !inCampaignWindow) {
         await t.rollback();
         return res
           .status(400)

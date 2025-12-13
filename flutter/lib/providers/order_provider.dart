@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import '../models/order.dart';
 import '../services/order_service.dart';
+import '../services/promotion_service.dart';
 
 class OrderProvider extends ChangeNotifier {
   // Address selection
@@ -21,8 +22,17 @@ class OrderProvider extends ChangeNotifier {
   String get addressDetail => _addressDetail;
 
   // Payment method
-  String _paymentMethod = 'cod'; // 'cod', 'vnpay', 'momo', 'ck'
+  String _paymentMethod = 'cod'; // 'cod', 'vnpay'
   String get paymentMethod => _paymentMethod;
+
+  // Promotions for current customer
+  List<Map<String, dynamic>> _customerPromotions = [];
+  bool _promoListLoading = false;
+  String _promoListError = '';
+
+  List<Map<String, dynamic>> get customerPromotions => _customerPromotions;
+  bool get promoListLoading => _promoListLoading;
+  String get promoListError => _promoListError;
 
   // Promo code
   String _promoCode = '';
@@ -64,7 +74,7 @@ class OrderProvider extends ChangeNotifier {
     double discount = 0,
   }) {
     _subTotal = subtotal;
-    _shippingFee = shippingFee;
+    _shippingFee = 0; // miễn phí vận chuyển
     _discount = discount;
     _total = 0;
     _recalculateTotal(subtotal: subtotal, shippingFee: shippingFee, discount: discount);
@@ -116,6 +126,27 @@ class OrderProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  // Load available promotions for logged-in customer
+  Future<void> loadCustomerPromotions({bool force = false}) async {
+    if (_promoListLoading) return;
+    if (_customerPromotions.isNotEmpty && !force) return;
+
+    _promoListLoading = true;
+    _promoListError = '';
+    notifyListeners();
+
+    try {
+      final promos = await PromotionService.getCustomerPromotions();
+      _customerPromotions = promos;
+    } catch (e) {
+      _promoListError = 'Không thể tải khuyến mãi: $e';
+      _customerPromotions = [];
+    } finally {
+      _promoListLoading = false;
+      notifyListeners();
+    }
+  }
+
   // Promo code
   void setPromoCode(String code) {
     _promoCode = code;
@@ -138,7 +169,7 @@ class OrderProvider extends ChangeNotifier {
   // Apply promo code
   Future<void> applyPromoCode({
     required List<Map<String, dynamic>> items,
-    required String userId,
+    required int userId,
   }) async {
     if (_promoCode.trim().isEmpty) {
       clearPromoCode();
@@ -236,7 +267,6 @@ class OrderProvider extends ChangeNotifier {
         'items': items.map((item) => {
           'product_id': item['product_id'],
           'quantity': item['quantity'],
-          'price': item['price'],
         }).toList(),
       };
 
@@ -275,6 +305,9 @@ class OrderProvider extends ChangeNotifier {
     _total = 0;
     _isSubmitting = false;
     _error = '';
+    _customerPromotions = [];
+    _promoListError = '';
+    _promoListLoading = false;
     notifyListeners();
   }
 
@@ -287,7 +320,7 @@ class OrderProvider extends ChangeNotifier {
       _subTotal = subtotal;
     }
     if (shippingFee != null) {
-      _shippingFee = shippingFee;
+      _shippingFee = 0; // giữ phí vận chuyển = 0
     }
     if (discount != null) {
       _discount = discount;

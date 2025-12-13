@@ -15,9 +15,11 @@ class ReviewModal extends StatefulWidget {
 }
 
 class ReviewModalState extends State<ReviewModal> {
-  int rating = 5;
+  int rating = 0;
   final TextEditingController _contentController = TextEditingController();
   bool isSubmitting = false;
+  String? _ratingError;
+  String? _contentError;
 
   @override
   void dispose() {
@@ -26,21 +28,35 @@ class ReviewModalState extends State<ReviewModal> {
   }
 
   void _submitReview() async {
-    if (_contentController.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Vui lòng nhập nội dung đánh giá')),
-      );
+    final content = _contentController.text.trim();
+    String? ratingError;
+    String? contentError;
+
+    if (rating <= 0) {
+      ratingError = 'Vui lòng chọn số sao';
+    }
+    if (content.isEmpty) {
+      contentError = 'Vui lòng chia sẻ cảm nhận của bạn';
+    }
+
+    if (ratingError != null || contentError != null) {
+      setState(() {
+        _ratingError = ratingError;
+        _contentError = contentError;
+      });
       return;
     }
 
     setState(() {
       isSubmitting = true;
+      _ratingError = null;
+      _contentError = null;
     });
 
     try {
       await widget.onSubmit({
         'rating': rating,
-        'content': _contentController.text.trim(),
+        'content': content,
       });
     } catch (e) {
       if (mounted) {
@@ -121,6 +137,7 @@ class ReviewModalState extends State<ReviewModal> {
                       onTap: () {
                         setState(() {
                           rating = index + 1;
+                          _ratingError = null;
                         });
                       },
                       child: Padding(
@@ -142,6 +159,14 @@ class ReviewModalState extends State<ReviewModal> {
                     color: Colors.grey.shade600,
                   ),
                 ),
+                if (_ratingError != null)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 6),
+                    child: Text(
+                      _ratingError!,
+                      style: const TextStyle(color: Colors.red, fontSize: 12),
+                    ),
+                  ),
               ],
             ),
           ),
@@ -163,6 +188,13 @@ class ReviewModalState extends State<ReviewModal> {
                 TextField(
                   controller: _contentController,
                   maxLines: 5,
+                  onChanged: (_) {
+                    if (_contentError != null) {
+                      setState(() {
+                        _contentError = null;
+                      });
+                    }
+                  },
                   decoration: InputDecoration(
                     hintText: 'Chia sẻ trải nghiệm của bạn về sản phẩm này...',
                     border: OutlineInputBorder(
@@ -175,6 +207,7 @@ class ReviewModalState extends State<ReviewModal> {
                         width: 2,
                       ),
                     ),
+                    errorText: _contentError,
                   ),
                 ),
               ],
@@ -190,7 +223,7 @@ class ReviewModalState extends State<ReviewModal> {
               child: ElevatedButton(
                 onPressed: isSubmitting ? null : _submitReview,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Theme.of(context).primaryColor,
+                  backgroundColor: const Color(0xFF2563EB),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(8),
                   ),

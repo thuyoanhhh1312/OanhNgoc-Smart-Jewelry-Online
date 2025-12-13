@@ -13,6 +13,7 @@ import 'screens/auth/reset_password_screen.dart';
 import 'screens/profile/personal_info_screen.dart';
 import 'screens/profile/my_orders_screen.dart';
 import 'screens/profile/my_reviews_screen.dart';
+import 'screens/profile/my_promotions_screen.dart';
 import 'screens/main_screen.dart';
 import 'screens/search_screen.dart';
 import 'screens/cart_screen.dart';
@@ -141,6 +142,7 @@ class MyApp extends StatelessWidget {
           '/profile/info': (context) => const PersonalInfoScreen(),
           '/profile/orders': (context) => const MyOrdersScreen(),
           '/profile/reviews': (context) => const MyReviewsScreen(),
+          '/profile/promotions': (context) => const MyPromotionsScreen(),
           '/main': (context) => const MainScreen(),
           '/home': (context) => const MainScreen(), // Alias for /main
           '/search': (context) => const SearchScreen(),

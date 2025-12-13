@@ -206,6 +206,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   Navigator.of(context).pushNamed('/profile/info');
                 },
               ),
+              _buildMenuItem(
+                icon: Icons.local_offer_outlined,
+                title: 'Khuyến mãi của tôi',
+                onTap: () {
+                  Navigator.of(context).pushNamed('/profile/promotions');
+                },
+              ),
             ],
           ),
           

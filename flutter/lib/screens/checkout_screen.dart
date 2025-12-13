@@ -4,7 +4,6 @@ import '../providers/order_provider.dart';
 import '../providers/location_provider.dart';
 import '../providers/auth_provider.dart';
 import '../providers/cart_provider.dart';
-import '../providers/payment_provider.dart';
 import '../models/order_success_arguments.dart';
 import '../services/payment_service.dart';
 import '../theme/app_colors.dart';
@@ -13,14 +12,6 @@ import '../constants/app_colors.dart' as colors;
 import '../widgets/luxury/luxury_buttons.dart';
 import '../widgets/luxury/luxury_product_widgets.dart';
 import '../widgets/luxury/luxury_layout_widgets.dart';
-
-const _codBankName = 'MB Bank';
-const _codBankCode = 'MBbank';
-const _codAccountNumber = '0816837690';
-const _codAccountHolder = 'SMART JEWELRY';
-const _momoAccountNumber = '99MM23332M53758772';
-const _momoAccountHolder = 'SMART JEWELRY';
-const _defaultTransferDescription = 'Thanh toan don hang Smart Jewelry';
 
 class CheckoutScreen extends StatefulWidget {
   const CheckoutScreen({super.key});
@@ -33,7 +24,10 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   late LocationProvider locationProvider;
   late OrderProvider orderProvider;
   late CartProvider cartProvider;
-  late PaymentProvider paymentProvider;
+  late AuthProvider authProvider;
+
+  final TextEditingController _promoController = TextEditingController();
+  bool _requestedPromos = false;
 
   @override
   void initState() {
@@ -41,24 +35,34 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     locationProvider = context.read<LocationProvider>();
     orderProvider = context.read<OrderProvider>();
     cartProvider = context.read<CartProvider>();
-    paymentProvider = context.read<PaymentProvider>();
+    authProvider = context.read<AuthProvider>();
 
     Future.microtask(() {
       // Load provinces
       if (locationProvider.provinces.isEmpty) {
         locationProvider.loadProvinces();
       }
-      if (paymentProvider.bankAccounts.isEmpty) {
-        paymentProvider.loadBankAccounts();
-      }
-
       // Initialize order with cart totals
       orderProvider.initializeWithCartTotals(
         subtotal: cartProvider.subtotal,
         shippingFee: cartProvider.shippingFee,
         discount: 0,
       );
+
+      // Preload khuyến mãi cá nhân nếu đã đăng nhập
+      if (authProvider.isLoggedIn && !_requestedPromos) {
+        _requestedPromos = true;
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          orderProvider.loadCustomerPromotions();
+        });
+      }
     });
+  }
+
+  @override
+  void dispose() {
+    _promoController.dispose();
+    super.dispose();
   }
 
   String _formatPrice(double price) {
@@ -78,6 +82,45 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     }
   }
 
+  Future<void> _applyPromoFromCode(
+    String code,
+    OrderProvider orderProvider,
+    CartProvider cartProvider,
+    AuthProvider authProvider,
+  ) async {
+    if (authProvider.user == null) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Vui lòng đăng nhập để áp dụng mã khuyến mãi')),
+      );
+      return;
+    }
+    _promoController.text = code;
+    orderProvider.setPromoCode(code);
+    await _handleApplyPromo();
+  }
+
+  String _formatCampaignDuration(String? start, String? end) {
+    String fmt(String? value) {
+      if (value == null || value.isEmpty) return '';
+      try {
+        final date = DateTime.parse(value);
+        return '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}';
+      } catch (_) {
+        return value;
+      }
+    }
+
+    final startStr = fmt(start);
+    final endStr = fmt(end);
+    if (startStr.isEmpty && endStr.isEmpty) return '';
+    if (startStr.isNotEmpty && endStr.isNotEmpty) {
+      return 'Hiệu lực: $startStr - $endStr';
+    }
+    if (startStr.isNotEmpty) return 'Bắt đầu: $startStr';
+    return 'Kết thúc: $endStr';
+  }
+
   void _handleDistrictChange(String? districtCode, String districtName) {
     if (districtCode != null) {
       orderProvider.setDistrict(districtCode, districtName);
@@ -92,7 +135,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     }
   }
 
-  void _handleApplyPromo() async {
+  Future<void> _handleApplyPromo() async {
     final user = context.read<AuthProvider>().user;
     if (user == null) {
       if (!mounted) return;
@@ -102,17 +145,25 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       return;
     }
 
+    final userIdInt = int.tryParse(user.id);
+    if (userIdInt == null) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Tài khoản không hợp lệ: thiếu user_id dạng số')),
+      );
+      return;
+    }
+
     final items = cartProvider.items
         .map((item) => {
           'product_id': item.product.id,
           'quantity': item.quantity,
-          'price': item.product.price,
         })
         .toList();
 
     await orderProvider.applyPromoCode(
       items: items,
-      userId: user.id,
+      userId: userIdInt,
     );
 
     if (!mounted) return;
@@ -194,6 +245,9 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 
       if (orderProvider.paymentMethod == 'vnpay') {
         await _openVnPayPayment(order.id, orderProvider.total);
+      } else if (orderProvider.paymentMethod == 'cod') {
+        // Cọc 10% qua VNPay trước, giống luồng web
+        await _openVnPayPayment(order.id, orderProvider.paymentAmount);
       }
 
       if (!mounted) return;
@@ -270,8 +324,14 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         ),
         centerTitle: true,
       ),
-      body: Consumer5<OrderProvider, LocationProvider, CartProvider, AuthProvider, PaymentProvider>(
-        builder: (context, orderProvider, locationProvider, cartProvider, authProvider, paymentProvider, _) {
+      body: Consumer4<OrderProvider, LocationProvider, CartProvider, AuthProvider>(
+        builder: (context, orderProvider, locationProvider, cartProvider, authProvider, _) {
+          if (authProvider.isLoggedIn && !_requestedPromos) {
+            _requestedPromos = true;
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              orderProvider.loadCustomerPromotions();
+            });
+          }
           return SingleChildScrollView(
             child: Padding(
               padding: const EdgeInsets.all(16.0),
@@ -286,17 +346,13 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                   _buildAddressSection(orderProvider, locationProvider),
 
                   // Payment Method
-                  _buildPaymentMethod(orderProvider, paymentProvider),
-                  if (orderProvider.paymentMethod == 'ck') ...[
-                    const SizedBox(height: 12),
-                    _buildBankSelection(paymentProvider),
-                  ],
+                  _buildPaymentMethod(orderProvider),
                   const SizedBox(height: 12),
-                  _buildPaymentDetails(orderProvider, paymentProvider),
+                  _buildPaymentDetails(orderProvider),
                   const SizedBox(height: 24),
 
                   // Promo Code
-                  _buildPromoCodeSection(orderProvider),
+                  _buildPromoCodeSection(orderProvider, cartProvider, authProvider),
                   const SizedBox(height: 24),
 
                   // Price Summary
@@ -521,29 +577,17 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     );
   }
 
-  Widget _buildPaymentMethod(OrderProvider orderProvider, PaymentProvider paymentProvider) {
+  Widget _buildPaymentMethod(OrderProvider orderProvider) {
     final List<Map<String, String>> paymentOptions = [
       {
         'value': 'cod',
         'title': '💳 Thanh toán khi nhận hàng (COD)',
-        'subtitle': 'Đặt cọc 10% giá trị đơn hàng qua MB Bank',
-      },
-      {
-        'value': 'momo',
-        'title': '📱 Thanh toán qua MoMo',
-        'subtitle': 'Thanh toán toàn bộ bằng ví MoMo',
-      },
-      {
-        'value': 'ck',
-        'title': '🏧 Chuyển khoản ngân hàng',
-        'subtitle': paymentProvider.selectedBank != null
-            ? '${paymentProvider.selectedBank!.bankName} - ${paymentProvider.selectedBank!.accountNumber}'
-            : 'Chọn ngân hàng để thanh toán toàn bộ đơn hàng',
+        'subtitle': 'Cọc 10% qua VNPay, thanh toán 90% khi nhận hàng',
       },
       {
         'value': 'vnpay',
         'title': '🏦 Thanh toán qua VNPay',
-        'subtitle': 'Chuyển hướng tới cổng VNPay sau khi đặt hàng',
+        'subtitle': 'Thanh toán toàn bộ qua cổng VNPay sau khi đặt hàng',
       },
     ];
 
@@ -612,81 +656,10 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     );
   }
 
-  Widget _buildBankSelection(PaymentProvider paymentProvider) {
-    if (paymentProvider.isLoading) {
-      return const SizedBox(
-        height: 60,
-        child: Center(
-          child: CircularProgressIndicator(strokeWidth: 2),
-        ),
-      );
-    }
-
-    if (paymentProvider.error != null) {
-      return Text(
-        paymentProvider.error ?? '',
-        style: const TextStyle(color: AppColors.errorColor),
-      );
-    }
-
-    if (paymentProvider.bankAccounts.isEmpty) {
-      return const Text(
-        'Hiện chưa có tài khoản ngân hàng nào khả dụng.',
-        style: TextStyle(color: AppColors.errorColor),
-      );
-    }
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          'Chọn ngân hàng',
-          style: TextStyle(
-            fontWeight: FontWeight.w600,
-            fontSize: 13,
-          ),
-        ),
-        const SizedBox(height: 8),
-        InputDecorator(
-          decoration: InputDecoration(
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-            ),
-            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-          ),
-          child: DropdownButtonHideUnderline(
-            child: DropdownButton<int>(
-              value: paymentProvider.selectedBank?.id,
-              isExpanded: true,
-              items: paymentProvider.bankAccounts
-                  .map(
-                    (bank) => DropdownMenuItem<int>(
-                      value: bank.id,
-                      child: Text('${bank.bankName} - ${bank.accountNumber}'),
-                    ),
-                  )
-                  .toList(),
-              onChanged: (value) => paymentProvider.selectBank(value),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
   Widget _buildPaymentDetails(
     OrderProvider orderProvider,
-    PaymentProvider paymentProvider,
   ) {
     final amount = orderProvider.paymentAmount;
-    if (orderProvider.paymentMethod == 'vnpay') {
-      return _buildInfoBanner(
-        title: 'Thanh toán qua VNPay',
-        message: 'Sau khi đặt hàng, bạn sẽ được chuyển sang cổng VNPay để thanh toán toàn bộ số tiền.',
-        icon: Icons.link,
-      );
-    }
-
     if (amount <= 0) {
       return _buildInfoBanner(
         title: 'Không thể hiển thị thông tin thanh toán',
@@ -695,133 +668,21 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       );
     }
 
-    late final String title;
-    late final String bankName;
-    late final String accountNumber;
-    late final String accountHolder;
-    late final String description;
-    late final String helperText;
-    late final String qrUrl;
-
-    switch (orderProvider.paymentMethod) {
-      case 'cod':
-        title = 'Đặt cọc giữ đơn (10%)';
-        bankName = _codBankName;
-        accountNumber = _codAccountNumber;
-        accountHolder = _codAccountHolder;
-        description = 'Thanh toan dat coc';
-        helperText = 'Vui lòng chuyển khoản 10% giá trị đơn hàng để xác nhận giao dịch.';
-        qrUrl = _buildVietQrUrl(
-          bankCode: _codBankCode,
-          accountNumber: accountNumber,
-          amount: amount,
-          description: description,
-        );
-        break;
-      case 'momo':
-        title = 'Thanh toán qua ví MoMo';
-        bankName = 'Ví MoMo';
-        accountNumber = _momoAccountNumber;
-        accountHolder = _momoAccountHolder;
-        description = _defaultTransferDescription;
-        helperText = 'Quét mã hoặc nhập thông tin ví để thanh toán toàn bộ đơn hàng.';
-        qrUrl = _buildTextQrUrl(
-          'PAYMENT|MOMO|$accountNumber|${amount.round()}|$description',
-        );
-        break;
-      case 'ck':
-        final bank = paymentProvider.selectedBank;
-        if (bank == null) {
-          return _buildInfoBanner(
-            title: 'Chuyển khoản ngân hàng',
-            message: paymentProvider.bankAccounts.isEmpty
-                ? 'Hiện chưa có tài khoản ngân hàng nào khả dụng.'
-                : 'Vui lòng chọn tài khoản ngân hàng để tiếp tục.',
-            icon: Icons.account_balance,
-          );
-        }
-        title = 'Chuyển khoản ngân hàng';
-        bankName = bank.bankName;
-        accountNumber = bank.accountNumber;
-        accountHolder = bank.accountName ?? _codAccountHolder;
-        description = _defaultTransferDescription;
-        helperText = 'Quét mã VietQR hoặc nhập thông tin bên dưới để thanh toán toàn bộ đơn hàng.';
-        final bankCode = bank.bankCode?.isNotEmpty == true ? bank.bankCode! : _codBankCode;
-        qrUrl = _buildVietQrUrl(
-          bankCode: bankCode,
-          accountNumber: bank.accountNumber,
-          amount: amount,
-          description: description,
-        );
-        break;
-      default:
-        return const SizedBox.shrink();
+    if (orderProvider.paymentMethod == 'vnpay') {
+      return _buildInfoBanner(
+        title: 'Thanh toán qua VNPay',
+        message: 'Sau khi đặt hàng, bạn sẽ được chuyển sang cổng VNPay để thanh toán toàn bộ số tiền.',
+        icon: Icons.link,
+      );
     }
 
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        border: Border.all(color: Colors.grey[300]!),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            title,
-            style: const TextStyle(
-              fontWeight: FontWeight.bold,
-              fontSize: 14,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            helperText,
-            style: TextStyle(
-              fontSize: 12,
-              color: Colors.grey[600],
-            ),
-          ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _buildPaymentInfoRow('Số tiền cần thanh toán', _formatPrice(amount)),
-                    const SizedBox(height: 8),
-                    _buildPaymentInfoRow('Ngân hàng/ Ví', bankName),
-                    _buildPaymentInfoRow('Số tài khoản', accountNumber),
-                    _buildPaymentInfoRow('Chủ tài khoản', accountHolder),
-                    _buildPaymentInfoRow('Nội dung chuyển khoản', description),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 16),
-              ClipRRect(
-                borderRadius: BorderRadius.circular(8),
-                child: Image.network(
-                  qrUrl,
-                  width: 140,
-                  height: 140,
-                  fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) {
-                    return const SizedBox(
-                      width: 140,
-                      height: 140,
-                      child: Center(
-                        child: Icon(Icons.qr_code, size: 48, color: Colors.grey),
-                      ),
-                    );
-                  },
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
+    // COD với cọc 10% qua VNPay
+    return _buildInfoBanner(
+      title: 'Thanh toán khi nhận hàng (COD)',
+      message:
+          'Bạn sẽ thanh toán 10% giá trị đơn hàng qua VNPay để giữ đơn (khoảng ${_formatPrice(amount)}). '
+          'Phần còn lại thanh toán khi nhận hàng.',
+      icon: Icons.verified,
     );
   }
 
@@ -869,49 +730,11 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     );
   }
 
-  Widget _buildPaymentInfoRow(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 6),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 11,
-              color: Colors.grey[600],
-            ),
-          ),
-          const SizedBox(height: 2),
-          SelectableText(
-            value,
-            style: const TextStyle(
-              fontWeight: FontWeight.w600,
-              fontSize: 13,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  String _buildVietQrUrl({
-    required String bankCode,
-    required String accountNumber,
-    required double amount,
-    required String description,
-  }) {
-    final amountValue = amount <= 0 ? 0 : amount.round();
-    final encodedInfo = Uri.encodeComponent(description);
-    return 'https://img.vietqr.io/image/$bankCode-$accountNumber-compact2.png?amount=$amountValue&addInfo=$encodedInfo';
-  }
-
-  String _buildTextQrUrl(String content) {
-    final encoded = Uri.encodeComponent(content);
-    return 'https://chart.googleapis.com/chart?chs=300x300&cht=qr&chl=$encoded&choe=UTF-8';
-  }
-
-  Widget _buildPromoCodeSection(OrderProvider orderProvider) {
+  Widget _buildPromoCodeSection(
+    OrderProvider orderProvider,
+    CartProvider cartProvider,
+    AuthProvider authProvider,
+  ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -927,6 +750,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
           children: [
             Expanded(
               child: TextField(
+                controller: _promoController,
                 onChanged: (value) => orderProvider.setPromoCode(value),
                 enabled: !orderProvider.promoLoading,
                 decoration: InputDecoration(
@@ -980,6 +804,135 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
               ),
             ),
           ),
+        if (authProvider.isLoggedIn) ...[
+          const SizedBox(height: 14),
+          Text(
+            'Khuyến mãi của bạn',
+            style: TextStyle(
+              fontWeight: FontWeight.w700,
+              fontSize: 13,
+              color: Colors.grey[800],
+            ),
+          ),
+          const SizedBox(height: 10),
+          if (orderProvider.promoListLoading)
+            const Center(child: CircularProgressIndicator(strokeWidth: 2))
+          else if (orderProvider.promoListError.isNotEmpty)
+            Text(
+              orderProvider.promoListError,
+              style: const TextStyle(color: Colors.red, fontSize: 12),
+            )
+          else if (orderProvider.customerPromotions.isEmpty)
+            Text(
+              'Hiện chưa có mã khuyến mãi nào khả dụng.',
+              style: TextStyle(color: Colors.grey[600], fontSize: 12),
+            )
+          else
+            Column(
+              children: orderProvider.customerPromotions.map((promo) {
+                final code = promo['promotion_code']?.toString() ?? '';
+                final discount = promo['discount'];
+                final desc = promo['description']?.toString();
+                final campaign = promo['campaign'] as Map<String, dynamic>?;
+                final start = campaign?['start_date'] as String?;
+                final end = campaign?['end_date'] as String?;
+                return Container(
+                  width: double.infinity,
+                  margin: const EdgeInsets.only(bottom: 10),
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: Colors.grey.withValues(alpha: 0.2)),
+                    color: Colors.white,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.04),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Expanded(
+                            child: Text(
+                              code,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w800,
+                                fontSize: 15,
+                              ),
+                            ),
+                          ),
+                          ElevatedButton(
+                            onPressed: code.isEmpty || orderProvider.promoLoading
+                                ? null
+                                : () => _applyPromoFromCode(
+                                      code,
+                                      orderProvider,
+                                      cartProvider,
+                                      authProvider,
+                                    ),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppColors.goldColor,
+                              minimumSize: const Size(90, 36),
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                            ),
+                            child: const Text(
+                              'Áp dụng',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 13,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      if (discount != null)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 6),
+                          child: Text(
+                            'Giảm ${discount.toString()}%',
+                            style: const TextStyle(
+                              color: Color(0xFF00796B),
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      if (desc != null && desc.isNotEmpty)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 4),
+                          child: Text(
+                            desc,
+                            style: TextStyle(
+                              color: Colors.grey[700],
+                              fontSize: 12.5,
+                              height: 1.4,
+                            ),
+                          ),
+                        ),
+                      if (start != null || end != null)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 4),
+                          child: Text(
+                            _formatCampaignDuration(start, end),
+                            style: TextStyle(
+                              color: Colors.grey[600],
+                              fontSize: 12,
+                              fontStyle: FontStyle.italic,
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                );
+              }).toList(),
+            ),
+        ],
       ],
     );
   }
@@ -1007,8 +960,6 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
           ),
           const SizedBox(height: 12),
           _priceRow('Tạm tính', orderProvider.subTotal),
-          const SizedBox(height: 8),
-          _priceRow('Phí vận chuyển', orderProvider.shippingFee),
           if (orderProvider.discount > 0) ...[
             const SizedBox(height: 8),
             _priceRow(

@@ -224,7 +224,10 @@ class ProductDetailScreenState extends State<ProductDetailScreen>
 
       if (!mounted) return;
 
-      if (result['success']) {
+      final bool success =
+          (result['success'] == true) || (result['review'] != null);
+
+      if (success) {
         setState(() {
           _showReviewModal = false;
         });
@@ -236,6 +239,11 @@ class ProductDetailScreenState extends State<ProductDetailScreen>
         // Reload reviews
         await _loadReviews();
         await _loadRatingSummary();
+      } else {
+        final msg = result['message'] ?? 'Không thể gửi đánh giá';
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Gửi đánh giá thất bại: $msg')),
+        );
       }
     } catch (e) {
       if (mounted) {
@@ -701,78 +709,9 @@ class ProductDetailScreenState extends State<ProductDetailScreen>
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
       child: Column(
         children: [
-          // Buy now button with gradient
-          Container(
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [Color(0xFFAD2A36), Color(0xFF8B1F27)],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              borderRadius: BorderRadius.circular(14),
-              boxShadow: [
-                BoxShadow(
-                  color: const Color(0xFFAD2A36).withValues(alpha: 0.3),
-                  blurRadius: 16,
-                  offset: const Offset(0, 6),
-                ),
-                BoxShadow(
-                  color: const Color(0xFFAD2A36).withValues(alpha: 0.15),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
-            child: Material(
-              color: Colors.transparent,
-              child: InkWell(
-                onTap: () {
-                  setState(() {
-                    _showBuyNowModal = true;
-                  });
-                },
-                borderRadius: BorderRadius.circular(14),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(vertical: 10),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Text(
-                        'Mua ngay',
-                        style: TextStyle(
-                          fontSize: 17,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                          letterSpacing: 0.3,
-                          shadows: [
-                            Shadow(
-                              offset: Offset(0, 2),
-                              blurRadius: 4,
-                              color: Color.fromARGB(100, 0, 0, 0),
-                            ),
-                          ],
-                        ),
-                      ),
-                      Text(
-                        'Giao hàng miễn phí tận nhà',
-                        style: TextStyle(
-                          fontSize: 11,
-                          color: Colors.white.withValues(alpha: 0.9),
-                          letterSpacing: 0.2,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(height: 16),
-
-          // Add to cart and Buy now buttons
+          // Single row: add to cart + buy now (lightning icon)
           Row(
             children: [
-              // Add to cart button
               Expanded(
                 child: LuxurySecondaryButton(
                   onPressed: () {
@@ -786,10 +725,7 @@ class ProductDetailScreenState extends State<ProductDetailScreen>
                 ),
               ),
               const SizedBox(width: 12),
-
-              // Buy now button
               Expanded(
-                flex: 2,
                 child: LuxuryPrimaryButton(
                   onPressed: () {
                     setState(() {
@@ -1020,28 +956,60 @@ class ProductDetailScreenState extends State<ProductDetailScreen>
                   // Policy tab
                   SingleChildScrollView(
                     padding: const EdgeInsets.all(16),
-                    child: Text(
-                      'Thông tin chính sách đổi trả và bảo hành sẽ được hiển thị ở đây.',
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.grey.shade600,
-                        height: 1.6,
-                        fontWeight: FontWeight.w500,
-                      ),
+                    child: Column(
+                      children: [
+                        _buildPolicyCard(
+                          icon: Icons.local_shipping,
+                          iconColor: const Color(0xFF2196F3),
+                          title: 'Chính sách giao hàng',
+                          description:
+                              'Miễn phí giao hàng trong 3 giờ cho các đơn nội thành. Nếu giao trễ, tặng ngay voucher 100.000đ cho lần mua tiếp theo.',
+                        ),
+                        const SizedBox(height: 12),
+                        _buildPolicyCard(
+                          icon: Icons.autorenew,
+                          iconColor: const Color(0xFFFF9800),
+                          title: 'Chính sách đổi trả',
+                          description:
+                              'Đổi 48 giờ đối với trang sức vàng và 72 giờ với trang sức bạc (đổi size). Tính từ lúc xuất hóa đơn hoặc thời điểm nhận hàng.',
+                        ),
+                        const SizedBox(height: 12),
+                        _buildPolicyCard(
+                          icon: Icons.credit_card,
+                          iconColor: const Color(0xFF4CAF50),
+                          title: 'Phương thức thanh toán',
+                          description: 'Hỗ trợ COD (thanh toán khi nhận hàng) và VNPay.',
+                        ),
+                      ],
                     ),
                   ),
 
                   // FAQ tab
                   SingleChildScrollView(
-                    padding: const EdgeInsets.all(16),
-                    child: Text(
-                      'Câu hỏi thường gặp về sản phẩm sẽ được hiển thị ở đây.',
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.grey.shade600,
-                        height: 1.6,
-                        fontWeight: FontWeight.w500,
-                      ),
+                    padding: const EdgeInsets.all(12),
+                    child: Column(
+                      children: [
+                        _buildFaqItem(
+                          question: 'Sản phẩm có bảo hành không?',
+                          answer:
+                              'Có, tất cả sản phẩm đều được bảo hành 1 năm từ ngày mua. Nếu lỗi kỹ thuật, sẽ được thay thế miễn phí.',
+                        ),
+                        _buildFaqItem(
+                          question: 'Làm thế nào để kiểm tra tính chính hãng?',
+                          answer:
+                              'Sản phẩm nhập trực tiếp từ nhà sản xuất, kèm giấy chứng nhận bảo hành chính hãng.',
+                        ),
+                        _buildFaqItem(
+                          question: 'Có thể trả lại nếu không hài lòng không?',
+                          answer:
+                              'Có thể trả trong 48 giờ từ khi nhận hàng nếu sản phẩm còn nguyên vẹn và chưa qua sử dụng.',
+                        ),
+                        _buildFaqItem(
+                          question: 'Giao hàng đến các tỉnh thành khác?',
+                          answer:
+                              'Có, giao hàng toàn quốc. Phí vận chuyển tính theo khoảng cách và đơn vị vận chuyển.',
+                        ),
+                      ],
                     ),
                   ),
                 ],
@@ -1049,6 +1017,121 @@ class ProductDetailScreenState extends State<ProductDetailScreen>
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildPolicyCard({
+    required IconData icon,
+    required Color iconColor,
+    required String title,
+    required String description,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: iconColor.withValues(alpha: 0.06),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: iconColor.withValues(alpha: 0.25)),
+        boxShadow: [
+          BoxShadow(
+            color: iconColor.withValues(alpha: 0.12),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.05),
+                  blurRadius: 6,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Icon(icon, color: iconColor, size: 22),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF1A1A1A),
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  description,
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.grey.shade700,
+                    height: 1.5,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFaqItem({required String question, required String answer}) {
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 6),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey.withValues(alpha: 0.2)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 8,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Theme(
+        data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+        child: ExpansionTile(
+          tilePadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+          childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+          title: Text(
+            question,
+            style: const TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.w700,
+              color: Color(0xFF1A1A1A),
+            ),
+          ),
+          iconColor: const Color(0xFF202E65),
+          collapsedIconColor: Colors.grey.shade600,
+          children: [
+            Text(
+              answer,
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.grey.shade700,
+                height: 1.5,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -1131,8 +1214,8 @@ class ProductDetailScreenState extends State<ProductDetailScreen>
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Header
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               ShaderMask(
                 shaderCallback: (bounds) => const LinearGradient(
@@ -1150,56 +1233,37 @@ class ProductDetailScreenState extends State<ProductDetailScreen>
                   ),
                 ),
               ),
+              const SizedBox(height: 10),
               Consumer<AuthProvider>(
                 builder: (context, authProvider, child) {
                   if (authProvider.isLoggedIn) {
-                    return Container(
-                      decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          colors: [Color(0xFF4CAF50), Color(0xFF388E3C)],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
-                        borderRadius: BorderRadius.circular(10),
-                        boxShadow: [
-                          BoxShadow(
-                            color: const Color(
-                              0xFF4CAF50,
-                            ).withValues(alpha: 0.3),
-                            blurRadius: 8,
-                            offset: const Offset(0, 2),
+                    return Align(
+                      alignment: Alignment.centerLeft,
+                      child: ElevatedButton.icon(
+                        onPressed: () {
+                          setState(() {
+                            _showReviewModal = true;
+                          });
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF2563EB),
+                          foregroundColor: Colors.white,
+                          elevation: 4,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 14,
+                            vertical: 10,
                           ),
-                        ],
-                      ),
-                      child: Material(
-                        color: Colors.transparent,
-                        child: InkWell(
-                          onTap: () {
-                            setState(() {
-                              _showReviewModal = true;
-                            });
-                          },
-                          borderRadius: BorderRadius.circular(10),
-                          child: const Padding(
-                            padding: EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 10,
-                            ),
-                            child: Row(
-                              children: [
-                                Icon(Icons.edit, color: Colors.white, size: 18),
-                                SizedBox(width: 6),
-                                Text(
-                                  'Viết đánh giá',
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 13,
-                                    letterSpacing: 0.2,
-                                  ),
-                                ),
-                              ],
-                            ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                        ),
+                        icon: const Icon(Icons.edit, size: 18),
+                        label: const Text(
+                          'Viết đánh giá của bạn',
+                          style: TextStyle(
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: 0.2,
+                            fontSize: 13,
                           ),
                         ),
                       ),

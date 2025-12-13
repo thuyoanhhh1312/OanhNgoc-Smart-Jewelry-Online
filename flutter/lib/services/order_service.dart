@@ -77,7 +77,7 @@ class OrderService {
   static Future<Map<String, dynamic>> calculatePrice({
     required List<Map<String, dynamic>> items,
     String? promotionCode,
-    String? userId,
+    required int userId,
   }) async {
     try {
       final response = await ApiService.post('/calculate-price', body: {

@@ -20,10 +20,21 @@ class ReviewCard extends StatelessWidget {
       userName = review['Customer']['name'];
     }
     final createdAt = review['created_at'] ?? '';
-    final sentiment = review['sentiment'];
 
-    return Card(
+    return Container(
       margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey.withValues(alpha: 0.2)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 8,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -31,14 +42,17 @@ class ReviewCard extends StatelessWidget {
           children: [
             // User info and rating
             Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 CircleAvatar(
-                  backgroundColor: Theme.of(context).primaryColor,
+                  radius: 20,
+                  backgroundColor: const Color(0xFFFFC107),
                   child: Text(
                     userName.isNotEmpty ? userName[0].toUpperCase() : 'A',
                     style: const TextStyle(
                       color: Colors.white,
                       fontWeight: FontWeight.bold,
+                      fontSize: 18,
                     ),
                   ),
                 ),
@@ -50,10 +64,12 @@ class ReviewCard extends StatelessWidget {
                       Text(
                         userName,
                         style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
+                          fontWeight: FontWeight.w700,
+                          fontSize: 15,
+                          color: Color(0xFF1A1A1A),
                         ),
                       ),
+                      const SizedBox(height: 4),
                       Row(
                         children: [
                           Row(
@@ -61,7 +77,7 @@ class ReviewCard extends StatelessWidget {
                               return Icon(
                                 index < rating ? Icons.star : Icons.star_border,
                                 color: Colors.amber,
-                                size: 16,
+                                size: 18,
                               );
                             }),
                           ),
@@ -72,6 +88,7 @@ class ReviewCard extends StatelessWidget {
                               style: TextStyle(
                                 color: Colors.grey.shade600,
                                 fontSize: 12,
+                                fontStyle: FontStyle.italic,
                               ),
                             ),
                         ],
@@ -79,66 +96,22 @@ class ReviewCard extends StatelessWidget {
                     ],
                   ),
                 ),
-                if (sentiment != null) _buildSentimentBadge(sentiment),
               ],
             ),
-            
+
             const SizedBox(height: 12),
-            
+
             // Review content
             Text(
               content,
-              style: const TextStyle(fontSize: 14, height: 1.4),
+              style: const TextStyle(
+                fontSize: 14,
+                height: 1.6,
+                color: Color(0xFF333333),
+              ),
             ),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildSentimentBadge(String sentiment) {
-    Color color;
-    String text;
-    IconData icon;
-
-    switch (sentiment.toUpperCase()) {
-      case 'POS':
-        color = Colors.green;
-        text = 'Tích cực';
-        icon = Icons.sentiment_satisfied;
-        break;
-      case 'NEG':
-        color = Colors.red;
-        text = 'Tiêu cực';
-        icon = Icons.sentiment_dissatisfied;
-        break;
-      default:
-        color = Colors.grey;
-        text = 'Trung tính';
-        icon = Icons.sentiment_neutral;
-    }
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withValues(alpha: 0.3)),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, color: color, size: 14),
-          const SizedBox(width: 4),
-          Text(
-            text,
-            style: TextStyle(
-              color: color,
-              fontSize: 12,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-        ],
       ),
     );
   }

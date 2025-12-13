@@ -77,7 +77,7 @@ class Cart {
 
   double get subtotal => items.fold(0.0, (sum, item) => sum + item.totalPrice);
 
-  double get shippingFee => subtotal > 500000 ? 0.0 : 30000; // Free shipping over 500k VND
+  double get shippingFee => 0.0; // Miễn phí vận chuyển
 
   double get tax => subtotal * 0.1; // 10% tax
 
