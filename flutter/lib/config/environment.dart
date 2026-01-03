@@ -32,9 +32,16 @@ class Environment {
 
   // Cache all environment values safely
   static void _cacheValues() {
-    _apiBaseUrl = _getEnv('API_BASE_URL', 
-      kIsWeb ? 'http://127.0.0.1:3001/api' : 'http://localhost:3001/api'
-    );
+    // Determine base URL based on platform
+    String baseUrl;
+    if (kIsWeb) {
+      baseUrl = 'http://127.0.0.1:3001/api';
+    } else {
+      // Thay 10.0.2.2 bằng IP máy host: 172.20.10.3
+      baseUrl = 'http://172.20.10.3:3001/api';
+    }
+    
+    _apiBaseUrl = _getEnv('API_BASE_URL', baseUrl);
     
     _apiTimeout = int.tryParse(_getEnv('API_TIMEOUT', '30000')) ?? 30000;
     
@@ -47,7 +54,7 @@ class Environment {
     _receiveTimeout = int.tryParse(_getEnv('RECEIVE_TIMEOUT', '30000')) ?? 30000;
     
     _imageBaseUrl = _getEnv('IMAGE_BASE_URL',
-      kIsWeb ? 'http://127.0.0.1:3001/uploads' : 'http://localhost:3001/uploads'
+      kIsWeb ? 'http://127.0.0.1:3001/uploads' : 'http://172.20.10.3:3001/uploads'
     );
     
     _appName = _getEnv('APP_NAME', 'Smart Jewelry');
