@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+
 class Product {
   final String id;
   final String name;
@@ -98,21 +100,48 @@ class Product {
 
   // Helper method to extract images from different response formats
   static List<String> _extractImages(Map<String, dynamic> json) {
+    const String imageBaseUrl = 'http://127.0.0.1:3001';
+
     // If images field exists and is a list
     if (json['images'] != null && json['images'] is List) {
-      return List<String>.from(json['images']);
-    }
-
-    // If ProductImages exists (from API response)
-    if (json['ProductImages'] != null && json['ProductImages'] is List) {
-      return (json['ProductImages'] as List)
-          .map((img) => img['image_url'] ?? '')
+      return (json['images'] as List)
+          .map((img) {
+            final url = img is String ? img : img.toString();
+            final fullUrl = _ensureFullUrl(url, imageBaseUrl);
+            debugPrint('[ProductImage] images field: $url -> $fullUrl');
+            return fullUrl;
+          })
           .where((url) => url.isNotEmpty)
           .cast<String>()
           .toList();
     }
 
+    // If ProductImages exists (from API response)
+    if (json['ProductImages'] != null && json['ProductImages'] is List) {
+      return (json['ProductImages'] as List)
+          .map((img) {
+            final url = img['image_url'] ?? '';
+            final fullUrl = _ensureFullUrl(url, imageBaseUrl);
+            debugPrint('[ProductImage] ProductImages field: $url -> $fullUrl');
+            return fullUrl;
+          })
+          .where((url) => url.isNotEmpty)
+          .cast<String>()
+          .toList();
+    }
+
+    debugPrint('[ProductImage] No images found in response');
     return [];
+  }
+
+  // Helper to ensure URL is complete
+  static String _ensureFullUrl(String url, String baseUrl) {
+    if (url.isEmpty) return '';
+    if (url.startsWith('http://') || url.startsWith('https://')) {
+      return url;
+    }
+    // If it's a relative path, prepend the base URL
+    return '$baseUrl$url';
   }
 
   Map<String, dynamic> toJson() {
