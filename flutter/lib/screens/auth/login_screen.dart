@@ -18,11 +18,11 @@ class _LoginScreenState extends State<LoginScreen>
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
-  
+
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
   late Animation<Offset> _slideAnimation;
-  
+
   bool _obscurePassword = true;
   bool _rememberMe = false;
 
@@ -38,21 +38,17 @@ class _LoginScreenState extends State<LoginScreen>
       vsync: this,
     );
 
-    _fadeAnimation = Tween<double>(
-      begin: 0.0,
-      end: 1.0,
-    ).animate(CurvedAnimation(
-      parent: _animationController,
-      curve: Curves.easeInOut,
-    ));
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
+    );
 
-    _slideAnimation = Tween<Offset>(
-      begin: const Offset(0, 0.3),
-      end: Offset.zero,
-    ).animate(CurvedAnimation(
-      parent: _animationController,
-      curve: Curves.easeOutCubic,
-    ));
+    _slideAnimation =
+        Tween<Offset>(begin: const Offset(0, 0.3), end: Offset.zero).animate(
+          CurvedAnimation(
+            parent: _animationController,
+            curve: Curves.easeOutCubic,
+          ),
+        );
 
     _animationController.forward();
   }
@@ -69,7 +65,7 @@ class _LoginScreenState extends State<LoginScreen>
     if (!_formKey.currentState!.validate()) return;
 
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    
+
     final success = await authProvider.login(
       email: _emailController.text.trim(),
       password: _passwordController.text,
@@ -87,14 +83,29 @@ class _LoginScreenState extends State<LoginScreen>
     }
   }
 
+  Future<void> _loginWithGoogle() async {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final success = await authProvider.signInWithGoogle();
+
+    if (success && mounted) {
+      Navigator.of(context).pushReplacementNamed('/main');
+    } else if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(authProvider.error ?? 'Đăng nhập Google thất bại'),
+          backgroundColor: AppColors.error,
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    final authState = Provider.of<AuthProvider>(context);
     return Scaffold(
       backgroundColor: AppColors.softWhite,
       body: Container(
-        decoration: const BoxDecoration(
-          gradient: AppColors.champagneGradient,
-        ),
+        decoration: const BoxDecoration(gradient: AppColors.champagneGradient),
         child: SafeArea(
           child: SingleChildScrollView(
             padding: const EdgeInsets.all(24.0),
@@ -108,37 +119,37 @@ class _LoginScreenState extends State<LoginScreen>
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       const SizedBox(height: 40),
-                      
+
                       // Logo and Welcome
                       _buildHeader(),
-                      
+
                       const SizedBox(height: 48),
-                      
+
                       // Login Form
                       _buildLoginForm(),
-                      
+
                       const SizedBox(height: 24),
-                      
+
                       // Remember Me & Forgot Password
                       _buildRememberAndForgot(),
-                      
+
                       const SizedBox(height: 32),
-                      
+
                       // Login Button
                       _buildLoginButton(),
-                      
+
                       const SizedBox(height: 24),
-                      
+
                       // Divider
                       _buildDivider(),
-                      
+
                       const SizedBox(height: 24),
-                      
+
                       // Social Login
-                      _buildSocialLogin(),
-                      
+                      _buildSocialLogin(isLoading: authState.isLoading),
+
                       const SizedBox(height: 32),
-                      
+
                       // Sign Up Link
                       _buildSignUpLink(),
                     ],
@@ -177,9 +188,9 @@ class _LoginScreenState extends State<LoginScreen>
             color: AppColors.softWhite,
           ),
         ),
-        
+
         const SizedBox(height: 32),
-        
+
         // Welcome Text - Luxury Typography
         Text(
           'Chào mừng trở lại!',
@@ -189,14 +200,14 @@ class _LoginScreenState extends State<LoginScreen>
             letterSpacing: 0.5,
           ),
         ),
-        
+
         const SizedBox(height: 8),
-        
+
         Text(
           'Đăng nhập để tiếp tục mua sắm trang sức cao cấp',
-          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-            color: AppColors.textSecondary,
-          ),
+          style: Theme.of(
+            context,
+          ).textTheme.bodyLarge?.copyWith(color: AppColors.textSecondary),
           textAlign: TextAlign.center,
         ),
       ],
@@ -222,9 +233,9 @@ class _LoginScreenState extends State<LoginScreen>
             return null;
           },
         ),
-        
+
         const SizedBox(height: 20),
-        
+
         // Password Field
         CustomTextField(
           controller: _passwordController,
@@ -290,7 +301,7 @@ class _LoginScreenState extends State<LoginScreen>
             ),
           ],
         ),
-        
+
         // Forgot Password - Rose Gold
         LuxuryGhostButton(
           text: 'Quên mật khẩu?',
@@ -319,12 +330,7 @@ class _LoginScreenState extends State<LoginScreen>
   Widget _buildDivider() {
     return Row(
       children: [
-        Expanded(
-          child: Container(
-            height: 1,
-            color: AppColors.champagne,
-          ),
-        ),
+        Expanded(child: Container(height: 1, color: AppColors.champagne)),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 20),
           child: Text(
@@ -335,39 +341,20 @@ class _LoginScreenState extends State<LoginScreen>
             ),
           ),
         ),
-        Expanded(
-          child: Container(
-            height: 1,
-            color: AppColors.champagne,
-          ),
-        ),
+        Expanded(child: Container(height: 1, color: AppColors.champagne)),
       ],
     );
   }
 
-  Widget _buildSocialLogin() {
-    return Row(
-      children: [
-        Expanded(
-          child: _buildSocialButton(
-            icon: FontAwesomeIcons.google,
-            label: 'Google',
-            onPressed: () {
-              // TODO: Implement Google login
-            },
-          ),
-        ),
-        const SizedBox(width: 16),
-        Expanded(
-          child: _buildSocialButton(
-            icon: FontAwesomeIcons.facebook,
-            label: 'Facebook',
-            onPressed: () {
-              // TODO: Implement Facebook login
-            },
-          ),
-        ),
-      ],
+  Widget _buildSocialLogin({bool isLoading = false}) {
+    return _buildSocialButton(
+      icon: FontAwesomeIcons.google,
+      label: 'Google',
+      isLoading: isLoading,
+      onPressed: () async {
+        if (!mounted) return;
+        await _loginWithGoogle();
+      },
     );
   }
 
@@ -375,20 +362,18 @@ class _LoginScreenState extends State<LoginScreen>
     required IconData icon,
     required String label,
     required VoidCallback onPressed,
+    bool isLoading = false,
   }) {
     return Container(
       height: 52,
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: AppColors.champagne,
-          width: 1.5,
-        ),
+        border: Border.all(color: AppColors.champagne, width: 1.5),
         boxShadow: AppColors.lightShadow,
       ),
       child: InkWell(
-        onTap: onPressed,
+        onTap: isLoading ? null : onPressed,
         borderRadius: BorderRadius.circular(12),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -404,6 +389,14 @@ class _LoginScreenState extends State<LoginScreen>
                 letterSpacing: 0.3,
               ),
             ),
+            if (isLoading) ...[
+              const SizedBox(width: 8),
+              const SizedBox(
+                height: 16,
+                width: 16,
+                child: CircularProgressIndicator(strokeWidth: 1.8),
+              ),
+            ],
           ],
         ),
       ),

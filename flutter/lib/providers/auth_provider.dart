@@ -1,5 +1,8 @@
 import 'package:flutter/foundation.dart';
+import 'package:firebase_auth/firebase_auth.dart' as fb_auth;
+import 'package:google_sign_in/google_sign_in.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../firebase_options.dart';
 import '../models/user.dart';
 import '../services/auth_service.dart';
 import '../services/api_service.dart';
@@ -24,11 +27,11 @@ class AuthProvider extends ChangeNotifier {
     try {
       final prefs = await SharedPreferences.getInstance();
       final token = prefs.getString(AppConstants.userTokenKey);
-      
+
       if (token != null) {
         // Set token for API calls
         ApiService.setToken(token);
-        
+
         // Try to get current user
         await getCurrentUser();
       }
@@ -38,10 +41,7 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
-  Future<bool> login({
-    required String email,
-    required String password,
-  }) async {
+  Future<bool> login({required String email, required String password}) async {
     try {
       _setLoading(true);
       _setError(null);
@@ -54,7 +54,7 @@ class AuthProvider extends ChangeNotifier {
       // Handle different response formats
       String? token;
       Map<String, dynamic>? userData;
-      
+
       // Check for direct token/user structure
       if (response['accessToken'] != null || response['token'] != null) {
         token = response['accessToken'] ?? response['token'];
@@ -74,13 +74,13 @@ class AuthProvider extends ChangeNotifier {
       if (token != null && userData != null) {
         // Save token and user data
         await _saveAuthData(token, userData);
-        
+
         _user = User.fromJson(userData);
         _isLoggedIn = true;
-        
+
         _setLoading(false);
         notifyListeners();
-        
+
         return true;
       } else {
         throw Exception('Invalid response format: missing token or user data');
@@ -116,7 +116,7 @@ class AuthProvider extends ChangeNotifier {
       // Handle different response formats
       String? token;
       Map<String, dynamic>? userData;
-      
+
       // Check for direct token/user structure
       if (response['accessToken'] != null || response['token'] != null) {
         token = response['accessToken'] ?? response['token'];
@@ -136,13 +136,13 @@ class AuthProvider extends ChangeNotifier {
       if (token != null && userData != null) {
         // Save token and user data
         await _saveAuthData(token, userData);
-        
+
         _user = User.fromJson(userData);
         _isLoggedIn = true;
-        
+
         _setLoading(false);
         notifyListeners();
-        
+
         return true;
       } else {
         throw Exception('Invalid response format: missing token or user data');
@@ -164,7 +164,7 @@ class AuthProvider extends ChangeNotifier {
       _setError(null);
 
       await AuthService.sendPasswordResetOtp(email: email);
-      
+
       _setLoading(false);
       return true;
     } catch (e) {
@@ -244,14 +244,17 @@ class AuthProvider extends ChangeNotifier {
       );
 
       _user = updatedUser;
-      
+
       // Update stored user data
       final prefs = await SharedPreferences.getInstance();
-      await prefs.setString(AppConstants.userDataKey, updatedUser.toJson().toString());
-      
+      await prefs.setString(
+        AppConstants.userDataKey,
+        updatedUser.toJson().toString(),
+      );
+
       _setLoading(false);
       notifyListeners();
-      
+
       return true;
     } catch (e) {
       _setError(e.toString());
@@ -272,7 +275,7 @@ class AuthProvider extends ChangeNotifier {
         currentPassword: currentPassword,
         newPassword: newPassword,
       );
-      
+
       _setLoading(false);
       return true;
     } catch (e) {
@@ -288,6 +291,11 @@ class AuthProvider extends ChangeNotifier {
     } catch (e) {
       // Continue with logout even if API call fails
     } finally {
+      // Also sign out of Firebase/Google to clear social session
+      try {
+        await fb_auth.FirebaseAuth.instance.signOut();
+        await GoogleSignIn.instance.signOut();
+      } catch (_) {}
       await _clearAuthData();
       _user = null;
       _isLoggedIn = false;
@@ -295,7 +303,81 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
-  Future<void> _saveAuthData(String token, Map<String, dynamic> userData) async {
+  Future<bool> signInWithGoogle() async {
+    try {
+      _setLoading(true);
+      _setError(null);
+
+      fb_auth.UserCredential userCredential;
+
+      if (kIsWeb) {
+        final provider = fb_auth.GoogleAuthProvider();
+        userCredential = await fb_auth.FirebaseAuth.instance.signInWithPopup(
+          provider,
+        );
+      } else {
+        final google = GoogleSignIn.instance;
+        await google.initialize(
+          clientId: DefaultFirebaseOptions.currentPlatform.iosClientId,
+          serverClientId: DefaultFirebaseOptions.currentPlatform.iosClientId,
+        );
+
+        final googleUser = await google.authenticate();
+        final googleAuth = googleUser.authentication;
+        final credential = fb_auth.GoogleAuthProvider.credential(
+          idToken: googleAuth.idToken,
+        );
+        userCredential = await fb_auth.FirebaseAuth.instance
+            .signInWithCredential(credential);
+      }
+
+      final firebaseUser = userCredential.user;
+      if (firebaseUser == null) {
+        throw Exception('Không lấy được thông tin tài khoản Google');
+      }
+
+      final idToken = await firebaseUser.getIdToken();
+      if (idToken != null) {
+        ApiService.setToken(idToken);
+      }
+
+      final userData = {
+        'id': firebaseUser.uid,
+        'email': firebaseUser.email ?? '',
+        'name': firebaseUser.displayName,
+        'avatar': firebaseUser.photoURL,
+        'createdAt':
+            firebaseUser.metadata.creationTime?.toIso8601String() ??
+            DateTime.now().toIso8601String(),
+      };
+
+      await _saveAuthData(idToken ?? '', userData);
+
+      _user = User(
+        id: firebaseUser.uid,
+        email: firebaseUser.email ?? '',
+        fullName: firebaseUser.displayName,
+        avatar: firebaseUser.photoURL,
+        addresses: const [],
+        createdAt: firebaseUser.metadata.creationTime ?? DateTime.now(),
+        updatedAt: firebaseUser.metadata.lastSignInTime,
+      );
+
+      _isLoggedIn = true;
+      _setLoading(false);
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _setError('Đăng nhập Google thất bại: $e');
+      _setLoading(false);
+      return false;
+    }
+  }
+
+  Future<void> _saveAuthData(
+    String token,
+    Map<String, dynamic> userData,
+  ) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(AppConstants.userTokenKey, token);
     await prefs.setString(AppConstants.userDataKey, userData.toString());

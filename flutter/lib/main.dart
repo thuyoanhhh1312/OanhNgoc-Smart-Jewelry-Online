@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:provider/provider.dart';
 import 'config/environment.dart';
 import 'theme/app_theme.dart';
 import 'constants/app_strings.dart';
+import 'firebase_options.dart';
 import 'screens/splash_screen.dart';
 import 'screens/onboarding_screen.dart';
 import 'screens/auth/login_screen.dart' as auth_login;
@@ -33,13 +35,16 @@ import 'providers/payment_provider.dart';
 void main() async {
   // Ensure Flutter is initialized
   WidgetsFlutterBinding.ensureInitialized();
-  
+
+  // Initialize Firebase for Auth/Analytics/etc.
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+
   // Initialize environment configuration
   await Environment.init();
-  
+
   // Print configuration in debug mode
   Environment.printConfig();
-  
+
   runApp(const MyApp());
 }
 
@@ -74,7 +79,7 @@ class MyApp extends StatelessWidget {
               // Handle both Product object and productId
               final args = settings.arguments;
               String productId;
-              
+
               if (args is String) {
                 // If arguments is a String, use it as productId
                 productId = args;
@@ -92,7 +97,7 @@ class MyApp extends StatelessWidget {
               } else {
                 productId = '';
               }
-              
+
               return MaterialPageRoute(
                 builder: (context) => ProductDetailScreen(productId: productId),
               );
@@ -154,7 +159,7 @@ class MyApp extends StatelessWidget {
   }
 }
 
-// Placeholder screens - will be implemented  
+// Placeholder screens - will be implemented
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
 
