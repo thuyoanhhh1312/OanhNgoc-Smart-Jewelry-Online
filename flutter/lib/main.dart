@@ -36,7 +36,12 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   // Initialize Firebase for Auth/Analytics/etc.
-  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  try {
+    await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  } catch (e) {
+    // Firebase already initialized
+    print('Firebase already initialized: $e');
+  }
 
   // Initialize environment configuration
   await Environment.init();
