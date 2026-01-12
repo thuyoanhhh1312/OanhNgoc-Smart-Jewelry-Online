@@ -1,8 +1,6 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_html/flutter_html.dart';
-import 'package:flutter/services.dart';
 import '../models/product.dart';
 import '../providers/cart_provider.dart';
 import '../providers/auth_provider.dart';
@@ -17,7 +15,6 @@ import '../constants/app_colors.dart';
 import '../widgets/luxury/luxury_buttons.dart';
 import '../widgets/luxury/luxury_product_widgets.dart';
 import '../widgets/luxury/luxury_layout_widgets.dart';
-import '../widgets/three_d_viewer.dart';
 
 class ProductDetailScreen extends StatefulWidget {
   final String productId;
@@ -30,9 +27,6 @@ class ProductDetailScreen extends StatefulWidget {
 
 class ProductDetailScreenState extends State<ProductDetailScreen>
     with TickerProviderStateMixin {
-  // slug -> local GLB asset path, loaded dynamically from AssetManifest
-  final Map<String, String> _modelAssets = {};
-
   Product? product;
   List<Product> similarProducts = [];
   List<dynamic> reviews = [];
@@ -53,7 +47,6 @@ class ProductDetailScreenState extends State<ProductDetailScreen>
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
-    _loadModelAssets();
     _loadProductDetail();
   }
 
@@ -105,30 +98,6 @@ class ProductDetailScreenState extends State<ProductDetailScreen>
           isLoading = false;
         });
       }
-    }
-  }
-
-  Future<void> _loadModelAssets() async {
-    try {
-      final manifestContent = await rootBundle.loadString('AssetManifest.json');
-      final Map<String, dynamic> manifestMap = json.decode(manifestContent);
-      final entries = manifestMap.keys.where((path) {
-        return path.startsWith('assets/3d/') && path.endsWith('.glb');
-      }).map((path) {
-        final filename = path.split('/').last;
-        final slug = filename.replaceFirst('.glb', '');
-        return MapEntry(slug, path);
-      });
-
-      if (mounted) {
-        setState(() {
-          _modelAssets
-            ..clear()
-            ..addEntries(entries);
-        });
-      }
-    } catch (_) {
-      // silently ignore if manifest is not available
     }
   }
 
@@ -361,27 +330,14 @@ class ProductDetailScreenState extends State<ProductDetailScreen>
     );
   }
 
-  bool _shouldShow3DModel() {
-    if (product?.slug == null) return false;
-    return _modelAssets.containsKey(product!.slug);
-  }
-
   List<_MediaItem> _buildMediaItems() {
     if (product == null) return [];
 
     final items = <_MediaItem>[];
     if (product!.images.isNotEmpty) {
-      items.addAll(product!.images.map((url) => _MediaItem.image(url)));
+      items.addAll(product!.images.map((url) => _MediaItem(url)));
     } else {
-      items.add(const _MediaItem.image('https://via.placeholder.com/400'));
-    }
-
-    if (_shouldShow3DModel()) {
-      final slug = product?.slug ?? '';
-      final modelPath = _modelAssets[slug];
-      if (modelPath != null) {
-        items.add(_MediaItem.model(modelPath));
-      }
+      items.add(const _MediaItem('https://via.placeholder.com/400'));
     }
 
     return items;
@@ -414,14 +370,11 @@ class ProductDetailScreenState extends State<ProductDetailScreen>
                 borderRadius: BorderRadius.circular(16),
                 child: Stack(
                   children: [
-                    if (selectedMedia.type == _MediaType.image)
-                      Image.network(
-                        selectedMedia.source,
-                        fit: BoxFit.contain,
-                        width: double.infinity,
-                      )
-                    else
-                      ThreeDViewer(modelAssetPath: selectedMedia.source),
+                    Image.network(
+                      selectedMedia.source,
+                      fit: BoxFit.contain,
+                      width: double.infinity,
+                    ),
                     // Image counter badge
                     if (mediaItems.length > 1)
                       Positioned(
@@ -502,27 +455,12 @@ class ProductDetailScreenState extends State<ProductDetailScreen>
                         borderRadius: BorderRadius.circular(10),
                         child: Stack(
                           children: [
-                            if (item.type == _MediaType.image)
-                              Image.network(
-                                item.source,
-                                fit: BoxFit.cover,
-                                width: double.infinity,
-                                height: double.infinity,
-                              )
-                            else
-                              Container(
-                                color: Colors.black.withValues(alpha: 0.7),
-                                child: const Center(
-                                  child: Text(
-                                    '3D',
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontWeight: FontWeight.bold,
-                                      letterSpacing: 0.5,
-                                    ),
-                                  ),
-                                ),
-                              ),
+                            Image.network(
+                              item.source,
+                              fit: BoxFit.cover,
+                              width: double.infinity,
+                              height: double.infinity,
+                            ),
                             // Overlay for selected thumbnail
                             if (isSelected)
                               Container(
@@ -676,24 +614,6 @@ class ProductDetailScreenState extends State<ProductDetailScreen>
                     ],
                   ),
                   const SizedBox(height: 10),
-
-                  // Sentiment badges (wraps to new line to avoid overflow)
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 6,
-                    children: [
-                      _buildSentimentBadge(
-                        'Tích cực',
-                        reviewSummary!['sentimentCount']['POS'] ?? 0,
-                        Colors.green,
-                      ),
-                      _buildSentimentBadge(
-                        'Tiêu cực',
-                        reviewSummary!['sentimentCount']['NEG'] ?? 0,
-                        Colors.red,
-                      ),
-                    ],
-                  ),
                 ],
               ),
             ),
@@ -704,23 +624,8 @@ class ProductDetailScreenState extends State<ProductDetailScreen>
   }
 
   Widget _buildSentimentBadge(String label, int count, Color color) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.2),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: color.withValues(alpha: 0.4)),
-      ),
-      child: Text(
-        '$label ($count)',
-        style: TextStyle(
-          fontSize: 11,
-          fontWeight: FontWeight.w600,
-          color: color,
-          letterSpacing: 0.2,
-        ),
-      ),
-    );
+    // Sentiment badges no longer shown; method retained for potential future use.
+    return const SizedBox.shrink();
   }
 
   Widget _buildActionButtons() {
@@ -1463,13 +1368,8 @@ class ProductDetailScreenState extends State<ProductDetailScreen>
   }
 }
 
-enum _MediaType { image, model }
-
 class _MediaItem {
-  final _MediaType type;
   final String source;
 
-  const _MediaItem.image(this.source) : type = _MediaType.image;
-
-  const _MediaItem.model(this.source) : type = _MediaType.model;
+  const _MediaItem(this.source);
 }

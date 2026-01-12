@@ -3,7 +3,6 @@ import 'package:provider/provider.dart';
 import 'constants/app_theme.dart';
 import 'constants/app_strings.dart';
 import 'screens/splash_screen.dart';
-import 'screens/onboarding_screen.dart';
 import 'screens/auth/login_screen.dart' as auth_login;
 import 'screens/auth/register_screen.dart' as auth_register;
 import 'screens/main_screen.dart';
@@ -33,7 +32,6 @@ class MyApp extends StatelessWidget {
         home: const SplashScreen(),
         routes: {
           '/splash': (context) => const SplashScreen(),
-          '/onboarding': (context) => const OnboardingScreen(),
           '/login': (context) => const auth_login.LoginScreen(),
           '/register': (context) => const auth_register.RegisterScreen(),
           '/home': (context) => const MainScreen(),
