@@ -16,21 +16,32 @@ class VnPayWebViewScreen extends StatefulWidget {
   State<VnPayWebViewScreen> createState() => _VnPayWebViewScreenState();
 }
 
-class _VnPayWebViewScreenState extends State<VnPayWebViewScreen> {
+class _VnPayWebViewScreenState extends State<VnPayWebViewScreen>
+    with WidgetsBindingObserver {
   late WebViewController _webViewController;
   bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _initializeWebView();
   }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     // Clean up WebViewController to prevent memory leaks
     _webViewController.clearCache();
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    // Khi quay lại app từ VNPay app, tắt overlay để tránh màn hình đen
+    if (state == AppLifecycleState.resumed && mounted) {
+      setState(() => _isLoading = false);
+    }
   }
 
   void _initializeWebView() {
@@ -47,21 +58,47 @@ class _VnPayWebViewScreenState extends State<VnPayWebViewScreen> {
             _checkPaymentStatus(url);
           },
           onWebResourceError: (WebResourceError error) {
+            setState(() => _isLoading = false);
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(content: Text('Lỗi: ${error.description}')),
             );
           },
           onNavigationRequest: (NavigationRequest request) {
-            _checkPaymentStatus(request.url);
-            return NavigationDecision.navigate;
+            return _handleNavigationRequest(request.url);
           },
         ),
       )
       ..loadRequest(Uri.parse(widget.paymentUrl));
   }
 
-  void _checkPaymentStatus(String url) {
-    final uri = Uri.parse(url);
+  NavigationDecision _handleNavigationRequest(String url) {
+    final handled = _checkPaymentStatus(url);
+    if (handled) {
+      return NavigationDecision.prevent;
+    }
+
+    final uri = Uri.tryParse(url);
+    // Nếu là custom scheme (mở app VNPay hoặc callback) mà không có response code, tránh giữ overlay đen
+    if (uri != null &&
+        uri.scheme.isNotEmpty &&
+        uri.scheme != 'http' &&
+        uri.scheme != 'https') {
+      if (mounted) {
+        setState(() => _isLoading = false);
+        // coi như hủy giao dịch để không kẹt màn đen
+        Future.microtask(() {
+          if (mounted) Navigator.pop(context, false);
+        });
+      }
+      return NavigationDecision.prevent;
+    }
+
+    return NavigationDecision.navigate;
+  }
+
+  bool _checkPaymentStatus(String url) {
+    final uri = Uri.tryParse(url);
+    if (uri == null) return false;
 
     if (uri.queryParameters.containsKey('vnp_ResponseCode')) {
       final responseCode = uri.queryParameters['vnp_ResponseCode'] ?? '';
@@ -71,10 +108,15 @@ class _VnPayWebViewScreenState extends State<VnPayWebViewScreen> {
       } else {
         _handlePaymentFailure(responseCode);
       }
+      return true;
     }
+    return false;
   }
 
   void _handlePaymentSuccess() {
+    if (!mounted) return;
+    setState(() => _isLoading = false);
+
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
         content: Text('✓ Thanh toán thành công'),
@@ -82,7 +124,7 @@ class _VnPayWebViewScreenState extends State<VnPayWebViewScreen> {
       ),
     );
 
-    Future.delayed(const Duration(seconds: 1), () {
+    Future.delayed(const Duration(milliseconds: 300), () {
       if (!mounted) return;
       Navigator.of(context).pop(true);
     });
@@ -107,8 +149,9 @@ class _VnPayWebViewScreenState extends State<VnPayWebViewScreen> {
       SnackBar(content: Text(message), backgroundColor: Colors.red),
     );
 
-    Future.delayed(const Duration(seconds: 2), () {
+    Future.delayed(const Duration(seconds: 1), () {
       if (!mounted) return;
+      setState(() => _isLoading = false);
       Navigator.of(context).pop(false);
     });
   }
